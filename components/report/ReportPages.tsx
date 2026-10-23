@@ -6,12 +6,13 @@ import { StenChart } from "./StenChart";
 
 const pill = { Low: "bg-amber-100 text-amber-900", Average: "bg-blue-100 text-blue-900", High: "bg-green-100 text-green-900" } as const;
 
-function Head({ n, name }: { n: number; name: string }) {
-return (
-  <header className="mb-4 flex items-end justify-between border-b-2 border-brand-600 pb-2">
-    <div className="flex items-center gap-3"><img src="/brand/logo.png" alt="Tamanna" className="h-8 w-auto" /><div><p className="text-xs font-bold text-brand-700">An Aptitude Test for Senior School Students</p><h2 className="text-xl font-extrabold">Aptitude Test Report Sheet</h2></div></div>
-    <p className="text-xs">{name} · Page {n} of 3</p>
-  </header>);
+function Head({ n, roll }: { n: number; roll: string }) {
+  return (
+    <header className="mb-4 flex items-end justify-between border-b-2 border-brand-600 pb-2">
+      <div className="flex items-center gap-3"><img src="/brand/logo.png" alt="Tamanna" className="h-8 w-auto" /><div><p className="text-xs font-bold text-brand-700">An Aptitude Test for Senior School Students</p><h2 className="text-xl font-extrabold">Aptitude Test Report Sheet</h2></div></div>
+      <p className="text-xs font-semibold">Roll {roll} · Page {n} of 3</p>
+    </header>
+  );
 }
 
 /** A 3-page personal report. Content comes only from the Tamanna booklet (see lib/booklet.ts). */
@@ -23,9 +24,9 @@ export function ReportPages({ s }: { s: Student }) {
   return (
     <>
       <section className="report-page">
-        <Head n={1} name={s.name} />
+        <Head n={1} roll={s.name} />
         <dl className="mb-4 grid grid-cols-2 gap-x-6 gap-y-1 text-sm">
-          <div><dt className="inline font-bold">Name: </dt><dd className="inline">{s.name}</dd></div><div><dt className="inline font-bold">Class: </dt><dd className="inline">{s.class}</dd></div>
+          <div><dt className="inline font-bold">Roll no.: </dt><dd className="inline">{s.name}</dd></div><div><dt className="inline font-bold">Class: </dt><dd className="inline">{s.class}</dd></div>
           <div><dt className="inline font-bold">Gender: </dt><dd className="inline">{s.gender}</dd></div><div><dt className="inline font-bold">School: </dt><dd className="inline">{s.school}</dd></div>
         </dl>
         <div className="overflow-x-auto">
@@ -47,7 +48,7 @@ export function ReportPages({ s }: { s: Student }) {
       </section>
 
       <section className="report-page">
-        <Head n={2} name={s.name} />
+        <Head n={2} roll={s.name} />
         <h3 className="mb-3 text-lg font-extrabold">What each score means</h3>
         <ul className="space-y-3">{p.rows.map((r) => (
           <li key={r.code} className="rounded-2xl border border-brand-100 p-3 text-sm">
@@ -59,7 +60,7 @@ export function ReportPages({ s }: { s: Student }) {
       </section>
 
       <section className="report-page">
-        <Head n={3} name={s.name} />
+        <Head n={3} roll={s.name} />
         <h3 className="mb-2 text-lg font-extrabold">Suggestions and remarks</h3>
         {p.remarks.map((t, i) => <p key={i} className="mb-2 text-sm leading-relaxed">{t}</p>)}
         {p.highs.length > 0 && (

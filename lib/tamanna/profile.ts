@@ -29,7 +29,7 @@ export function buildProfile(s: Pick<Student, "name" | "class" | "gender" | "sco
   else if (!highs.length) remarks.push(NOTES.noHigh);
   else {
     const names = highs.map((h) => h.name);
-    remarks.push(`The profile of ${s.name} shows high aptitude in ${list(names)}. This suggests they are likely to do well in subjects such as ${list(subjects.slice(0, 12))}.`);
+    remarks.push(`Roll ${s.name} shows high aptitude in ${list(names)}. This suggests they are likely to do well in subjects such as ${list(subjects.slice(0, 12))}.`);
     remarks.push(`Depending on interest and inclination, they may explore courses and occupations related to ${list(occupations.slice(0, 10).map((o) => o.name))}. See Appendix VII and VIII of the booklet for related information.`);
   }
   return { cls, group, normLabel, rows, highs, subjects, occupations, remarks, areas: (c: string) => AREAS[c] };

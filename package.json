@@ -1,6 +1,6 @@
 {
   "name": "tamanna-portal",
-  "version": "0.8.1",
+  "version": "0.8.2",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -10,7 +10,8 @@
     "check:report": "tsx --tsconfig tsconfig.json scripts/smoke-report.tsx",
     "predev": "node scripts/setup.js",
     "setup": "node scripts/setup.js",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "ci": "npm run typecheck && npm run check:norms && npm run check:report && npm run build"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",

@@ -1,5 +1,6 @@
 export type ScoreRow = { test_code: string; correct: number; wrong?: number; blank?: number; flagged?: number };
 export type Verification = "pending" | "verified" | "mismatch";
+/** `name` column in `students` stores the student roll number (names are not shown). */
 export type Student = {
   id: string; name: string; class: string; gender: string; school: string; scores: ScoreRow[];
   excluded?: boolean; exclude_reason?: string | null;

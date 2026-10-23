@@ -10,17 +10,17 @@ export default async function Page() {
   const byId = new Map((students ?? []).map((s: { id: string; name: string; class: string | null }) => [s.id, s]));
   const rows = (subs ?? []) as { id: string; created_at: string; student_id: string }[];
   return (
-    <div className="space-y-5">
-      <PageHeader title="Logs" description="Recent scan activity." />
+    <div className="space-y-6">
+      <PageHeader title="Logs" />
       <Card>
         {rows.length === 0 ? <p className="text-sm">No activity yet.</p> : (
           <ul className="divide-y divide-(--line)">
             {rows.map((r) => {
               const s = byId.get(r.student_id);
               return (
-                <li key={r.id} className="flex flex-wrap items-center justify-between gap-3 py-2 text-sm">
-                  <span className="font-semibold">{s?.name ?? "Unknown student"}</span>
-                  <span className="text-ink/70">{s?.class ?? "—"}</span>
+                <li key={r.id} className="flex flex-wrap items-center justify-between gap-3 py-2.5 text-sm">
+                  <span className="font-semibold">{s?.name ? `Roll ${s.name}` : "Unknown roll no."}</span>
+                  <span className="text-ink/70">{s?.class ? `Class ${s.class}` : "—"}</span>
                   <span className="text-ink/60">{new Date(r.created_at).toLocaleString()}</span>
                 </li>
               );

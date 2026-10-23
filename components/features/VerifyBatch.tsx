@@ -24,14 +24,14 @@ export function VerifyBatch({ items, email }: { items: VerifyItem[]; email: stri
       verification_status: ok ? "verified" : "mismatch", verified_by: email, verified_at: new Date().toISOString(),
       manual_scores: Object.fromEntries(TESTS.map((t) => [t.code, Number(m[t.code])])), verification_note: ok ? null : diffs.join("; "),
     }).eq("id", s.id);
-    toast(error ? "Could not save." : ok ? `${s.name}: verified` : `${s.name}: mismatch recorded`);
+    toast(error ? "Could not save." : ok ? `Roll ${s.name}: verified` : `Roll ${s.name}: mismatch recorded`);
     router.refresh();
   }
 
   return (
     <ul className="space-y-4">{items.map((s) => (
       <li key={s.id}><Card className="space-y-3">
-        <div className="flex flex-wrap items-center justify-between gap-2"><h2 className="text-lg font-extrabold">{s.name} <span className="text-sm font-semibold">Class {s.class} · {s.gender}</span></h2>
+        <div className="flex flex-wrap items-center justify-between gap-2"><h2 className="text-lg font-extrabold">Roll {s.name} <span className="text-sm font-semibold text-ink/75">· Class {s.class} · {s.gender}</span></h2>
           <span className="flex gap-3 text-sm font-bold">{s.imgs.map((u, i) => <a key={u} href={u} target="_blank" rel="noreferrer" className="underline">Open side {i + 1}</a>)}</span></div>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">{TESTS.map((t) => (
           <label key={t.code} className="clay-inset block p-2 text-xs font-semibold">{t.code} <span className="font-normal">(app: {app(s, t.code)})</span>

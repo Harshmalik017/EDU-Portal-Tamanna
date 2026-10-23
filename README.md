@@ -32,4 +32,4 @@ lib/            supabase client, OMR engine, template, tests
 supabase/       SQL
 memory-bank/    PRD, tech stack, design, modules, changelog
 ```
-Current version: see `package.json` (0.8.0). Docs start at `memory-bank/index.md`.
+Current version: see `package.json` (0.8.2). Docs start at `memory-bank/index.md`.

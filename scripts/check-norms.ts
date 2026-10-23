@@ -13,7 +13,7 @@ for (const [cls, groups] of Object.entries(NORMS))
         console.log(`${r[i][0] <= r[i - 1][1] ? "OVERLAP" : "GAP"} ${cls}/${g}/${t.code} sten ${i}->${i + 1}: ${r[i - 1]} | ${r[i]}`); problems++;
       }
     }
-// Worked example in the booklet (p.12-13): Manju, Class IX, girl
-const manju: [string, number, number][] = [["LA", 15, 5], ["AR", 27, 10], ["VR", 25, 9], ["MR", 6, 3], ["NA", 19, 8], ["SA", 11, 5], ["PA", 43, 6]];
-for (const [t, raw, want] of manju) { const got = stenOf("IX", "Female", t, raw); if (got !== want) { console.log(`MANJU ${t}: got ${got}, want ${want}`); problems++; } }
+// Worked example in the booklet (p.12-13): Roll 101, Class IX, girl
+const example: [string, number, number][] = [["LA", 15, 5], ["AR", 27, 10], ["VR", 25, 9], ["MR", 6, 3], ["NA", 19, 8], ["SA", 11, 5], ["PA", 43, 6]];
+for (const [t, raw, want] of example) { const got = stenOf("IX", "Female", t, raw); if (got !== want) { console.log(`EXAMPLE ${t}: got ${got}, want ${want}`); problems++; } }
 console.log(problems ? `${problems} item(s) to review (overlaps are likely misprints in the booklet)` : "All norm tables consistent");

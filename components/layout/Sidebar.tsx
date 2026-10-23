@@ -35,8 +35,10 @@ export function Sidebar({ demo }: { demo: boolean }) {
 
   const nav = (
     <div className="flex h-full flex-col">
-      <div className="flex h-16 shrink-0 items-center gap-3 border-b border-(--line) px-4">
-        <Image src="/brand/logo.png" alt="Tamanna" width={110} height={24} priority />
+      <div className="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-(--line) px-4">
+        <Link href="/" aria-label="Tamanna home">
+          <Image src="/brand/logo.png" alt="Tamanna" width={110} height={24} priority />
+        </Link>
       </div>
       <nav aria-label="Main menu" className="flex-1 space-y-5 overflow-y-auto px-3 py-4">
         {GROUPS.map((g) => (
@@ -58,18 +60,25 @@ export function Sidebar({ demo }: { demo: boolean }) {
           </div>
         ))}
       </nav>
-      <div className="shrink-0 space-y-2 border-t border-(--line) p-3">
-        {demo && <p className="flex items-center gap-2 rounded-xl bg-amber-100 px-3 py-2 text-xs font-semibold text-amber-900"><span aria-hidden>🧪</span> Demo mode</p>}
-      </div>
+      {demo && (
+        <div className="shrink-0 border-t border-(--line) p-3">
+          <p className="flex items-center gap-2 rounded-xl bg-amber-100 px-3 py-2 text-xs font-semibold text-amber-900"><span aria-hidden>🧪</span> Demo mode</p>
+        </div>
+      )}
     </div>
   );
 
   return (
     <>
-      <div className="sticky top-0 z-30 flex items-center justify-between border-b border-(--line) bg-[#f9fbf2]/90 px-4 py-2.5 backdrop-blur lg:hidden print:hidden">
-        <Link href="/admin" aria-label="Tamanna home"><Image src="/brand/logo.png" alt="Tamanna" width={96} height={21} priority /></Link>
-        <button aria-label="Open menu" aria-expanded={open} onClick={() => setOpen(true)} className="clay-btn-soft !min-h-10 !px-3 !py-2"><Menu size={20} /></button>
-      </div>
+      <button
+        type="button"
+        aria-label="Open menu"
+        aria-expanded={open}
+        onClick={() => setOpen(true)}
+        className="clay-btn-soft fixed left-3 top-2.5 z-30 !min-h-9 !w-9 !p-0 lg:hidden print:hidden"
+      >
+        <Menu size={18} />
+      </button>
       {open && <div className="fixed inset-0 z-40 bg-[#25331a]/50 lg:hidden print:hidden" onClick={() => setOpen(false)} aria-hidden />}
       <aside aria-label="Main menu" className={`fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-(--line) bg-[#fbfdf4] transition-transform lg:z-20 lg:w-64 lg:translate-x-0 print:hidden ${open ? "translate-x-0" : "-translate-x-full"}`}>
         {open && <button aria-label="Close menu" onClick={() => setOpen(false)} className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-lg bg-red-600 text-white shadow-sm hover:bg-red-700"><X size={16} /></button>}

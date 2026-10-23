@@ -29,10 +29,10 @@ export function ResultsTable({ rows }: { rows: Student[] }) {
     .sort((a, b) => { const x = get(a, sort.by), y = get(b, sort.by); return (x > y ? 1 : x < y ? -1 : 0) * sort.dir; }), [rows, q, cls, sort]);  
   const pages = Math.max(1, Math.ceil(shown.length / PAGE));
   const view = shown.slice(page * PAGE, page * PAGE + PAGE);
-  const heads: [string, string][] = [["name", "Name"], ["class", "Class"], ["school", "School"], ...TESTS.map((t) => [t.code, t.code] as [string, string]), ["status", "Check"]];
+  const heads: [string, string][] = [["name", "Roll no."], ["class", "Class"], ["school", "School"], ...TESTS.map((t) => [t.code, t.code] as [string, string]), ["status", "Check"]];
 
   function exportCsv() {
-    const head = ["Name", "Class", "Gender", "School", ...TESTS.flatMap((t) => [`${t.code} score`, `${t.code} sten`, `${t.code} level`]), "Verification", "Excluded"];
+    const head = ["Roll number", "Class", "Gender", "School", ...TESTS.flatMap((t) => [`${t.code} score`, `${t.code} sten`, `${t.code} level`]), "Verification", "Excluded"];
     const lines = shown.map((r) => [`"${r.name}"`, r.class, r.gender, `"${r.school}"`, ...TESTS.flatMap((t) => { const s = sten(r, t.code); return [raw(r, t.code) ?? "", s ?? "", s ? bandOf(s) : ""]; }), r.verification_status ?? "pending", r.excluded ? "yes" : "no"].join(","));
     const a = document.createElement("a");
     a.href = URL.createObjectURL(new Blob([[head.join(","), ...lines].join("\n")], { type: "text/csv" }));
@@ -49,8 +49,11 @@ export function ResultsTable({ rows }: { rows: Student[] }) {
         </div>
       </div>
       <p className="mb-3 text-xs">Score and Sten (Low 1–3 · Average 4–7 · High 8–10)</p>
-      <div className="mb-4 grid gap-3 sm:grid-cols-[1fr_180px]">
-        <div className="relative"><Search size={18} className="absolute left-4 top-[42px]" /><Input label="Search" className="!pl-11" value={q} onChange={(e) => { setQ(e.target.value); setPage(0); }} /></div>
+      <div className="mb-4 grid items-end gap-3 sm:grid-cols-[1fr_180px]">
+        <div className="relative">
+          <Search size={18} className="pointer-events-none absolute bottom-3.5 left-4 text-ink/60" />
+          <Input label="Search roll no. or school" placeholder="Roll no. or school" className="!pl-11" value={q} onChange={(e) => { setQ(e.target.value); setPage(0); }} />
+        </div>
         <Select label="Class" options={["IX", "X"]} placeholder="All classes" value={cls} onChange={(e) => { setCls(e.target.value); setPage(0); }} />
       </div>
       {!shown.length ? <p className="py-10 text-center">No results.</p> : (
@@ -63,13 +66,13 @@ export function ResultsTable({ rows }: { rows: Student[] }) {
                   <td className="px-2 py-2 font-semibold"><Link className="underline" href={`/admin/students/${r.id}`}>{r.name}</Link></td><td className="px-2 py-2">{r.class}</td><td className="px-2 py-2">{r.school}</td>
                   {TESTS.map((t) => <td key={t.code} className="px-2 py-2"><Cell r={r} c={t.code} /></td>)}
                   <td className="px-2 py-2"><Badge tone={TONE[status(r)]}>{status(r)}</Badge></td>
-                  <td className="px-2 py-2"><Link aria-label={`Report for ${r.name}`} href={`/admin/students/${r.id}/report`}><FileText size={18} /></Link></td>
+                  <td className="px-2 py-2"><Link aria-label={`Report for roll ${r.name}`} href={`/admin/students/${r.id}/report`}><FileText size={18} /></Link></td>
                 </tr>))}</tbody>
             </table>
           </div>
           <ul className="space-y-3 md:hidden">{view.map((r) => (
             <li key={r.id} className="clay-inset p-4">
-              <div className="flex justify-between gap-2"><Link href={`/admin/students/${r.id}`} className="font-extrabold underline">{r.name}</Link><Badge tone={TONE[status(r)]}>{status(r)}</Badge></div>
+              <div className="flex justify-between gap-2"><Link href={`/admin/students/${r.id}`} className="font-extrabold underline">Roll {r.name}</Link><Badge tone={TONE[status(r)]}>{status(r)}</Badge></div>
               <p className="text-xs">Class {r.class} · {r.school}</p>
               <p className="mt-2 grid grid-cols-3 gap-1 text-xs">{TESTS.map((t) => <span key={t.code}><b>{t.code}</b> <Cell r={r} c={t.code} /></span>)}</p>
               <Link href={`/admin/students/${r.id}/report`} className="mt-3 inline-flex items-center gap-1 text-sm font-bold underline"><FileText size={16} /> Open report</Link>

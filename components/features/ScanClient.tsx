@@ -61,11 +61,11 @@ export function ScanClient({ initialKey, template }: { initialKey: Key; template
     setAnswers((prev) => prev && { ...prev, [test]: prev[test].map((x, i) => (i === q ? v : x)) });
 
   async function save() {
-    if (!answers || !info.name) return toast("Enter the student's name.");
+    if (!answers || !info.name.trim()) return toast("Enter roll number.");
     if (!info.class || !info.gender) return toast("Select class and gender.");
     setBusy(true);
     const { data: dup } = await supabase.from("students").select("id").eq("name", info.name).eq("class", info.class).eq("school", info.school).limit(1);
-    if (dup?.length && !confirm("A student with the same name, class and school already exists. Save anyway?")) return setBusy(false);
+    if (dup?.length && !confirm("This roll number already exists in this class and school. Save anyway?")) return setBusy(false);
     const { data: st, error } = await supabase.from("students").insert({ ...info, excluded: exclude, exclude_reason: exclude ? patterns.join("; ") : null }).select("id").single();
     if (error || !st) { setBusy(false); return toast("Could not save. Try again."); }
     const paths: string[] = [];
@@ -115,20 +115,22 @@ export function ScanClient({ initialKey, template }: { initialKey: Key; template
   );
 
   return (
-    <div className="grid gap-6 lg:grid-cols-2">
+    <div className="grid items-start gap-6 lg:grid-cols-2">
       {cam && <CameraCapture title={`Side ${cam}`} onClose={() => setCam(null)} onCapture={(f) => { setFile(cam, f); setCam(null); }} />}
       <Card className="space-y-4">
-        <h2 className="text-lg font-bold">Student</h2>
+        <h2 className="text-lg font-bold">Student details</h2>
         <div className="grid gap-3 sm:grid-cols-2">
-          <Input label="Name" value={info.name} onChange={(e) => setInfo({ ...info, name: e.target.value })} />
+          <Input label="Roll number" placeholder="e.g. 101" value={info.name} onChange={(e) => setInfo({ ...info, name: e.target.value })} />
           <Select label="Class" options={CLASSES} value={info.class} onChange={(e) => setInfo({ ...info, class: e.target.value })} />
           <Select label="Gender" options={["Male", "Female", "Not specified"]} value={info.gender} onChange={(e) => setInfo({ ...info, gender: e.target.value })} />
           <Input label="School" value={info.school} onChange={(e) => setInfo({ ...info, school: e.target.value })} />
         </div>
         {pageBox(1, "Side 1 (LA, AR, VR, MR)")}
         {pageBox(2, "Side 2 (NA, SA, PA)")}
-        <Button onClick={process} disabled={busy}>{busy ? "Reading…" : "Check sheet"}</Button>
-        {isDemo() && <Button variant="soft" onClick={() => { setAnswers(sampleAnswers(key)); setInsp({}); setInfo((i) => (i.name ? i : { name: "Demo Student", class: "IX", gender: "Female", school: "Demo Public School" })); }}>Use sample answers (demo)</Button>}
+        <div className="flex flex-wrap gap-3">
+          <Button onClick={process} disabled={busy}>{busy ? "Reading…" : "Check sheet"}</Button>
+          {isDemo() && <Button variant="soft" onClick={() => { setAnswers(sampleAnswers(key)); setInsp({}); setInfo((i) => (i.name ? i : { name: "125", class: "IX", gender: "Female", school: "Demo Public School" })); }}>Use sample answers (demo)</Button>}
+        </div>
         {issues.length > 0 && <ul className="space-y-1 text-sm font-semibold text-amber-800">{issues.map((i) => <li key={i} className="flex gap-2"><AlertTriangle size={16} className="mt-0.5 shrink-0" />{i}</li>)}</ul>}
         {insp[1] && (
           <details className="clay-inset p-3" open>

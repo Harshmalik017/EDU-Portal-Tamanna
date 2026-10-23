@@ -11,7 +11,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
   if (!data) notFound();
   return (
     <div>
-      <div className="no-print mb-4 flex flex-wrap gap-3"><PrintButton /><Link href={`/admin/students/${id}`} className="clay-btn-soft">Back to student</Link></div>
+      <div className="no-print mb-4 flex flex-wrap gap-3"><PrintButton /><Link href={`/admin/students/${id}`} className="clay-btn-soft">Back to roll {data.name}</Link></div>
       <ReportPages s={data as unknown as Student} />
     </div>
   );

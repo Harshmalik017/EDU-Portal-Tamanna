@@ -1,6 +1,16 @@
 # Changelog
 Format: [Keep a Changelog](https://keepachangelog.com), versions follow [SemVer](https://semver.org). See `versioning.md`.
 
+## [0.8.2] - 2026-10-23
+### Added
+- GitHub Actions CI/CD workflow (`.github/workflows/ci.yml`) running `npm ci`, `npm run typecheck`, `npm run check:norms`, `npm run check:report`, and `npm run build` on pushes and pull requests to `main`
+### Changed
+- **Roll numbers only**: replaced student names across the entire portal (landing page example, demo data, scan form, results table, CSV export, student view, cross-verification, activity logs, and 3-page report sheets) with student roll numbers
+- **Simplified language**: shortened copy across the landing page and admin pages; removed subtitles under page headers
+### Fixed
+- **Landing page gaps and menu**: removed duplicate left rail navigation and `12rem` side column gap; made the top bar sticky with desktop section links and a compact mobile section row; spanned the 7th sub-test card across 2 columns on `md+` screens to close the grid gap; unified section spacing
+- **Admin UI gaps**: merged duplicate mobile top bars into a single `h-14` sticky header aligned with the sidebar header; added consistent vertical spacing (`space-y-6`) between `PageHeader` and content on Results, Scan, Answer key, Calibrate, Verify, Logs, and Student detail pages; aligned cards with `items-start` and styled the Calibrate file upload button
+
 ## [0.8.1] - 2026-10-23
 ### Fixed
 - Added `vercel.json` pinning the Next.js framework preset, install/build commands and output directory, so the Vercel project deploys to a working app instead of a platform 404 (a zip upload with a nested folder or a wrong Root Directory used to leave Vercel without `package.json`)

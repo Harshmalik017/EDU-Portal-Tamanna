@@ -20,12 +20,26 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ n
   const url = new Map(signed.map((x) => [x.path, x.signedUrl]));
   const items: VerifyItem[] = rows.map((r) => ({ ...r, imgs: (r.submissions?.[0]?.image_paths ?? []).map((p) => url.get(p) ?? "").filter(Boolean) }));
   return (
-    <div className="space-y-5">
-      <PageHeader title="Cross-verify a batch" />
+    <div className="space-y-6">
+      <PageHeader
+        title="Cross-verify"
+        actions={
+          <div className="clay-inset flex items-center gap-1 p-1" aria-label="Batch size">
+            {[10, 15, 20].map((v) => (
+              <Link
+                key={v}
+                href={`/admin/verify?n=${v}`}
+                aria-current={v === n ? "page" : undefined}
+                className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${v === n ? "bg-brand-600 text-white" : "hover:bg-brand-50"}`}
+              >
+                {v} sheets
+              </Link>
+            ))}
+          </div>
+        }
+      />
       <Card>
-        
-        <p className="mt-2 text-sm">Score each sheet by hand, enter the 7 scores, and the app compares. {count ?? 0} waiting.</p>
-        <p className="mt-2 flex gap-2 text-sm font-semibold">Batch size: {[10, 15, 20].map((v) => <Link key={v} href={`/admin/verify?n=${v}`} className={`underline ${v === n ? "font-extrabold" : ""}`}>{v}</Link>)}</p>
+        <p className="text-sm">Score each sheet by hand and enter the 7 scores to compare. <b>{count ?? 0}</b> waiting.</p>
       </Card>
       {items.length ? <VerifyBatch items={items} email={user?.email ?? "admin"} /> : <Card className="text-center">Nothing to verify.</Card>}
     </div>

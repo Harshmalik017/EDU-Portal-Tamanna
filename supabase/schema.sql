@@ -1,4 +1,5 @@
 -- OMR Portal schema v0.3.1. Safe to re-run on an existing database.
+-- Note: `students.name` stores the student roll number (student names are not stored or displayed).
 create extension if not exists "pgcrypto";
 create table if not exists students (id uuid primary key default gen_random_uuid(), name text not null, class text, gender text, school text, created_at timestamptz default now());
 create table if not exists answer_keys (test_code text, question_no int, correct_option text check (correct_option in ('A','B','C','D')), primary key (test_code, question_no));

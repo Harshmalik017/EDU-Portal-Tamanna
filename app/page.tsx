@@ -7,140 +7,235 @@ import { VersionBadge } from "@/components/VersionBadge";
 import { ACRONYM, ADMIN_POINTS, CAREER_EXAMPLES, CAUTIONS, COMPONENTS, CREDITS, EXAMPLE, FACTS, HELPS, LEVELS, MATERIALS, SCORING_STEPS, SUBTESTS } from "@/lib/tamanna/program";
 
 export const metadata: Metadata = {
-  title: "Tamanna: An Aptitude Test for Senior School Students",
-  description: "Tamanna: an NCERT aptitude test for classes IX and X. Seven sub-tests, Sten scores and an aptitude profile.",
+  title: "Tamanna: Aptitude Test for Senior School Students",
+  description: "Tamanna: NCERT aptitude test for Classes IX and X. Seven sub-tests, Sten scores and aptitude profiles.",
 };
 
 const ICONS: Record<string, LucideIcon> = { LA: Languages, AR: Shapes, VR: MessageSquareText, MR: Cog, NA: Calculator, SA: Box, PA: ScanEye };
-const NAV = [["about", "About"], ["subtests", "Sub-tests"], ["conduct", "Conducting"], ["scoring", "Scoring"], ["schools", "In schools"]];
+const NAV = [["about", "About"], ["subtests", "Sub-tests"], ["conduct", "Conduct"], ["scoring", "Scoring"], ["schools", "Schools"]] as const;
 const H2 = "mb-4 text-2xl font-bold sm:text-3xl";
 const toneOf = (s: number) => (s <= 3 ? "bg-amber-500" : s <= 7 ? "bg-sky-600" : "bg-green-600");
 const levelOf = (s: number) => (s <= 3 ? "Low" : s <= 7 ? "Average" : "High");
 
-/** Section menu: a sticky left rail on large screens, a scrollable chip row on small ones. */
-function Rail() {
-  return (
-    <>
-      <nav aria-label="On this page" className="sticky top-6 hidden self-start lg:block">
-        <p className="mb-3 px-3 text-xs font-bold uppercase tracking-wider text-ink/70">On this page</p>
-        <ul className="space-y-1">{NAV.map(([id, label]) => <li key={id}><a href={`#${id}`} className="block rounded-xl px-3 py-2 text-sm font-semibold hover:bg-brand-50">{label}</a></li>)}</ul>
-      </nav>
-      <nav aria-label="On this page" className="-mx-1 mb-2 flex gap-2 overflow-x-auto px-1 pb-2 lg:hidden">
-        {NAV.map(([id, label]) => <a key={id} href={`#${id}`} className="clay-btn-soft shrink-0 !min-h-9 !px-4 !py-1.5">{label}</a>)}
-      </nav>
-    </>
-  );
-}
-
 export default function Landing() {
-  const list = (items: string[]) => <ul className="space-y-2 text-sm">{items.map((t) => <li key={t} className="flex gap-2"><span aria-hidden className="mt-2 h-2 w-2 shrink-0 rounded-full bg-brand-600" />{t}</li>)}</ul>;
+  const list = (items: string[]) => (
+    <ul className="space-y-2 text-sm">
+      {items.map((t) => (
+        <li key={t} className="flex gap-2.5">
+          <span aria-hidden className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-brand-600" />
+          <span>{t}</span>
+        </li>
+      ))}
+    </ul>
+  );
+
   return (
-    <main className="mx-auto max-w-6xl px-4 py-6 sm:py-10">
-      <header className="clay flex flex-wrap items-center justify-between gap-3 px-5 py-3">
-        <Image src="/brand/logo.png" alt="Tamanna" width={120} height={26} priority />
-        <nav className="hidden items-center gap-1 lg:flex" aria-label="Page sections">
-          {NAV.map(([id, label]) => <a key={id} href={`#${id}`} className="rounded-xl px-3 py-2 text-sm font-semibold hover:bg-brand-50">{label}</a>)}
+    <main className="mx-auto max-w-6xl space-y-8 px-4 py-4 sm:space-y-10 sm:py-6">
+      <header className="clay sticky top-3 z-30 px-4 py-2.5 sm:px-5 sm:py-3">
+        <div className="flex items-center justify-between gap-3">
+          <Link href="/" aria-label="Tamanna home" className="shrink-0">
+            <Image src="/brand/logo.png" alt="Tamanna" width={120} height={26} priority />
+          </Link>
+          <nav className="hidden items-center gap-1 md:flex" aria-label="Page sections">
+            {NAV.map(([id, label]) => (
+              <a key={id} href={`#${id}`} className="rounded-xl px-3.5 py-2 text-sm font-semibold text-ink/85 transition hover:bg-brand-100/70 hover:text-brand-700">
+                {label}
+              </a>
+            ))}
+          </nav>
+          <Link href="/login" className="clay-btn !min-h-10 shrink-0 !px-4 !py-2">
+            <LogIn size={18} /> Admin login
+          </Link>
+        </div>
+        <nav aria-label="Page sections" className="mt-2.5 flex items-center gap-1.5 overflow-x-auto border-t border-(--line) pt-2 md:hidden">
+          {NAV.map(([id, label]) => (
+            <a key={id} href={`#${id}`} className="shrink-0 rounded-lg bg-brand-50 px-3 py-1.5 text-xs font-semibold text-brand-700 hover:bg-brand-100">
+              {label}
+            </a>
+          ))}
         </nav>
-        <Link href="/login" className="clay-btn"><LogIn size={18} /> Admin login</Link>
       </header>
 
-      <div className="mt-6 lg:grid lg:grid-cols-[12rem_minmax(0,1fr)] lg:gap-10">
-        <Rail />
-        <div>
-          <section className="grid items-center gap-8 py-8 md:grid-cols-2 md:py-12">
-            <div>
-              <p className="mb-2 text-sm font-bold text-brand-700">An Aptitude Test for Senior School Students</p>
-              <h1 className="text-4xl font-bold leading-tight sm:text-5xl">Know your strengths.</h1>
-              <p className="mt-4 text-lg font-semibold" aria-label="Try And Measure Aptitude And Natural Abilities">
-                {ACRONYM.map(([f, r], i) => <span key={i} className="mr-2 inline-block"><b className="text-2xl text-brand-600">{f}</b>{r}</span>)}
-              </p>
-              <p className="mt-4 max-w-md text-ink/85">An NCERT test for classes IX and X that measures seven aptitudes to guide subject and career choices.</p>
-            </div>
-            <Card className="overflow-hidden !p-3">
-              <Image src="/brand/art.webp" alt="Head with gears surrounded by arrows labelled strengths, decisions, planning, careers, subjects and choices" width={760} height={725} sizes="(min-width: 768px) 520px, 100vw" priority className="h-auto w-full rounded-xl" />
-            </Card>
-          </section>
-
-          <section className="grid grid-cols-2 gap-4 sm:grid-cols-4" aria-label="Key facts">
-            {FACTS.map((f, i) => {
-              const tones = ["border-amber-300 bg-amber-50", "border-sky-300 bg-sky-50", "border-green-300 bg-green-50", "border-violet-300 bg-violet-50"];
-              return <Card key={f.label} className={`text-center !p-4 ${tones[i % tones.length]}`}><p className="text-xl font-bold text-brand-700">{f.value}</p><p className="text-sm">{f.label}</p></Card>;
-            })}
-          </section>
-
-          <section id="about" className="scroll-mt-6 pt-14">
-            <h2 className={H2}>What is aptitude?</h2>
-            <div className="grid gap-5 lg:grid-cols-2">
-              <Card><p>Aptitude is the ability to acquire a skill or knowledge in a particular area. It shows how likely a student is to do well in a course or occupation.</p>
-                <p className="mt-3">Knowing it helps students, parents and schools make informed educational and career choices.</p></Card>
-              <Card title="Results help students">{list(HELPS)}</Card>
-            </div>
-            <div className="mt-5 grid gap-5 md:grid-cols-3">{COMPONENTS.map((c) => <Card key={c.title} title={c.title}><p className="text-sm">{c.text}</p></Card>)}</div>
-            <p className="mt-4 text-sm">Developed by NCERT and piloted by CBSE in its affiliated schools.</p>
-          </section>
-
-          <section id="subtests" className="scroll-mt-6 pt-14">
-            <h2 className={H2}>Sub-tests</h2>
-            <div className="grid gap-5 md:grid-cols-2">
-              {SUBTESTS.map((s, i) => { const Icon = ICONS[s.code]; const colors = ["text-amber-700 bg-amber-100", "text-sky-700 bg-sky-100", "text-green-700 bg-green-100", "text-violet-700 bg-violet-100", "text-rose-700 bg-rose-100", "text-teal-700 bg-teal-100", "text-indigo-700 bg-indigo-100"]; return (
-                <Card key={s.code} className="space-y-2">
-                  <div className="flex items-center gap-3"><div className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl ${colors[i % colors.length]}`}><Icon size={22} /></div>
-                    <div><h3 className="font-bold">{s.name} ({s.code})</h3><p className="text-xs">{s.items} items</p></div></div>
-                  <p className="text-sm font-medium">{s.measures}</p>
-                  <p className="text-sm"><b>Items:</b> {s.format}</p>
-                  <p className="text-sm"><b>Related:</b> {s.areas}</p>
-                </Card>); })}
-            </div>
-          </section>
-
-          <section id="conduct" className="scroll-mt-6 pt-14">
-            <h2 className={H2}>Conducting the test</h2>
-            <div className="grid gap-5 lg:grid-cols-2">
-              <Card title="Procedure">{list(ADMIN_POINTS)}</Card>
-              <Card title="Materials">{list(MATERIALS)}</Card>
-            </div>
-          </section>
-
-          <section id="scoring" className="scroll-mt-6 pt-14">
-            <h2 className={H2}>Scoring</h2>
-            <div className="grid gap-5 lg:grid-cols-2">
-              <Card className="space-y-4">
-                <ol className="space-y-3">{SCORING_STEPS.map((t, i) => <li key={t} className="flex gap-3"><span className="clay-inset grid h-8 w-8 shrink-0 place-items-center text-sm font-bold">{i + 1}</span><span className="pt-1 text-sm">{t}</span></li>)}</ol>
-                <div className="flex flex-wrap gap-2">{LEVELS.map((l) => <span key={l.band} className={`rounded-full px-3 py-1 text-xs font-semibold ${l.tone}`}>{l.band}: {l.range}</span>)}</div>
-              </Card>
-              <Card title={`Example: ${EXAMPLE.name}`} description={EXAMPLE.detail}>
-                <ul className="space-y-2">{EXAMPLE.rows.map((r) => (
-                  <li key={r.code} className="flex items-center gap-3 text-sm">
-                    <span className="w-7 font-bold">{r.code}</span>
-                    <div className="clay-inset h-4 flex-1 overflow-hidden" role="img" aria-label={`${r.code}: score ${r.score}, Sten ${r.sten}, ${levelOf(r.sten)}`}><div className={`h-full ${toneOf(r.sten)}`} style={{ width: `${r.sten * 10}%` }} /></div>
-                    <span className="w-28 text-right text-xs">{r.score} · Sten {r.sten} · {levelOf(r.sten)}</span>
-                  </li>))}</ul>
-              </Card>
-            </div>
-            <div className="mt-5 grid gap-5 lg:grid-cols-2">
-              <Card title="Careers linked to aptitudes"><ul className="grid gap-2 sm:grid-cols-2">{CAREER_EXAMPLES.map(([o, a]) => <li key={o} className="clay-inset px-3 py-2 text-sm"><b>{o}</b> <span className="text-xs">({a})</span></li>)}</ul></Card>
-              <Card title="Use scores with care">{list(CAUTIONS)}</Card>
-            </div>
-          </section>
-
-          <section id="schools" className="scroll-mt-6 py-14">
-            <h2 className={H2}>In schools</h2>
-            <p className="mb-5 text-sm">This portal scores and reports Tamanna for schools, following the guide.</p>
-            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-              {[["Scan", "Read both sides of the answer sheet.", "border-amber-300"], ["Score", "Sten scores from the class and gender norms.", "border-sky-300"], ["Report", "A 3-page report for each student.", "border-green-300"], ["Verify", "Check each batch of 10-20 by hand.", "border-violet-300"]].map(([t, d, c]) => (
-                <Card key={t} title={t} className={c}><p className="text-sm">{d}</p></Card>))}
-            </div>
-            <Card className="mt-5 space-y-1 text-sm">
-              <p>Principals can request the scoring key at <b>{CREDITS.key}</b>.</p>
-              <p>Guide by {CREDITS.authors.join(", ")}. Foreword: {CREDITS.foreword}.</p>
-            </Card>
-          </section>
+      <section className="grid items-center gap-6 md:grid-cols-2 lg:gap-10">
+        <div className="space-y-4">
+          <p className="inline-block rounded-full bg-brand-100 px-3 py-1 text-xs font-bold text-brand-700">
+            NCERT Aptitude Test · Classes IX &amp; X
+          </p>
+          <h1 className="text-4xl font-bold leading-tight sm:text-5xl">Know your strengths.</h1>
+          <p className="text-base font-semibold sm:text-lg" aria-label="Try And Measure Aptitude And Natural Abilities">
+            {ACRONYM.map(([f, r], i) => (
+              <span key={i} className="mr-2 inline-block">
+                <b className="text-xl text-brand-600 sm:text-2xl">{f}</b>{r}
+              </span>
+            ))}
+          </p>
+          <p className="max-w-lg text-sm leading-relaxed text-ink/85 sm:text-base">
+            Measures seven natural aptitudes to help students, parents and teachers make informed subject and career choices.
+          </p>
+          <div className="flex flex-wrap gap-3 pt-1">
+            <Link href="/login" className="clay-btn"><LogIn size={18} /> Open portal</Link>
+            <a href="#subtests" className="clay-btn-soft">View 7 sub-tests</a>
+          </div>
         </div>
-      </div>
+        <Card className="overflow-hidden !p-3">
+          <Image
+            src="/brand/art.webp"
+            alt="Student aptitude illustration showing strengths, planning, subjects and careers"
+            width={760}
+            height={725}
+            sizes="(min-width: 768px) 520px, 100vw"
+            priority
+            className="h-auto w-full rounded-xl"
+          />
+        </Card>
+      </section>
 
-      <footer className="clay-inset px-5 py-4 text-center text-sm">Tamanna is an NCERT programme. Scores and reports here follow its Guide for Teachers and Parents.</footer>
-      <p className="px-4 pt-4 text-center text-sm">© 2026 <a href="https://www.linkedin.com/in/harshmalik017" target="_blank" rel="noopener noreferrer" className="font-bold underline">Developer Details</a>, All Rights Reserved.</p>
-      <VersionBadge />
+      <section className="grid grid-cols-2 gap-4 sm:grid-cols-4" aria-label="Key facts">
+        {FACTS.map((f, i) => {
+          const tones = ["border-amber-300 bg-amber-50", "border-sky-300 bg-sky-50", "border-green-300 bg-green-50", "border-violet-300 bg-violet-50"];
+          return (
+            <Card key={f.label} className={`!p-4 text-center ${tones[i % tones.length]}`}>
+              <p className="text-xl font-bold text-brand-700 sm:text-2xl">{f.value}</p>
+              <p className="mt-0.5 text-xs font-medium sm:text-sm">{f.label}</p>
+            </Card>
+          );
+        })}
+      </section>
+
+      <section id="about" className="scroll-mt-24 space-y-5">
+        <h2 className={H2}>About Tamanna</h2>
+        <div className="grid gap-5 lg:grid-cols-2">
+          <Card title="What is aptitude?" className="h-full">
+            <p className="text-sm leading-relaxed">
+              Aptitude is the natural ability to learn a skill in a specific area. It shows where a student is likely to succeed with training.
+            </p>
+            <p className="mt-3 text-sm leading-relaxed">
+              Developed by NCERT and piloted by CBSE across affiliated schools for Classes IX and X.
+            </p>
+          </Card>
+          <Card title="How results help" className="h-full">{list(HELPS)}</Card>
+        </div>
+        <div className="grid gap-5 md:grid-cols-3">
+          {COMPONENTS.map((c) => (
+            <Card key={c.title} title={c.title} className="h-full">
+              <p className="text-sm">{c.text}</p>
+            </Card>
+          ))}
+        </div>
+      </section>
+
+      <section id="subtests" className="scroll-mt-24 space-y-5">
+        <h2 className={H2}>Seven sub-tests</h2>
+        <div className="grid gap-4 md:grid-cols-2">
+          {SUBTESTS.map((s, i) => {
+            const Icon = ICONS[s.code];
+            const colors = ["text-amber-700 bg-amber-100", "text-sky-700 bg-sky-100", "text-green-700 bg-green-100", "text-violet-700 bg-violet-100", "text-rose-700 bg-rose-100", "text-teal-700 bg-teal-100", "text-indigo-700 bg-indigo-100"];
+            const isLastOdd = i === SUBTESTS.length - 1 && SUBTESTS.length % 2 === 1;
+            return (
+              <Card key={s.code} className={`h-full space-y-2 ${isLastOdd ? "md:col-span-2" : ""}`}>
+                <div className="flex items-center gap-3">
+                  <div className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${colors[i % colors.length]}`}>
+                    <Icon size={20} />
+                  </div>
+                  <div>
+                    <h3 className="font-bold">{s.name} ({s.code})</h3>
+                    <p className="text-xs text-ink/70">{s.items} items · 10 minutes</p>
+                  </div>
+                </div>
+                <p className="text-sm font-medium">{s.measures}</p>
+                <p className="text-sm"><b>Questions:</b> {s.format}</p>
+                <p className="text-sm"><b>Fields:</b> {s.areas}</p>
+              </Card>
+            );
+          })}
+        </div>
+      </section>
+
+      <section id="conduct" className="scroll-mt-24 space-y-5">
+        <h2 className={H2}>Conducting the test</h2>
+        <div className="grid gap-5 lg:grid-cols-2">
+          <Card title="Test rules" className="h-full">{list(ADMIN_POINTS)}</Card>
+          <Card title="Materials needed" className="h-full">{list(MATERIALS)}</Card>
+        </div>
+      </section>
+
+      <section id="scoring" className="scroll-mt-24 space-y-5">
+        <h2 className={H2}>Scoring</h2>
+        <div className="grid gap-5 lg:grid-cols-2">
+          <Card title="Steps" className="h-full space-y-4">
+            <ol className="space-y-2.5">
+              {SCORING_STEPS.map((t, i) => (
+                <li key={t} className="flex items-center gap-3">
+                  <span className="clay-inset grid h-7 w-7 shrink-0 place-items-center text-xs font-bold">{i + 1}</span>
+                  <span className="text-sm">{t}</span>
+                </li>
+              ))}
+            </ol>
+            <div className="flex flex-wrap gap-2 pt-1">
+              {LEVELS.map((l) => (
+                <span key={l.band} className={`rounded-full px-3 py-1 text-xs font-semibold ${l.tone}`}>
+                  {l.band}: {l.range}
+                </span>
+              ))}
+            </div>
+          </Card>
+          <Card title={`Example: Roll ${EXAMPLE.roll}`} description={EXAMPLE.detail} className="h-full">
+            <ul className="space-y-2.5">
+              {EXAMPLE.rows.map((r) => (
+                <li key={r.code} className="flex items-center gap-3 text-sm">
+                  <span className="w-7 font-bold">{r.code}</span>
+                  <div className="clay-inset h-4 flex-1 overflow-hidden" role="img" aria-label={`${r.code}: score ${r.score}, Sten ${r.sten}, ${levelOf(r.sten)}`}>
+                    <div className={`h-full ${toneOf(r.sten)}`} style={{ width: `${r.sten * 10}%` }} />
+                  </div>
+                  <span className="w-32 text-right text-xs font-medium">{r.score} · Sten {r.sten} · {levelOf(r.sten)}</span>
+                </li>
+              ))}
+            </ul>
+          </Card>
+        </div>
+        <div className="grid gap-5 lg:grid-cols-2">
+          <Card title="Careers linked to aptitudes" className="h-full">
+            <ul className="grid gap-2 sm:grid-cols-2">
+              {CAREER_EXAMPLES.map(([o, a]) => (
+                <li key={o} className="clay-inset px-3 py-2 text-sm">
+                  <b>{o}</b> <span className="text-xs text-ink/75">({a})</span>
+                </li>
+              ))}
+            </ul>
+          </Card>
+          <Card title="Use scores with care" className="h-full">{list(CAUTIONS)}</Card>
+        </div>
+      </section>
+
+      <section id="schools" className="scroll-mt-24 space-y-5">
+        <h2 className={H2}>In schools</h2>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {[
+            ["1. Scan", "Scan both sides of the answer sheet.", "border-amber-300"],
+            ["2. Score", "Convert raw marks to Sten scores using norms.", "border-sky-300"],
+            ["3. Verify", "Hand-check batches of 10–20 sheets.", "border-violet-300"],
+            ["4. Report", "Print the 3-page report by roll number.", "border-green-300"],
+          ].map(([t, d, c]) => (
+            <Card key={t} title={t} className={`h-full ${c}`}>
+              <p className="text-sm">{d}</p>
+            </Card>
+          ))}
+        </div>
+        <Card className="flex flex-wrap items-center justify-between gap-2 text-sm">
+          <p>Scoring key requests (Principals): <b>{CREDITS.key}</b></p>
+          <p className="text-xs text-ink/75">Guide: {CREDITS.authors.join(", ")} · Foreword: {CREDITS.foreword}</p>
+        </Card>
+      </section>
+
+      <footer className="space-y-3 pt-2">
+        <div className="clay-inset px-5 py-3.5 text-center text-sm">
+          Tamanna is an NCERT programme. All scores and reports follow the Guide for Teachers and Parents.
+        </div>
+        <p className="text-center text-sm">
+          © 2026 <a href="https://www.linkedin.com/in/harshmalik017" target="_blank" rel="noopener noreferrer" className="font-bold underline">Developer Details</a>, All Rights Reserved.
+        </p>
+        <VersionBadge />
+      </footer>
     </main>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { Save, RotateCcw } from "lucide-react";
+import { Save, RotateCcw, Upload } from "lucide-react";
 import { DEFAULT_TEMPLATE, REF_HEIGHT, REF_WIDTH, type Column } from "@/lib/omr/template";
 import { supabase } from "@/lib/supabase/client";
 import { drawGrid, load } from "@/lib/omr/reader";
@@ -36,14 +36,21 @@ export function CalibrateClient({ initial }: { initial: Column[] }) {
   const upd = (k: keyof Column, v: number) => setTpl((t) => t.map((c, i) => (i === curIdx ? { ...c, [k]: v } : c)));
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
+    <div className="grid items-start gap-6 lg:grid-cols-[1fr_360px]">
       <Card>
-        <h2 className="mb-1 text-lg font-bold">Sample sheet</h2>
-        <p className="mb-3 text-sm">Upload a flat scan, then adjust until the red circles sit on the bubbles.</p>
-        <input type="file" accept="image/*" aria-label="Sample sheet" onChange={(e) => pick(e.target.files?.[0])} className="mb-3" />
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-bold">Sample sheet</h2>
+            <p className="text-sm text-ink/80">Upload a flat scan and align the red circles with the bubbles.</p>
+          </div>
+          <label className="clay-btn-soft cursor-pointer !py-2">
+            <Upload size={18} /> Upload sheet
+            <input type="file" accept="image/*" aria-label="Sample sheet" onChange={(e) => pick(e.target.files?.[0])} className="sr-only" />
+          </label>
+        </div>
         <canvas ref={canvas} width={REF_WIDTH} height={REF_HEIGHT} className="clay-inset w-full" />
       </Card>
-      <Card className="space-y-4 self-start lg:sticky lg:top-4">
+      <Card className="space-y-4 self-start lg:sticky lg:top-20">
         <div className="flex gap-2">{([1, 2] as const).map((p) => <button key={p} onClick={() => { setPage(p); setIdx(tpl.findIndex((c) => c.page === p)); }} className={(page === p ? "clay-btn" : "clay-btn-soft") + " flex-1 !py-2"}>Page {20 + p}</button>)}</div>
         <div className="flex flex-wrap gap-2">{cols.map(({ c, i }) => <button key={i} onClick={() => setIdx(i)} className={(i === curIdx ? "clay-btn" : "clay-btn-soft") + " !px-3 !py-2 text-sm"}>{c.test}{c.firstQ > 1 ? ` ${c.firstQ}+` : ""}</button>)}</div>
         {cur && FIELDS.map((f) => (
