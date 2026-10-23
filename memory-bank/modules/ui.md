@@ -1,4 +1,4 @@
 # Module: UI
 Layout: `components/layout/Sidebar` (left menu, drawer on mobile), `app/admin/layout.tsx`. Shared: `components/ui` (Button, Card with header slots, Badge, StatCard, PageHeader, Input, Select, Skeleton), `Toast` (useToast), `CameraCapture`, `DemoBanner`, `VersionBadge`.
-Routes: `/admin` dashboard, `/admin/results`, `/admin/students/[id]`, `/admin/scan`, `/admin/key`, `/admin/calibrate`.
+Routes: `/admin` dashboard, `/admin/results`, `/admin/students/[id]`, `/admin/scan`, `/admin/key`, `/admin/calibrate`, `/admin/logs`. Shell: sidebar + sticky top bar (user name, red Logout), mobile drawer.
 Pending: dark mode, Hindi labels, auto-capture in camera, service worker (offline).
