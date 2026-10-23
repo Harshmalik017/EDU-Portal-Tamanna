@@ -3,26 +3,23 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { ClipboardCheck, Crosshair, FileText, KeyRound, LayoutDashboard, LogOut, Menu, ScanLine, Table2, X } from "lucide-react";
-import { supabase } from "@/lib/supabase/client";
+import { ClipboardCheck, FileText, KeyRound, LayoutDashboard, Menu, ScanLine, Table2, X } from "lucide-react";
 
 const GROUPS = [
-  { label: "Workspace", items: [
+  { label: "School Portal", items: [
     { href: "/admin", label: "Dashboard", sublabel: "Overview", icon: LayoutDashboard },
-    { href: "/admin/results", label: "Results", sublabel: "Scored sheets", icon: Table2 },
-    { href: "/admin/scan", label: "Scan sheets", sublabel: "OMR capture", icon: ScanLine },
-    { href: "/admin/verify", label: "Cross-verify", sublabel: "Hand check", icon: ClipboardCheck },
+    { href: "/admin/results", label: "Student Reports", sublabel: "All roll numbers", icon: Table2 },
+    { href: "/admin/scan", label: "Check Sheets", sublabel: "Read answer sheets", icon: ScanLine },
+    { href: "/admin/verify", label: "Hand Check", sublabel: "Verify 10–20 sheets", icon: ClipboardCheck },
   ] },
-  { label: "Set-up", items: [
-    { href: "/admin/key", label: "Answer key", sublabel: "Scoring key", icon: KeyRound },
-    { href: "/admin/calibrate", label: "Calibrate", sublabel: "Template", icon: Crosshair },
-    { href: "/admin/logs", label: "Logs", sublabel: "Activity", icon: FileText },
+  { label: "Guide & Setup", items: [
+    { href: "/admin/key", label: "Answer Key", sublabel: "Correct options", icon: KeyRound },
+    { href: "/admin/logs", label: "Logs & Key Notes", sublabel: "Rules & activity", icon: FileText },
   ] },
 ];
 
 export function Sidebar({ demo }: { demo: boolean }) {
   const path = usePathname();
-  const router = useRouter();
   const [open, setOpen] = useState(false);
   const active = (h: string) => (h === "/admin" ? path === h : path.startsWith(h));
   useEffect(() => { setOpen(false); }, [path]);
@@ -62,7 +59,7 @@ export function Sidebar({ demo }: { demo: boolean }) {
       </nav>
       {demo && (
         <div className="shrink-0 border-t border-(--line) p-3">
-          <p className="flex items-center gap-2 rounded-xl bg-amber-100 px-3 py-2 text-xs font-semibold text-amber-900"><span aria-hidden>🧪</span> Demo mode</p>
+          <p className="flex items-center gap-2 rounded-xl bg-amber-100 px-3 py-2 text-xs font-semibold text-amber-900"><span aria-hidden>📋</span> Practice data</p>
         </div>
       )}
     </div>

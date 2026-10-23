@@ -22,7 +22,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ n
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Cross-verify"
+        title="Hand check"
         actions={
           <div className="clay-inset flex items-center gap-1 p-1" aria-label="Batch size">
             {[10, 15, 20].map((v) => (
@@ -39,9 +39,9 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ n
         }
       />
       <Card>
-        <p className="text-sm">Score each sheet by hand and enter the 7 scores to compare. <b>{count ?? 0}</b> waiting.</p>
+        <p className="text-sm">Count correct answers by hand using the scoring key and enter the 7 scores below to verify. <b>{count ?? 0}</b> waiting.</p>
       </Card>
-      {items.length ? <VerifyBatch items={items} email={user?.email ?? "admin"} /> : <Card className="text-center">Nothing to verify.</Card>}
+      {items.length ? <VerifyBatch items={items} email={user?.email ?? "admin"} /> : <Card className="text-center">Nothing to check right now.</Card>}
     </div>
   );
 }

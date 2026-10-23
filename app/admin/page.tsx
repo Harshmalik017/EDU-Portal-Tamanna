@@ -33,23 +33,23 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
       <PageHeader title="Dashboard"
         actions={<div className="clay-inset flex gap-1 p-1" aria-label="Filter by class">{[["", "All classes"], ["IX", "Class IX"], ["X", "Class X"]].map(([v, l]) => pill(v, l))}</div>} />
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard icon={Users} label="Students scored" value={rows.length} tone="green" />
-        <StatCard icon={ClipboardCheck} label="Cross-verified" value={count("verified")} hint={`${pending} pending`} tone="blue" />
-        <StatCard icon={AlertTriangle} label="Mismatches" value={count("mismatch")} tone="amber" />
-        <StatCard icon={FileText} label="Excluded" value={all.filter((s) => s.excluded).length} tone="violet" />
+        <StatCard icon={Users} label="Students checked" value={rows.length} tone="green" />
+        <StatCard icon={ClipboardCheck} label="Verified by hand" value={count("verified")} hint={`${pending} waiting`} tone="blue" />
+        <StatCard icon={AlertTriangle} label="Score differences" value={count("mismatch")} tone="amber" />
+        <StatCard icon={FileText} label="Excluded sheets" value={all.filter((s) => s.excluded).length} tone="violet" />
       </div>
       {pending >= 10 && (
-        <Card className="flex flex-wrap items-center justify-between gap-3 !border-amber-300"><p className="font-semibold">{pending} reports are waiting to be verified.</p>
-          <Link href="/admin/verify" className="clay-btn"><ClipboardCheck size={18} /> Verify a batch</Link></Card>)}
+        <Card className="flex flex-wrap items-center justify-between gap-3 !border-amber-300"><p className="font-semibold">{pending} student reports are waiting for a hand check.</p>
+          <Link href="/admin/verify" className="clay-btn"><ClipboardCheck size={18} /> Hand check a batch</Link></Card>)}
       <div className="flex flex-wrap gap-3">
-        <Link href="/admin/scan" className="clay-btn"><ScanLine size={18} /> Scan next sheet</Link>
+        <Link href="/admin/scan" className="clay-btn"><ScanLine size={18} /> Check answer sheet</Link>
         <Link href={`/admin/reports${cls ? `?class=${cls}` : ""}`} className="clay-btn-soft"><FileText size={18} /> Print reports</Link>
       </div>
       {rows.length === 0 ? <Card className="text-center">No students yet.</Card> : (
-        <Card title="Performance by sub-test" description="Low 1–3 · Average 4–7 · High 8–10">
+        <Card title="Performance by sub-test" description="Low (1–3) · Average (4–7) · High (8–10)">
           <ul className="space-y-4">{perTest.map((t) => (
             <li key={t.code}>
-              <div className="mb-1 flex justify-between text-sm"><span className="font-semibold">{t.code} <span className="font-normal">{t.name}</span></span><span>Average score {t.avg.toFixed(1)} / {t.questions}</span></div>
+              <div className="mb-1 flex justify-between text-sm"><span className="font-semibold">{t.code} <span className="font-normal">{t.name}</span></span><span>Average marks {t.avg.toFixed(1)} / {t.questions}</span></div>
               <div className="clay-inset flex h-5 overflow-hidden" role="img" aria-label={`${t.code}: ${t.b.High} high, ${t.b.Average} average, ${t.b.Low} low`}>
                 {t.b.High > 0 && <div className="bg-green-600" style={{ flex: t.b.High }} />}{t.b.Average > 0 && <div className="bg-sky-600" style={{ flex: t.b.Average }} />}{t.b.Low > 0 && <div className="bg-amber-500" style={{ flex: t.b.Low }} />}
               </div>

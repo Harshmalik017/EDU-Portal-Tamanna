@@ -13,13 +13,15 @@ export function demoKey() {
 }
 
 const PEOPLE: [string, string, string][] = [
-  ["101", "IX", "Female"], ["102", "IX", "Male"], ["103", "IX", "Female"], ["104", "X", "Male"], ["105", "X", "Female"],
+  ["101", "IX", "Female"], ["102", "X", "Male"], ["103", "IX", "Female"], ["104", "X", "Male"], ["105", "X", "Female"],
   ["106", "IX", "Male"], ["107", "X", "Female"], ["108", "X", "Male"], ["109", "IX", "Female"], ["110", "X", "Male"],
   ["111", "IX", "Female"], ["112", "IX", "Male"], ["113", "X", "Female"], ["114", "X", "Male"], ["115", "IX", "Female"],
   ["116", "X", "Male"], ["117", "IX", "Female"], ["118", "X", "Male"], ["119", "X", "Female"], ["120", "IX", "Male"],
   ["121", "IX", "Female"], ["122", "X", "Male"], ["123", "X", "Female"], ["124", "IX", "Male"],
 ];
-const EXAMPLE_SCORES: Record<string, number> = { LA: 15, AR: 27, VR: 25, MR: 6, NA: 19, SA: 11, PA: 43 }; // worked example in the booklet
+const EXAMPLE_SCORES: Record<string, number> = { LA: 15, AR: 27, VR: 25, MR: 6, NA: 19, SA: 11, PA: 43 }; // worked example in the booklet (High in AR, VR, NA)
+const NO_HIGH_EXAMPLE: Record<string, number> = { LA: 6, AR: 8, VR: 10, MR: 11, NA: 10, SA: 9, PA: 15 }; // Class X Boys example (Average in MR, NA, SA; Low in LA, AR, VR, PA)
+const NEAR_HIGH_EXAMPLE: Record<string, number> = { LA: 21, AR: 17, VR: 14, MR: 11, NA: 17, SA: 12, PA: 40 }; // Class IX Girls example with Sten 7 (near High) in LA, AR, NA
 
 function seed(): Db {
   const r = rng(2026); const now = Date.now();
@@ -28,7 +30,8 @@ function seed(): Db {
     const id = `demo-${i + 1}`; const ability = 0.3 + r() * 0.5;
     const raw: Record<string, number> = {};
     for (const t of TESTS) {
-      raw[t.code] = i === 0 ? EXAMPLE_SCORES[t.code] : Math.max(0, Math.min(t.questions, Math.round(t.questions * (ability + (r() - 0.5) * 0.4))));
+      raw[t.code] = i === 0 ? EXAMPLE_SCORES[t.code] : i === 1 ? NO_HIGH_EXAMPLE[t.code] : i === 2 ? NEAR_HIGH_EXAMPLE[t.code]
+        : Math.max(0, Math.min(t.questions, Math.round(t.questions * (ability + (r() - 0.5) * 0.4))));
       const blank = Math.floor(r() * 4), flagged = Math.floor(r() * 2);
       scores.push({ id: `${id}-${t.code}`, student_id: id, test_code: t.code, correct: raw[t.code], wrong: Math.max(0, t.questions - raw[t.code] - blank - flagged), blank, flagged });
     }

@@ -129,50 +129,50 @@ export function ScanClient({ initialKey, template }: { initialKey: Key; template
         {pageBox(2, "Side 2 (NA, SA, PA)")}
         <div className="flex flex-wrap gap-3">
           <Button onClick={process} disabled={busy}>{busy ? "Reading…" : "Check sheet"}</Button>
-          {isDemo() && <Button variant="soft" onClick={() => { setAnswers(sampleAnswers(key)); setInsp({}); setInfo((i) => (i.name ? i : { name: "125", class: "IX", gender: "Female", school: "Demo Public School" })); }}>Use sample answers (demo)</Button>}
+          {isDemo() && <Button variant="soft" onClick={() => { setAnswers(sampleAnswers(key)); setInsp({}); setInfo((i) => (i.name ? i : { name: "125", class: "IX", gender: "Female", school: "Demo Public School" })); }}>Load sample sheet</Button>}
         </div>
         {issues.length > 0 && <ul className="space-y-1 text-sm font-semibold text-amber-800">{issues.map((i) => <li key={i} className="flex gap-2"><AlertTriangle size={16} className="mt-0.5 shrink-0" />{i}</li>)}</ul>}
         {insp[1] && (
           <details className="clay-inset p-3" open>
-            <summary className="cursor-pointer font-bold">Preview</summary>
-            <p className="my-2 text-xs">Green read · Red double-marked · Orange blank</p>
-            {([1, 2] as N[]).map((n) => insp[n] &&   <img key={n} src={insp[n]!.overlay} alt={`Overlay for side ${n}`} className="mb-3 w-full rounded-xl" />)}
+            <summary className="cursor-pointer font-bold">Checked bubbles</summary>
+            <p className="my-2 text-xs">Green: single mark · Red: multiple marks · Orange: blank</p>
+            {([1, 2] as N[]).map((n) => insp[n] &&   <img key={n} src={insp[n]!.overlay} alt={`Checked side ${n}`} className="mb-3 w-full rounded-xl" />)}
           </details>
         )}
       </Card>
 
       <div className="space-y-6">
         <Card>
-          <h2 className="mb-4 text-xl font-extrabold">Scores</h2>
-          {!scores.length ? <p>Scores appear here after you check a sheet.</p> : (
+          <h2 className="mb-4 text-xl font-extrabold">Marks counted</h2>
+          {!scores.length ? <p>Marks appear here after you check a sheet.</p> : (
             <>
               <ul className="space-y-2">{scores.map((s) => (
                 <li key={s.test} className="clay-inset flex items-center justify-between gap-2 px-4 py-3">
                   <span className="font-extrabold">{s.test}</span>
-                  <span className="text-right text-sm">{s.correct} correct · {s.wrong} wrong · {s.blank} blank{s.flagged ? ` · ${s.flagged} double-marked (not scored)` : ""}</span>
+                  <span className="text-right text-sm">{s.correct} correct · {s.wrong} wrong · {s.blank} blank{s.flagged ? ` · ${s.flagged} multiple marks (not scored)` : ""}</span>
                 </li>))}</ul>
               {patterns.length > 0 && (
                 <div className="clay-inset mt-4 space-y-2 p-3 text-sm">
-                  <p className="flex gap-2 font-bold text-amber-800"><AlertTriangle size={16} className="mt-0.5 shrink-0" />Answer pattern found. The guide advises excluding this sheet.</p>
+                  <p className="flex gap-2 font-bold text-amber-800"><AlertTriangle size={16} className="mt-0.5 shrink-0" />Repeated answer pattern found. The guide advises excluding this sheet.</p>
                   <ul className="list-disc pl-6">{patterns.map((p) => <li key={p}>{p}</li>)}</ul>
                   <label className="flex items-center gap-2 font-semibold"><input type="checkbox" checked={exclude} onChange={(e) => setExclude(e.target.checked)} /> Exclude this sheet</label>
                 </div>)}
-              <Button className="mt-5 w-full" onClick={save} disabled={busy}><Save size={18} /> Save student</Button>
+              <Button className="mt-5 w-full" onClick={save} disabled={busy}><Save size={18} /> Save student report</Button>
             </>
           )}
         </Card>
         {answers && (
           <Card>
             <div className="mb-3 flex items-center justify-between gap-2">
-              <h2 className="text-xl font-extrabold">Review answers</h2>
+              <h2 className="text-xl font-extrabold">Questions needing attention</h2>
               <label className="flex items-center gap-2 text-sm font-semibold"><input type="checkbox" checked={showBlank} onChange={(e) => setShowBlank(e.target.checked)} /> Show blanks</label>
             </div>
-            {review.length === 0 ? <p className="flex items-center gap-2 text-sm"><CheckCircle2 size={18} className="text-green-700" /> Nothing to review.</p> : (
+            {review.length === 0 ? <p className="flex items-center gap-2 text-sm"><CheckCircle2 size={18} className="text-green-700" /> All questions read clearly.</p> : (
               <ul className="max-h-[28rem] space-y-3 overflow-y-auto pr-1">{review.map((r) => {
                 const img = insp[1]?.crop(r.test, r.q) ?? insp[2]?.crop(r.test, r.q);
                 return (
                   <li key={`${r.test}-${r.q}`} className="clay-inset space-y-2 p-3">
-                    <div className="flex items-center justify-between"><span className="font-bold">{r.test} Q{r.q + 1}</span><span className="text-xs">Read: {r.v === "MULTI" ? "double-marked" : "blank"}</span></div>
+                    <div className="flex items-center justify-between"><span className="font-bold">{r.test} Q{r.q + 1}</span><span className="text-xs">Read: {r.v === "MULTI" ? "multiple marks" : "blank"}</span></div>
                     { }
                     {img && <img src={img} alt={`Row ${r.test} Q${r.q + 1}`} className="w-full rounded-lg" />}
                     <div className="flex gap-2">{[...OPTIONS, null].map((o) => (

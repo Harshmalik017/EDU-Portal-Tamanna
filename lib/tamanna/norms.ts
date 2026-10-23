@@ -62,5 +62,17 @@ export function stenOf(cls: string | null | undefined, gender: string | null | u
   const i = ranges.findIndex(([lo, hi]) => raw >= lo && raw <= hi);
   return i < 0 ? null : i + 1;
 }
+/** Lower raw-score cutoff of the High band (Sten 8) for a class, gender and sub-test. */
+export function highMinOf(cls: string | null | undefined, gender: string | null | undefined, test: string): number | null {
+  const c = normalizeClass(cls); if (!c) return null;
+  const ranges = NORMS[c][groupOf(gender)][test];
+  return ranges?.[7]?.[0] ?? null;
+}
+/** True when an Average score is in the top Average bracket (Sten 7) right below High (Sten 8), or within 2 marks of High's lower cutoff. */
+export function isNearHigh(cls: string | null | undefined, gender: string | null | undefined, test: string, raw: number | null, sten: number | null): boolean {
+  if (raw === null || sten === null || bandOf(sten) !== "Average") return false;
+  const highMin = highMinOf(cls, gender, test);
+  return sten === 7 || (highMin !== null && highMin - raw <= 2);
+}
 /** Appendix VI: Sten 1-3 Low, 4-7 Average, 8-10 High. */
 export const bandOf = (s: number): Band => (s <= 3 ? "Low" : s <= 7 ? "Average" : "High");

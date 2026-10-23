@@ -66,9 +66,12 @@ export const OCCUPATIONS = [
 ];
 
 export const NOTES = {
-  suggestive: "These scores only suggest a student's potential. They should not be the only basis for choosing subjects, and the school and parents should not use them to choose subjects for the student.",
+  suggestive: "Aptitude test scores obtained are suggestive and should not be used as the only deciding factor for choosing subjects. School and parents should NOT use these scores to choose subjects for the student. (Guide, pp. 12–13)",
   cluster: "A cluster of aptitudes is needed to do well in a course of study or an occupation, so a choice should not rest on one aptitude alone. The courses and occupations listed are examples only.",
   noPassFail: "There is no pass or fail in this test.",
+  noHighBody: "Not scoring high on any sub-test does not mean that the student lacks the ability to pursue further education or training in courses to choose a career. The student needs assistance and opportunities to understand strengths through self-exploration, and should be encouraged to participate in school activities of interest, in addition to subjects of study. The student needs assistance in knowing future courses and occupations so that they can make the best suitable career choices.",
+  noHighAction: "It is recommended that the student attend educational and career planning sessions and be referred to the school counsellor for career counselling.",
+  noHighSource: "Source: Guide for Teachers and Parents, Section 5, Note for Teachers and Parents (p. 11).",
   noHigh: "Not scoring high on any sub-test does not mean a lack of ability to pursue further education or training. Self-exploration, taking part in school activities of interest, career-planning sessions and meeting the school counsellor can help in making suitable career choices.",
   source: "Prepared only from Tamanna: An Aptitude Test for Senior School Students, Guide for Teachers and Parents (NCERT): Sten norms (Appendix IV and V), descriptions (Appendix VI), occupations (Appendix VII) and areas (Appendix VIII).",
 };

@@ -10,8 +10,9 @@ Source: *Tamanna: An Aptitude Test for Senior School Students, Guide for Teacher
 | Raw -> Sten using class and gender norms | p.11, Appendix IV (Class IX), V (Class X) |
 | Low 1-3, Average 4-7, High 8-10 | Appendix VI |
 | Description text per level | Appendix VI (condensed in `lib/tamanna/booklet.ts`) |
-| Report layout (score, Sten, High/Average/Low, Sten graph, remarks) | p.12-13, Appendix III |
-| "Likely to do well in subjects like..." | p.13 example, Section 2 lists |
+| Report layout (S. No., Sub-Test, Score Obtained, Sten Score, Performance columns High/Average/Low with ✓, Sten graph, remarks) | p.12-13, Appendix III |
+| Recommendations (subjects, areas, occupations) given for High scores (Sten 8-10) and Average scores close to the High bracket (Sten 7 / within 2 marks of High); no recommendations for other Average (Sten 4-6) or Low (Sten 1-3) scores | Section 2, Appendix VII & VIII, manager instruction |
+| No-High-score remarks (self-exploration, school activities, educational/career planning sessions, referral to school counsellor) | p.11 Section 5 Note for Teachers and Parents |
 | Occupations list | Appendix VII; areas Appendix VIII |
 | Disclaimers (suggestive only; not for choosing subjects; no pass/fail; cluster of aptitudes; note when no High score) | p.6-7, 9, 11-13 |
 | Practice items are not scored | Answer sheet (Appendix I) |

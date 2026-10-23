@@ -1,6 +1,15 @@
 # Changelog
 Format: [Keep a Changelog](https://keepachangelog.com), versions follow [SemVer](https://semver.org). See `versioning.md`.
 
+## [0.9.0] - 2026-10-23
+### Added
+- **Key notes under Logs (`/admin/logs`)**: added 7 plain-language portal notes covering roll-number privacy, NCERT booklet source rules, when recommendations are given, no-High counselling guidance, hand-checking batches of 10–20 sheets, sheet exclusion rules, and suggestive-only score use
+- **Near-High Average recommendations (`lib/tamanna/norms.ts`, `lib/tamanna/profile.ts`)**: `highMinOf` and `isNearHigh` identify Average scores close to the High score's lower bracket (Sten 7 or within 2 marks of High); recommendations are now given for High scores and Near-High Average scores only, with no recommendations for other Average (Sten 4–6) or Low (Sten 1–3) scores
+- **Demo examples (`lib/demo/store.ts`)**: Roll `101` (High-score example), Roll `102` (Class X Boys no-High example with Sten 2, 3, 3, 5, 4, 4, 2), and Roll `103` (Near-High Average example)
+### Changed
+- **Report sheet table & remarks (`components/report/ReportPages.tsx`, `lib/tamanna/profile.ts`, `lib/tamanna/booklet.ts`)**: matched the NCERT Aptitude Test Report Sheet layout (`S. No.`, `Sub-Test`, `Score Obtained`, `Sten Score`, and `Performance` split into `High | Average | Low` columns with `✓`), exact norm table citation (`Appendix IV/V, Table 1–6`), full band summary, Section 5 (p. 11) counselling and self-exploration guidance when a student has no High scores, and bold p. 12–13 caution notice
+- **Non-technical language & streamlined Admin UI**: replaced technical terms (`OMR`, `Cross-verify`, `Export CSV`, `Demo mode`, `Connect Supabase`, `Overlay`) with plain school-friendly labels (`Check Sheets`, `Hand Check`, `Student Reports`, `Download list`, `Practice mode`, `Checked bubbles`); removed unrequested technical features (`Calibrate` link from sidebar and raw CSV text import from `KeyEditor`)
+
 ## [0.8.2] - 2026-10-23
 ### Added
 - GitHub Actions CI/CD workflow (`.github/workflows/ci.yml`) running `npm ci`, `npm run typecheck`, `npm run check:norms`, `npm run check:report`, and `npm run build` on pushes and pull requests to `main`

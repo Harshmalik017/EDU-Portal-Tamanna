@@ -34,8 +34,8 @@ export function VerifyBatch({ items, email }: { items: VerifyItem[]; email: stri
         <div className="flex flex-wrap items-center justify-between gap-2"><h2 className="text-lg font-extrabold">Roll {s.name} <span className="text-sm font-semibold text-ink/75">· Class {s.class} · {s.gender}</span></h2>
           <span className="flex gap-3 text-sm font-bold">{s.imgs.map((u, i) => <a key={u} href={u} target="_blank" rel="noreferrer" className="underline">Open side {i + 1}</a>)}</span></div>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">{TESTS.map((t) => (
-          <label key={t.code} className="clay-inset block p-2 text-xs font-semibold">{t.code} <span className="font-normal">(app: {app(s, t.code)})</span>
-            <input inputMode="numeric" min={0} max={t.questions} type="number" aria-label={`Manual score for ${t.code}`} value={manual[s.id]?.[t.code] ?? ""}
+          <label key={t.code} className="clay-inset block p-2 text-xs font-semibold">{t.code} <span className="font-normal">(portal: {app(s, t.code)})</span>
+            <input inputMode="numeric" min={0} max={t.questions} type="number" aria-label={`Hand score for ${t.code}`} value={manual[s.id]?.[t.code] ?? ""}
               onChange={(e) => setManual((p) => ({ ...p, [s.id]: { ...p[s.id], [t.code]: e.target.value } }))} className="mt-1 w-full rounded-lg bg-white/70 px-2 py-2 text-base" /></label>))}</div>
         <Button onClick={() => compare(s)}>Compare and save</Button>
       </Card></li>))}</ul>

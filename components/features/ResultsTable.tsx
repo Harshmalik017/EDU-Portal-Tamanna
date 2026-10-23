@@ -45,10 +45,10 @@ export function ResultsTable({ rows }: { rows: Student[] }) {
         <p className="text-sm font-semibold text-ink/80">{shown.length} students</p>
         <div className="flex flex-wrap gap-2">
           <Link href={`/admin/reports${cls ? `?class=${cls}` : ""}`} className="clay-btn-soft"><Printer size={18} /> Print all reports</Link>
-          <Button variant="soft" onClick={exportCsv} disabled={!shown.length}><Download size={18} /> Export CSV</Button>
+          <Button variant="soft" onClick={exportCsv} disabled={!shown.length}><Download size={18} /> Download list</Button>
         </div>
       </div>
-      <p className="mb-3 text-xs">Score and Sten (Low 1–3 · Average 4–7 · High 8–10)</p>
+      <p className="mb-3 text-xs">Marks and Sten score (Low 1–3 · Average 4–7 · High 8–10)</p>
       <div className="mb-4 grid items-end gap-3 sm:grid-cols-[1fr_180px]">
         <div className="relative">
           <Search size={18} className="pointer-events-none absolute bottom-3.5 left-4 text-ink/60" />

@@ -70,10 +70,15 @@ export function StudentView({ initial, imgs }: { initial: S; imgs: string[] }) {
           <h2 className="mb-1 text-lg font-bold">Scorecard</h2>
           <p className="mb-4 text-xs">{p.normLabel}</p>
           <ul className="space-y-2">{p.rows.map((r) => (
-            <li key={r.code} className="clay-inset flex items-center justify-between gap-2 px-4 py-3">
+            <li key={r.code} className="clay-inset flex flex-wrap items-center justify-between gap-2 px-4 py-3">
               <span className="font-extrabold">{r.code} <span className="text-sm font-semibold">{r.name}</span></span>
               <span className="flex items-center gap-2 text-sm"><b>{r.raw ?? "–"}</b>/{r.max}
-                {r.band && <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${tone[r.band]}`}>Sten {r.sten} · {r.band}</span>}</span>
+                {r.band && (
+                  <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${tone[r.band]}`}>
+                    Sten {r.sten} · {r.band}{r.nearHigh ? " (Close to High)" : ""}{r.giveReccs ? " · Reccs given" : ""}
+                  </span>
+                )}
+              </span>
             </li>))}</ul>
         </Card>
       </div>
