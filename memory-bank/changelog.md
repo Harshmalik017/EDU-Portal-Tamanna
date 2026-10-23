@@ -1,6 +1,10 @@
 # Changelog
 Format: [Keep a Changelog](https://keepachangelog.com), versions follow [SemVer](https://semver.org). See `versioning.md`.
 
+## [0.8.1] - 2026-10-23
+### Fixed
+- Added `vercel.json` pinning the Next.js framework preset, install/build commands and output directory, so the Vercel project deploys to a working app instead of a platform 404 (a zip upload with a nested folder or a wrong Root Directory used to leave Vercel without `package.json`)
+
 ## [0.8.0] - 2026-10-23
 ### Changed
 - **UI aligned with the LMS shell**: left sidebar with grouped navigation and active state, sticky top bar with user name and red Logout button, mobile drawer with red close button, content area with VersionBadge
