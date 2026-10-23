@@ -1,0 +1,2 @@
+# Module: Cross-verification
+`/admin/verify` lists the oldest 10-20 pending sheets (not excluded) with links to the original images. The teacher scores by hand with the booklet key and enters 7 raw scores; `VerifyBatch` compares and sets `verification_status` (verified / mismatch), `verified_by`, `verified_at`, `manual_scores`, `verification_note`. Mismatches can be sent back to pending from the student page. Dashboard prompts when 10+ are pending.
