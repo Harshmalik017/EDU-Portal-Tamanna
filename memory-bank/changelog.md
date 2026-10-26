@@ -1,6 +1,10 @@
 # Changelog
 Format: [Keep a Changelog](https://keepachangelog.com), versions follow [SemVer](https://semver.org). See `versioning.md`.
 
+## [0.9.15] - 2026-10-26
+### Changed
+- **Login page**: styled the demo notice red, added a branded logo and Home action to the top bar, and matched the landing-page footer with programme note, developer details, and version
+
 ## [0.9.14] - 2026-10-26
 ### Changed
 - **Landing page**: removed the In schools section, scoring-key request contact, guide credits, and the now-unused Schools menu link
