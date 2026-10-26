@@ -5,7 +5,7 @@ import { Box, Calculator, Cog, Languages, LogIn, MessageSquareText, ScanEye, Sha
 import { Card } from "@/components/ui";
 import { LandingHeader } from "@/components/layout/LandingHeader";
 import { VersionBadge } from "@/components/VersionBadge";
-import { ACRONYM, ADMIN_POINTS, CAREER_EXAMPLES, CAUTIONS, COMPONENTS, CREDITS, EXAMPLE, FACTS, HELPS, LEVELS, MATERIALS, SCORING_STEPS, SUBTESTS } from "@/lib/tamanna/program";
+import { ACRONYM, ADMIN_POINTS, CAREER_EXAMPLES, CAUTIONS, COMPONENTS, EXAMPLE, FACTS, HELPS, LEVELS, MATERIALS, SCORING_STEPS, SUBTESTS } from "@/lib/tamanna/program";
 
 export const metadata: Metadata = {
   title: "Tamanna: Aptitude Test for Senior School Students",
@@ -36,7 +36,7 @@ export default function Landing() {
       <section className="grid items-center gap-6 md:grid-cols-2 lg:gap-10">
         <div className="space-y-4">
           <p className="inline-block rounded-full bg-brand-100 px-3 py-1 text-xs font-bold text-brand-700">
-            NCERT Aptitude Test · Classes IX &amp; X
+            Uttar Pradesh · NCERT Aptitude Test · Classes IX &amp; X
           </p>
           <h1 className="text-4xl font-bold leading-tight sm:text-5xl">Know your strengths.</h1>
           <p className="text-base font-semibold sm:text-lg" aria-label="Try And Measure Aptitude And Natural Abilities">
@@ -182,26 +182,6 @@ export default function Landing() {
           </Card>
           <Card title="Use scores with care" className="h-full">{list(CAUTIONS)}</Card>
         </div>
-      </section>
-
-      <section id="schools" className="scroll-mt-24 space-y-5">
-        <h2 className={H2}>In schools</h2>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {[
-            ["1. Scan", "Scan both sides of the answer sheet.", "border-amber-300"],
-            ["2. Score", "Convert raw marks to Sten scores using norms.", "border-sky-300"],
-            ["3. Verify", "Hand-check batches of 10–20 sheets.", "border-violet-300"],
-            ["4. Report", "Print the 3-page report by roll number.", "border-green-300"],
-          ].map(([t, d, c]) => (
-            <Card key={t} title={t} className={`h-full ${c}`}>
-              <p className="text-sm">{d}</p>
-            </Card>
-          ))}
-        </div>
-        <Card className="flex flex-wrap items-center justify-between gap-2 text-sm">
-          <p>Scoring key requests (Principals): <b>{CREDITS.key}</b></p>
-          <p className="text-xs text-ink/75">Guide: {CREDITS.authors.join(", ")} · Foreword: {CREDITS.foreword}</p>
-        </Card>
       </section>
 
       <footer className="space-y-3 pt-2">

@@ -10,7 +10,10 @@ export function TopBar({ userName, demo }: { userName?: string; demo?: boolean }
   return (
     <header className="sticky top-0 z-20 flex h-14 items-center justify-between gap-2 border-b border-(--line) bg-[#f9fbf2]/90 px-4 pl-14 backdrop-blur sm:px-6 lg:px-10 2xl:px-12 print:hidden">
       <Link href="/admin" aria-label="Tamanna dashboard" className="lg:hidden">
-        <Image src="/brand/logo.png" alt="Tamanna" width={96} height={21} priority />
+        <span className="flex flex-col items-start">
+          <Image src="/brand/logo.png" alt="Tamanna" width={96} height={21} priority />
+          <span className="text-[9px] font-semibold leading-none text-brand-700">Uttar Pradesh</span>
+        </span>
       </Link>
       <div className="ml-auto flex shrink-0 items-center gap-3">
         {userName && <span className={`hidden max-w-48 truncate text-xs font-semibold text-ink/75 sm:block ${demo ? "animate-pulse" : ""}`}>{userName}</span>}

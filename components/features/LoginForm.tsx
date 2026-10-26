@@ -31,7 +31,10 @@ export function LoginForm({ denied }: { denied?: boolean }) {
       </header>
       <main className="grid flex-1 place-items-center py-8">
         <Card className="w-full max-w-md">
-          <Image src="/brand/logo.png" alt="Tamanna" width={170} height={36} className="mx-auto mb-4" priority />
+          <div className="mb-4 flex flex-col items-center">
+            <Image src="/brand/logo.png" alt="Tamanna" width={170} height={36} priority />
+            <span className="text-xs font-semibold text-brand-700">Uttar Pradesh</span>
+          </div>
           <h1 className="mb-6 text-center text-2xl font-extrabold">Admin login</h1>
           {isDemo() && <p className="clay-inset mb-4 animate-pulse p-3 text-sm font-semibold">Demo mode: any email and password works.</p>}
           <form onSubmit={submit} className="space-y-4">

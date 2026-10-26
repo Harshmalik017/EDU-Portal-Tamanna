@@ -10,7 +10,10 @@ function Head({ n, roll }: { n: number; roll: string }) {
   return (
     <header className="mb-4 flex items-end justify-between border-b-2 border-brand-600 pb-2">
       <div className="flex items-center gap-3">
-        <img src="/brand/logo.png" alt="Tamanna" className="h-8 w-auto" />
+        <div className="flex flex-col items-start">
+          <img src="/brand/logo.png" alt="Tamanna" className="h-8 w-auto" />
+          <span className="text-[9px] font-semibold leading-none text-brand-700">Uttar Pradesh</span>
+        </div>
         <div>
           <p className="text-xs font-bold text-brand-700">Tamanna: An Aptitude Test</p>
           <h2 className="text-xl font-extrabold">Aptitude Test Report Sheet</h2>

@@ -1,6 +1,14 @@
 # Changelog
 Format: [Keep a Changelog](https://keepachangelog.com), versions follow [SemVer](https://semver.org). See `versioning.md`.
 
+## [0.9.14] - 2026-10-26
+### Changed
+- **Landing page**: removed the In schools section, scoring-key request contact, guide credits, and the now-unused Schools menu link
+
+## [0.9.13] - 2026-10-26
+### Changed
+- **Regional branding**: added Uttar Pradesh beneath the Tamanna logo throughout the portal and identified Uttar Pradesh on the landing page
+
 ## [0.9.12] - 2026-10-26
 ### Changed
 - **Admin navigation and charts**: added a mobile bottom navigation with a round center Check Sheets action, icons beside admin page headings, and a two-column dashboard chart layout on wider screens

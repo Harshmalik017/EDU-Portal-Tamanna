@@ -37,8 +37,9 @@ export function Sidebar({ demo }: { demo: boolean }) {
   const nav = (
     <div className="flex h-full flex-col">
       <div className="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-brand-200 bg-brand-100/70 px-4">
-        <Link href="/" aria-label="Tamanna home">
+        <Link href="/" aria-label="Tamanna Uttar Pradesh home" className="flex flex-col items-start">
           <Image src="/brand/logo.png" alt="Tamanna" width={110} height={24} priority />
+          <span className="text-[10px] font-semibold leading-none text-brand-700">Uttar Pradesh</span>
         </Link>
       </div>
       <nav aria-label="Main menu" className="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain px-3 py-4">

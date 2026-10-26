@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { LogIn, Menu, X } from "lucide-react";
 
-const NAV = [["about", "About"], ["subtests", "Sub-tests"], ["conduct", "Conduct"], ["scoring", "Scoring"], ["schools", "Schools"]] as const;
+const NAV = [["about", "About"], ["subtests", "Sub-tests"], ["conduct", "Conduct"], ["scoring", "Scoring"]] as const;
 
 export function LandingHeader() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -12,8 +12,9 @@ export function LandingHeader() {
   return (
     <header className="clay sticky top-3 z-30 px-4 py-2.5 sm:px-5 sm:py-3">
       <div className="flex items-center justify-between gap-3">
-        <Link href="/" aria-label="Tamanna home" className="shrink-0">
+        <Link href="/" aria-label="Tamanna Uttar Pradesh home" className="flex shrink-0 flex-col items-start">
           <Image src="/brand/logo.png" alt="Tamanna" width={120} height={26} priority />
+          <span className="text-[10px] font-semibold leading-none text-brand-700">Uttar Pradesh</span>
         </Link>
         <nav className="hidden items-center gap-1 md:flex" aria-label="Page sections">
           {NAV.map(([id, label]) => (
