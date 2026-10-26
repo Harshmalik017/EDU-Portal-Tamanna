@@ -8,7 +8,7 @@ import { supabase } from "@/lib/supabase/client";
 export function TopBar({ userName, demo }: { userName?: string; demo?: boolean }) {
   const router = useRouter();
   return (
-    <header className="sticky top-0 z-20 flex h-14 items-center justify-between gap-2 border-b border-(--line) bg-[#f9fbf2]/90 px-4 pl-14 backdrop-blur lg:px-8 print:hidden">
+    <header className="sticky top-0 z-20 flex h-14 items-center justify-between gap-2 border-b border-(--line) bg-[#f9fbf2]/90 px-4 pl-14 backdrop-blur sm:px-6 lg:px-10 2xl:px-12 print:hidden">
       <Link href="/admin" aria-label="Tamanna dashboard" className="lg:hidden">
         <Image src="/brand/logo.png" alt="Tamanna" width={96} height={21} priority />
       </Link>

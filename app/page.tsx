@@ -30,7 +30,7 @@ export default function Landing() {
   );
 
   return (
-    <main className="mx-auto max-w-6xl space-y-8 px-4 py-4 sm:space-y-10 sm:py-6">
+    <main className="w-full space-y-8 px-4 py-4 sm:space-y-10 sm:px-6 sm:py-6 lg:px-10 2xl:px-12">
       <LandingHeader />
 
       <section className="grid items-center gap-6 md:grid-cols-2 lg:gap-10">

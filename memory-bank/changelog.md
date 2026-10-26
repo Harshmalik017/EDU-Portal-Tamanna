@@ -1,6 +1,10 @@
 # Changelog
 Format: [Keep a Changelog](https://keepachangelog.com), versions follow [SemVer](https://semver.org). See `versioning.md`.
 
+## [0.9.5] - 2026-10-26
+### Changed
+- **Responsive content width**: remove narrow max-width constraints on admin pages and the landing page, using consistent responsive gutters across the available viewport
+
 ## [0.9.4] - 2026-10-26
 ### Changed
 - **Demo indicators**: style sample-data notices with light red backgrounds, red text, and an exclamation icon
