@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { AlertTriangle, ChartColumn, ClipboardCheck, FileText, UserRound, Users, UsersRound } from "lucide-react";
+import { ChartColumn, UserRound, Users, UsersRound } from "lucide-react";
 import { createServer } from "@/lib/supabase/server";
 import { TESTS } from "@/lib/tamanna/tests";
 import { bandOf, normalizeClass, stenOf } from "@/lib/tamanna/norms";
@@ -12,8 +12,6 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
   const all = (data ?? []) as unknown as Student[];
   const cls = normalizeClass(sp.class);
   const rows = all.filter((s) => !s.excluded && (!cls || normalizeClass(s.class) === cls));
-  const count = (st: string) => rows.filter((s) => (s.verification_status ?? "pending") === st).length;
-  const pending = count("pending");
   const perTest = TESTS.map((t) => {
     const b = { Low: 0, Average: 0, High: 0 };
     let sum = 0, n = 0;
@@ -36,9 +34,6 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
         <StatCard icon={Users} label="Students checked" value={rows.length} tone="green" />
         <StatCard icon={UserRound} label="Male students" value={rows.filter((s) => s.gender === "Male").length} tone="blue" />
         <StatCard icon={UsersRound} label="Female students" value={rows.filter((s) => s.gender === "Female").length} tone="violet" />
-        <StatCard icon={ClipboardCheck} label="Verified by hand" value={count("verified")} hint={`${pending} waiting`} tone="blue" />
-        <StatCard icon={AlertTriangle} label="Score differences" value={count("mismatch")} tone="amber" />
-        <StatCard icon={FileText} label="Excluded sheets" value={all.filter((s) => s.excluded).length} tone="violet" />
       </div>
       {rows.length === 0 ? <Card className="text-center">No students yet.</Card> : (
         <Card title="Performance by sub-test">

@@ -1,6 +1,11 @@
 # Changelog
 Format: [Keep a Changelog](https://keepachangelog.com), versions follow [SemVer](https://semver.org). See `versioning.md`.
 
+## [0.9.16] - 2026-10-26
+### Changed
+- **Student reports**: moved verified, score difference, and excluded counts from Dashboard to Student Reports; completed checks now show Recheck instead of Hand Check
+- **Admin navigation loading**: show an immediate skeleton when switching pages from the sidebar or mobile navigation
+
 ## [0.9.15] - 2026-10-26
 ### Changed
 - **Login page**: styled the demo notice red, added a branded logo and Home action to the top bar, and matched the landing-page footer with programme note, developer details, and version

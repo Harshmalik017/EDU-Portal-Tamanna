@@ -2,12 +2,12 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowUpDown, ClipboardCheck, Download, FileText, Printer, Search, Table2, Trash2, UserRound } from "lucide-react";
+import { AlertTriangle, ArrowUpDown, ClipboardCheck, Download, FileText, Printer, Search, Table2, Trash2, UserRound } from "lucide-react";
 import { TESTS } from "@/lib/tamanna/tests";
 import { bandOf, normalizeClass, stenOf } from "@/lib/tamanna/norms";
 import { supabase } from "@/lib/supabase/client";
 import type { Student } from "@/lib/types";
-import { Badge, Button, Card, Input, PageHeader, Select } from "@/components/ui";
+import { Badge, Button, Card, Input, PageHeader, Select, StatCard } from "@/components/ui";
 import { ManualCheckDialog } from "@/components/features/ManualCheckDialog";
 import { useToast } from "@/components/Toast";
 
@@ -32,6 +32,11 @@ export function ResultsTable({ rows, email }: { rows: Student[]; email: string }
   const [manualCheck, setManualCheck] = useState<{ studentId?: string } | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const eligibleStudents = rows.filter((row) => !row.excluded);
+  const classRows = rows.filter((row) => !cls || normalizeClass(row.class) === cls);
+  const checkedRows = classRows.filter((row) => !row.excluded);
+  const verifiedCount = checkedRows.filter((row) => row.verification_status === "verified").length;
+  const mismatchCount = checkedRows.filter((row) => row.verification_status === "mismatch").length;
+  const excludedCount = classRows.filter((row) => row.excluded).length;
   const get = (r: Student, by: string): string | number => TESTS.some((t) => t.code === by) ? raw(r, by) ?? -1 : by === "status" ? status(r) : ((r as unknown as Record<string, string>)[by] ?? "");
   const shown = useMemo(() => rows
     .filter((r) => (!cls || normalizeClass(r.class) === cls) && `${r.name} ${r.school}`.toLowerCase().includes(q.toLowerCase()))
@@ -74,6 +79,11 @@ export function ResultsTable({ rows, email }: { rows: Student[]; email: string }
   return (
     <div className="space-y-6">
     <PageHeader title="Student reports" icon={Table2} actions={<Button variant="soft" disabled={!eligibleStudents.length} onClick={() => setManualCheck({})}><ClipboardCheck size={18} /> Manual Check</Button>} />
+    <div className="grid gap-4 sm:grid-cols-3">
+      <StatCard icon={ClipboardCheck} label="Verified by hand" value={verifiedCount} tone="blue" />
+      <StatCard icon={AlertTriangle} label="Score differences" value={mismatchCount} tone="amber" />
+      <StatCard icon={FileText} label="Excluded sheets" value={excludedCount} tone="violet" />
+    </div>
     <Card>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm font-semibold text-ink/80">{shown.length} students</p>
@@ -103,7 +113,7 @@ export function ResultsTable({ rows, email }: { rows: Student[]; email: string }
                   {TESTS.map((t) => <td key={t.code} className="border-b border-r border-(--line) px-3 py-2.5"><Cell r={r} c={t.code} /></td>)}
                   <td className="border-b border-r border-(--line) px-3 py-2.5"><Badge tone={TONE[status(r)]}>{status(r)}</Badge></td>
                   <td className="border-b border-(--line) px-3 py-2.5"><div className="flex items-center gap-2">
-                    <Button variant="soft" className="!min-h-9 !px-3 !py-1.5 text-xs" disabled={r.excluded} onClick={() => setManualCheck({ studentId: r.id })}><ClipboardCheck size={15} /> Hand Check</Button>
+                    {!r.excluded && <Button variant="soft" className="!min-h-9 !px-3 !py-1.5 text-xs" onClick={() => setManualCheck({ studentId: r.id })}><ClipboardCheck size={15} />{r.verification_status && r.verification_status !== "pending" ? "Recheck" : "Hand Check"}</Button>}
                     <Link href={`/admin/students/${r.id}/report`} aria-label={`Report for roll ${r.name}`} title="Report" className="inline-flex min-h-9 items-center gap-1.5 rounded-xl bg-sky-100 px-3 py-1.5 text-xs font-bold text-sky-800 transition hover:bg-sky-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600"><FileText size={15} /> Report</Link>
                     <Link href={`/admin/students/${r.id}`} className="inline-flex min-h-9 items-center gap-1.5 rounded-xl bg-brand-50 px-3 py-1.5 text-xs font-bold text-brand-700 transition hover:bg-brand-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"><UserRound size={15} /> Profile</Link>
                     <button type="button" aria-label={`Delete roll ${r.name}`} title="Delete student" disabled={deletingId === r.id} onClick={() => deleteStudent(r)} className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-red-200 bg-red-50 text-red-700 transition hover:bg-red-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600 disabled:opacity-50"><Trash2 size={17} /></button>
@@ -117,7 +127,7 @@ export function ResultsTable({ rows, email }: { rows: Student[]; email: string }
               <p className="text-xs">Class {r.class} · {r.gender} · {r.school}</p>
               <p className="mt-2 grid grid-cols-3 gap-1 text-xs">{TESTS.map((t) => <span key={t.code}><b>{t.code}</b> <Cell r={r} c={t.code} /></span>)}</p>
               <div className="mt-3 flex flex-wrap gap-2">
-                <Button variant="soft" className="!min-h-9 !px-3 !py-1.5 text-xs" disabled={r.excluded} onClick={() => setManualCheck({ studentId: r.id })}><ClipboardCheck size={15} /> Hand Check</Button>
+                {!r.excluded && <Button variant="soft" className="!min-h-9 !px-3 !py-1.5 text-xs" onClick={() => setManualCheck({ studentId: r.id })}><ClipboardCheck size={15} />{r.verification_status && r.verification_status !== "pending" ? "Recheck" : "Hand Check"}</Button>}
                 <Link href={`/admin/students/${r.id}/report`} className="inline-flex min-h-9 items-center gap-1.5 rounded-xl bg-sky-100 px-3 py-1.5 text-xs font-bold text-sky-800 transition hover:bg-sky-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600"><FileText size={15} /> Report</Link>
                 <Link href={`/admin/students/${r.id}`} className="inline-flex min-h-9 items-center gap-1.5 rounded-xl bg-brand-50 px-3 py-1.5 text-xs font-bold text-brand-700 transition hover:bg-brand-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"><UserRound size={15} /> Profile</Link>
                 <button type="button" aria-label={`Delete roll ${r.name}`} title="Delete student" disabled={deletingId === r.id} onClick={() => deleteStudent(r)} className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-red-200 bg-red-50 text-red-700 transition hover:bg-red-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600 disabled:opacity-50"><Trash2 size={17} /></button>
