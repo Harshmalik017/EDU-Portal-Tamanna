@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Box, Calculator, Cog, Languages, LogIn, MessageSquareText, ScanEye, Shapes, type LucideIcon } from "lucide-react";
 import { Card } from "@/components/ui";
+import { LandingHeader } from "@/components/layout/LandingHeader";
 import { VersionBadge } from "@/components/VersionBadge";
 import { ACRONYM, ADMIN_POINTS, CAREER_EXAMPLES, CAUTIONS, COMPONENTS, CREDITS, EXAMPLE, FACTS, HELPS, LEVELS, MATERIALS, SCORING_STEPS, SUBTESTS } from "@/lib/tamanna/program";
 
@@ -12,7 +13,6 @@ export const metadata: Metadata = {
 };
 
 const ICONS: Record<string, LucideIcon> = { LA: Languages, AR: Shapes, VR: MessageSquareText, MR: Cog, NA: Calculator, SA: Box, PA: ScanEye };
-const NAV = [["about", "About"], ["subtests", "Sub-tests"], ["conduct", "Conduct"], ["scoring", "Scoring"], ["schools", "Schools"]] as const;
 const H2 = "mb-4 text-2xl font-bold sm:text-3xl";
 const toneOf = (s: number) => (s <= 3 ? "bg-amber-500" : s <= 7 ? "bg-sky-600" : "bg-green-600");
 const levelOf = (s: number) => (s <= 3 ? "Low" : s <= 7 ? "Average" : "High");
@@ -31,30 +31,7 @@ export default function Landing() {
 
   return (
     <main className="mx-auto max-w-6xl space-y-8 px-4 py-4 sm:space-y-10 sm:py-6">
-      <header className="clay sticky top-3 z-30 px-4 py-2.5 sm:px-5 sm:py-3">
-        <div className="flex items-center justify-between gap-3">
-          <Link href="/" aria-label="Tamanna home" className="shrink-0">
-            <Image src="/brand/logo.png" alt="Tamanna" width={120} height={26} priority />
-          </Link>
-          <nav className="hidden items-center gap-1 md:flex" aria-label="Page sections">
-            {NAV.map(([id, label]) => (
-              <a key={id} href={`#${id}`} className="rounded-xl px-3.5 py-2 text-sm font-semibold text-ink/85 transition hover:bg-brand-100/70 hover:text-brand-700">
-                {label}
-              </a>
-            ))}
-          </nav>
-          <Link href="/login" className="clay-btn !min-h-10 shrink-0 !px-4 !py-2">
-            <LogIn size={18} /> Login
-          </Link>
-        </div>
-        <nav aria-label="Page sections" className="mt-2.5 flex items-center gap-1.5 overflow-x-auto border-t border-(--line) pt-2 md:hidden">
-          {NAV.map(([id, label]) => (
-            <a key={id} href={`#${id}`} className="shrink-0 rounded-lg bg-brand-50 px-3 py-1.5 text-xs font-semibold text-brand-700 hover:bg-brand-100">
-              {label}
-            </a>
-          ))}
-        </nav>
-      </header>
+      <LandingHeader />
 
       <section className="grid items-center gap-6 md:grid-cols-2 lg:gap-10">
         <div className="space-y-4">

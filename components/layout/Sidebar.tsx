@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { ClipboardCheck, FileText, KeyRound, LayoutDashboard, Menu, ScanLine, Table2, X } from "lucide-react";
+import { CircleAlert, ClipboardCheck, FileText, KeyRound, LayoutDashboard, Menu, ScanLine, Table2, X } from "lucide-react";
 
 const GROUPS = [
   { label: "School Portal", items: [
@@ -64,7 +64,7 @@ export function Sidebar({ demo }: { demo: boolean }) {
       </nav>
       {demo && (
         <div className="shrink-0 border-t border-(--line) p-3">
-          <p className="flex animate-pulse items-center gap-2 rounded-xl bg-amber-100 px-3 py-2 text-xs font-semibold text-amber-900"><span aria-hidden>📋</span> Practice data</p>
+          <p className="flex animate-pulse items-center gap-2 rounded-xl bg-red-100 px-3 py-2 text-xs font-semibold text-red-800"><CircleAlert size={16} aria-hidden="true" /> Practice data</p>
         </div>
       )}
     </div>

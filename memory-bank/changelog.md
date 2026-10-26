@@ -1,6 +1,18 @@
 # Changelog
 Format: [Keep a Changelog](https://keepachangelog.com), versions follow [SemVer](https://semver.org). See `versioning.md`.
 
+## [0.9.4] - 2026-10-26
+### Changed
+- **Demo indicators**: style sample-data notices with light red backgrounds, red text, and an exclamation icon
+
+## [0.9.3] - 2026-10-26
+### Fixed
+- **Footer version**: read the displayed app version directly from `package.json` to keep it in sync with the release version
+
+## [0.9.2] - 2026-10-26
+### Fixed
+- **Landing-page mobile menu**: replaced the always-visible horizontal section links with a hamburger menu that expands and collapses a vertical section list
+
 ## [0.9.1] - 2026-10-26
 ### Changed
 - **Login and mobile navigation**: added Home links to the login page top bar and footer, removed the forgot-password option, and shortened the landing-page Admin login button to Login
