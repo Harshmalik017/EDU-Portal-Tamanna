@@ -129,7 +129,7 @@ export function ScanClient({ initialKey, template }: { initialKey: Key; template
         {pageBox(2, "Side 2 (NA, SA, PA)")}
         <div className="flex flex-wrap gap-3">
           <Button onClick={process} disabled={busy}>{busy ? "Reading…" : "Check sheet"}</Button>
-          {isDemo() && <Button variant="soft" onClick={() => { setAnswers(sampleAnswers(key)); setInsp({}); setInfo((i) => (i.name ? i : { name: "125", class: "IX", gender: "Female", school: "Demo Public School" })); }}>Load sample sheet</Button>}
+          {isDemo() && <Button variant="soft" className="animate-pulse" onClick={() => { setAnswers(sampleAnswers(key)); setInsp({}); setInfo((i) => (i.name ? i : { name: "125", class: "IX", gender: "Female", school: "Demo Public School" })); }}>Load sample sheet</Button>}
         </div>
         {issues.length > 0 && <ul className="space-y-1 text-sm font-semibold text-amber-800">{issues.map((i) => <li key={i} className="flex gap-2"><AlertTriangle size={16} className="mt-0.5 shrink-0" />{i}</li>)}</ul>}
         {insp[1] && (

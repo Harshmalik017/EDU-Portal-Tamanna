@@ -25,9 +25,14 @@ export function Sidebar({ demo }: { demo: boolean }) {
   useEffect(() => { setOpen(false); }, [path]);
   useEffect(() => {
     if (!open) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
     const esc = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
     window.addEventListener("keydown", esc);
-    return () => window.removeEventListener("keydown", esc);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", esc);
+    };
   }, [open]);
 
   const nav = (
@@ -37,7 +42,7 @@ export function Sidebar({ demo }: { demo: boolean }) {
           <Image src="/brand/logo.png" alt="Tamanna" width={110} height={24} priority />
         </Link>
       </div>
-      <nav aria-label="Main menu" className="flex-1 space-y-5 overflow-y-auto px-3 py-4">
+      <nav aria-label="Main menu" className="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain px-3 py-4">
         {GROUPS.map((g) => (
           <div key={g.label} className="space-y-1">
             <p className="px-2.5 pb-1 text-[10px] font-bold uppercase tracking-widest text-ink/60">{g.label}</p>
@@ -59,7 +64,7 @@ export function Sidebar({ demo }: { demo: boolean }) {
       </nav>
       {demo && (
         <div className="shrink-0 border-t border-(--line) p-3">
-          <p className="flex items-center gap-2 rounded-xl bg-amber-100 px-3 py-2 text-xs font-semibold text-amber-900"><span aria-hidden>📋</span> Practice data</p>
+          <p className="flex animate-pulse items-center gap-2 rounded-xl bg-amber-100 px-3 py-2 text-xs font-semibold text-amber-900"><span aria-hidden>📋</span> Practice data</p>
         </div>
       )}
     </div>
@@ -77,7 +82,7 @@ export function Sidebar({ demo }: { demo: boolean }) {
         <Menu size={18} />
       </button>
       {open && <div className="fixed inset-0 z-40 bg-[#25331a]/50 lg:hidden print:hidden" onClick={() => setOpen(false)} aria-hidden />}
-      <aside aria-label="Main menu" className={`fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-(--line) bg-[#fbfdf4] transition-transform lg:z-20 lg:w-64 lg:translate-x-0 print:hidden ${open ? "translate-x-0" : "-translate-x-full"}`}>
+      <aside aria-label="Main menu" className={`fixed inset-y-0 left-0 z-50 flex w-72 flex-col overflow-hidden border-r border-(--line) bg-[#fbfdf4] transition-transform lg:z-20 lg:w-64 lg:translate-x-0 print:hidden ${open ? "translate-x-0" : "-translate-x-full"}`}>
         {open && <button aria-label="Close menu" onClick={() => setOpen(false)} className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-lg bg-red-600 text-white shadow-sm hover:bg-red-700"><X size={16} /></button>}
         {nav}
       </aside>

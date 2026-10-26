@@ -13,8 +13,8 @@ export default async function Setup({ searchParams }: { searchParams: Promise<{ 
     <main className="mx-auto max-w-2xl space-y-5 px-4 py-10">
       <Card>
         <h1 className="text-2xl font-extrabold">Set up Tamanna Portal</h1>
-        <p className="mt-2 text-sm">{ready ? "Supabase keys found." : "No keys found, so the app is in demo mode. Add keys to use real data."}</p>
-        {!ready && <Link href="/admin" className="clay-btn mt-4">Open the demo</Link>}
+        <p className={`mt-2 text-sm ${ready ? "" : "animate-pulse"}`}>{ready ? "Supabase keys found." : "No keys found, so the app is in demo mode. Add keys to use real data."}</p>
+        {!ready && <Link href="/admin" className="clay-btn mt-4 animate-pulse">Open the demo</Link>}
         {ready && !sp.step && <Link href="/login" className="clay-btn mt-4">Continue to login</Link>}
       </Card>
       <Card className="space-y-3 text-sm">

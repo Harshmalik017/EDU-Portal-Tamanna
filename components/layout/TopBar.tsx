@@ -5,7 +5,7 @@ import { LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 
-export function TopBar({ userName }: { userName?: string }) {
+export function TopBar({ userName, demo }: { userName?: string; demo?: boolean }) {
   const router = useRouter();
   return (
     <header className="sticky top-0 z-20 flex h-14 items-center justify-between gap-2 border-b border-(--line) bg-[#f9fbf2]/90 px-4 pl-14 backdrop-blur lg:px-8 print:hidden">
@@ -13,7 +13,7 @@ export function TopBar({ userName }: { userName?: string }) {
         <Image src="/brand/logo.png" alt="Tamanna" width={96} height={21} priority />
       </Link>
       <div className="ml-auto flex shrink-0 items-center gap-3">
-        {userName && <span className="hidden max-w-48 truncate text-xs font-semibold text-ink/75 sm:block">{userName}</span>}
+        {userName && <span className={`hidden max-w-48 truncate text-xs font-semibold text-ink/75 sm:block ${demo ? "animate-pulse" : ""}`}>{userName}</span>}
         <button
           type="button"
           aria-label="Sign out"

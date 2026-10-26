@@ -24,7 +24,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-xl focus:bg-white focus:px-4 focus:py-2 print:hidden">Skip to content</a>
       <Sidebar demo={demo} />
       <div className="lg:pl-64 print:pl-0">
-        <TopBar userName={userName} />
+        <TopBar userName={userName} demo={demo} />
         {demo && <div className="mx-auto max-w-6xl px-4 pt-4 lg:px-8"><DemoBanner /></div>}
         <main id="main" className="mx-auto max-w-6xl px-4 py-6 lg:px-8 lg:py-8">{children}</main>
         <VersionBadge />

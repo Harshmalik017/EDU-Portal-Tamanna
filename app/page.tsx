@@ -44,7 +44,7 @@ export default function Landing() {
             ))}
           </nav>
           <Link href="/login" className="clay-btn !min-h-10 shrink-0 !px-4 !py-2">
-            <LogIn size={18} /> Admin login
+            <LogIn size={18} /> Login
           </Link>
         </div>
         <nav aria-label="Page sections" className="mt-2.5 flex items-center gap-1.5 overflow-x-auto border-t border-(--line) pt-2 md:hidden">

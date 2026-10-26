@@ -1,6 +1,13 @@
 # Changelog
 Format: [Keep a Changelog](https://keepachangelog.com), versions follow [SemVer](https://semver.org). See `versioning.md`.
 
+## [0.9.1] - 2026-10-26
+### Changed
+- **Login and mobile navigation**: added Home links to the login page top bar and footer, removed the forgot-password option, and shortened the landing-page Admin login button to Login
+- **Demo indicators**: added a reduced-motion-safe pulse animation to visible demo labels
+### Fixed
+- **Mobile menu scrolling**: prevent the page behind the drawer from scrolling while it is open and contain scrolling within the menu
+
 ## [0.9.0] - 2026-10-23
 ### Added
 - **Key notes under Logs (`/admin/logs`)**: added 7 plain-language portal notes covering roll-number privacy, NCERT booklet source rules, when recommendations are given, no-High counselling guidance, hand-checking batches of 10–20 sheets, sheet exclusion rules, and suggestive-only score use
