@@ -71,6 +71,22 @@ export function Sidebar({ demo }: { demo: boolean }) {
 
   return (
     <>
+      <nav aria-label="Quick navigation" className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-3 items-end border-t border-brand-200 bg-[#fbfdf4]/95 px-4 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] shadow-[0_-8px_24px_rgba(37,51,26,.10)] backdrop-blur lg:hidden print:hidden">
+        <Link href="/admin" aria-current={path === "/admin" ? "page" : undefined} className={`flex min-h-12 flex-col items-center justify-center gap-1 text-[10px] font-semibold ${path === "/admin" ? "text-brand-700" : "text-ink/70"}`}>
+          <LayoutDashboard size={19} aria-hidden="true" />
+          Dashboard
+        </Link>
+        <Link href="/admin/scan" aria-current={path.startsWith("/admin/scan") ? "page" : undefined} className={`-mt-6 flex min-h-16 flex-col items-center justify-center gap-1 text-[10px] font-bold ${path.startsWith("/admin/scan") ? "text-brand-700" : "text-ink/70"}`}>
+          <span className={`grid h-12 w-12 place-items-center rounded-full border-4 border-[#fbfdf4] shadow-md ${path.startsWith("/admin/scan") ? "bg-brand-700 text-white" : "bg-brand-600 text-white"}`}>
+            <ScanLine size={22} aria-hidden="true" />
+          </span>
+          Check Sheets
+        </Link>
+        <Link href="/admin/results" aria-current={path.startsWith("/admin/results") || path.startsWith("/admin/students") ? "page" : undefined} className={`flex min-h-12 flex-col items-center justify-center gap-1 text-[10px] font-semibold ${path.startsWith("/admin/results") || path.startsWith("/admin/students") ? "text-brand-700" : "text-ink/70"}`}>
+          <Table2 size={19} aria-hidden="true" />
+          Student Reports
+        </Link>
+      </nav>
       <button
         type="button"
         aria-label="Open menu"

@@ -2,7 +2,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowUpDown, ClipboardCheck, Download, FileText, Printer, Search, Trash2, UserRound } from "lucide-react";
+import { ArrowUpDown, ClipboardCheck, Download, FileText, Printer, Search, Table2, Trash2, UserRound } from "lucide-react";
 import { TESTS } from "@/lib/tamanna/tests";
 import { bandOf, normalizeClass, stenOf } from "@/lib/tamanna/norms";
 import { supabase } from "@/lib/supabase/client";
@@ -73,7 +73,7 @@ export function ResultsTable({ rows, email }: { rows: Student[]; email: string }
 
   return (
     <div className="space-y-6">
-    <PageHeader title="Student reports" actions={<Button variant="soft" disabled={!eligibleStudents.length} onClick={() => setManualCheck({})}><ClipboardCheck size={18} /> Manual Check</Button>} />
+    <PageHeader title="Student reports" icon={Table2} actions={<Button variant="soft" disabled={!eligibleStudents.length} onClick={() => setManualCheck({})}><ClipboardCheck size={18} /> Manual Check</Button>} />
     <Card>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm font-semibold text-ink/80">{shown.length} students</p>

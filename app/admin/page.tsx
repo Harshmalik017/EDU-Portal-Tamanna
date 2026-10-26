@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { AlertTriangle, ClipboardCheck, FileText, UserRound, Users, UsersRound } from "lucide-react";
+import { AlertTriangle, ChartColumn, ClipboardCheck, FileText, UserRound, Users, UsersRound } from "lucide-react";
 import { createServer } from "@/lib/supabase/server";
 import { TESTS } from "@/lib/tamanna/tests";
 import { bandOf, normalizeClass, stenOf } from "@/lib/tamanna/norms";
@@ -30,7 +30,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
   const pill = (v: string, l: string) => <Link key={l} href={v ? `/admin?class=${v}` : "/admin"} aria-current={(cls ?? "") === v ? "page" : undefined} className={`rounded-lg px-4 py-1.5 text-sm font-semibold ${(cls ?? "") === v ? "bg-brand-600 text-white" : "hover:bg-brand-50"}`}>{l}</Link>;
   return (
     <div className="space-y-6">
-      <PageHeader title="Dashboard"
+      <PageHeader title="Dashboard" icon={ChartColumn}
         actions={<div className="clay-inset flex gap-1 p-1" aria-label="Filter by class">{[["", "All classes"], ["IX", "Class IX"], ["X", "Class X"]].map(([v, l]) => pill(v, l))}</div>} />
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         <StatCard icon={Users} label="Students checked" value={rows.length} tone="green" />
@@ -47,7 +47,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
             <span className="rounded-full bg-sky-100 px-3 py-1 text-xs font-bold text-sky-900">Average (4–7)</span>
             <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-bold text-green-900">High (8–10)</span>
           </div>
-          <ul className="space-y-4">{perTest.map((t) => (
+          <ul className="grid gap-x-6 gap-y-5 md:grid-cols-2">{perTest.map((t) => (
             <li key={t.code}>
               <div className="mb-1 flex justify-between text-sm"><span className="font-semibold">{t.code} <span className="font-normal">{t.name}</span></span><span>Average marks {t.avg.toFixed(1)} / {t.questions}</span></div>
               <div className="clay-inset flex h-8 overflow-hidden" role="img" aria-label={`${t.code}: ${t.b.High} high students, ${t.b.Average} average students, ${t.b.Low} low students`}>

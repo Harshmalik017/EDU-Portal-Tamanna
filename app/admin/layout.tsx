@@ -26,7 +26,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       <div className="lg:pl-64 print:pl-0">
         <TopBar userName={userName} demo={demo} />
         {demo && <div className="w-full px-4 pt-4 sm:px-6 lg:px-10 2xl:px-12"><DemoBanner /></div>}
-        <main id="main" className="w-full px-4 py-6 sm:px-6 lg:px-10 lg:py-8 2xl:px-12">{children}</main>
+        <main id="main" className="w-full px-4 pt-6 pb-24 sm:px-6 lg:px-10 lg:py-8 2xl:px-12">{children}</main>
         <VersionBadge />
       </div>
     </>

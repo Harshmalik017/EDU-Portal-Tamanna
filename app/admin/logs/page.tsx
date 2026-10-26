@@ -1,3 +1,4 @@
+import { FileText } from "lucide-react";
 import { createServer } from "@/lib/supabase/server";
 import { Card, PageHeader } from "@/components/ui";
 
@@ -42,7 +43,7 @@ export default async function Page() {
   const rows = (subs ?? []) as { id: string; created_at: string; student_id: string }[];
   return (
     <div className="space-y-6">
-      <PageHeader title="Logs & key notes" />
+      <PageHeader title="Logs & key notes" icon={FileText} />
       <Card title="Key notes about this portal">
         <ul className="grid gap-3 sm:grid-cols-2">
           {KEY_NOTES.map((n) => (

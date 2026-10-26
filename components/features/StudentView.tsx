@@ -2,7 +2,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, ClipboardCheck, FileText, Save, Trash2 } from "lucide-react";
+import { ArrowLeft, ClipboardCheck, FileText, Save, Trash2, UserRound } from "lucide-react";
 import { supabase } from "@/lib/supabase/client";
 import { buildProfile } from "@/lib/tamanna/profile";
 import type { Student as S } from "@/lib/types";
@@ -40,6 +40,7 @@ export function StudentView({ initial, imgs, email }: { initial: S; imgs: string
     <div className="space-y-6">
       <PageHeader
         title={`Roll ${s.name}`}
+        icon={UserRound}
         actions={
           <div className="flex flex-wrap gap-2">
             <Link href="/admin/results" className="clay-btn-soft"><ArrowLeft size={18} /> Back to results</Link>

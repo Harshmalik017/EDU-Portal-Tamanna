@@ -1,6 +1,12 @@
 # Changelog
 Format: [Keep a Changelog](https://keepachangelog.com), versions follow [SemVer](https://semver.org). See `versioning.md`.
 
+## [0.9.12] - 2026-10-26
+### Changed
+- **Admin navigation and charts**: added a mobile bottom navigation with a round center Check Sheets action, icons beside admin page headings, and a two-column dashboard chart layout on wider screens
+### Fixed
+- **Student report navigation**: added a direct Back to Student Reports action on individual report pages
+
 ## [0.9.11] - 2026-10-26
 ### Changed
 - **Sidebar and demo controls**: applied the Tamanna green theme to sidebar surfaces and styled Reset sample data as a button
