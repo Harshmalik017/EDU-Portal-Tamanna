@@ -1,6 +1,10 @@
 # Changelog
 Format: [Keep a Changelog](https://keepachangelog.com), versions follow [SemVer](https://semver.org). See `versioning.md`.
 
+## [0.9.17] - 2026-10-26
+### Changed
+- **Dashboard and demo banner**: expanded dashboard summary cards across the row and renamed the notice to "Demo Data Mode: showing sample student records."
+
 ## [0.9.16] - 2026-10-26
 ### Changed
 - **Student reports**: moved verified, score difference, and excluded counts from Dashboard to Student Reports; completed checks now show Recheck instead of Hand Check

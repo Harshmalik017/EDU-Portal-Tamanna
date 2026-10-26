@@ -30,7 +30,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
     <div className="space-y-6">
       <PageHeader title="Dashboard" icon={ChartColumn}
         actions={<div className="clay-inset flex gap-1 p-1" aria-label="Filter by class">{[["", "All classes"], ["IX", "Class IX"], ["X", "Class X"]].map(([v, l]) => pill(v, l))}</div>} />
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+      <div className="grid gap-4 sm:grid-cols-3">
         <StatCard icon={Users} label="Students checked" value={rows.length} tone="green" />
         <StatCard icon={UserRound} label="Male students" value={rows.filter((s) => s.gender === "Male").length} tone="blue" />
         <StatCard icon={UsersRound} label="Female students" value={rows.filter((s) => s.gender === "Female").length} tone="violet" />
