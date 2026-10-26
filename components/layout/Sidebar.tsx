@@ -3,14 +3,13 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { CircleAlert, ClipboardCheck, FileText, KeyRound, LayoutDashboard, Menu, ScanLine, Table2, X } from "lucide-react";
+import { CircleAlert, FileText, KeyRound, LayoutDashboard, Menu, ScanLine, Table2, X } from "lucide-react";
 
 const GROUPS = [
   { label: "School Portal", items: [
     { href: "/admin", label: "Dashboard", sublabel: "Overview", icon: LayoutDashboard },
     { href: "/admin/results", label: "Student Reports", sublabel: "All roll numbers", icon: Table2 },
     { href: "/admin/scan", label: "Check Sheets", sublabel: "Read answer sheets", icon: ScanLine },
-    { href: "/admin/verify", label: "Hand Check", sublabel: "Verify 10–20 sheets", icon: ClipboardCheck },
   ] },
   { label: "Guide & Setup", items: [
     { href: "/admin/key", label: "Answer Key", sublabel: "Correct options", icon: KeyRound },

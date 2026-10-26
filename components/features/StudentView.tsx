@@ -2,20 +2,22 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, FileText, Save, Trash2 } from "lucide-react";
+import { ArrowLeft, ClipboardCheck, FileText, Save, Trash2 } from "lucide-react";
 import { supabase } from "@/lib/supabase/client";
 import { buildProfile } from "@/lib/tamanna/profile";
 import type { Student as S } from "@/lib/types";
 import { Badge, Button, Card, Input, PageHeader, Select } from "@/components/ui";
 import { useToast } from "@/components/Toast";
+import { ManualCheckDialog } from "@/components/features/ManualCheckDialog";
 
 const tone = { Low: "bg-amber-100 text-amber-900", Average: "bg-blue-100 text-blue-900", High: "bg-green-100 text-green-900" } as const;
 
-export function StudentView({ initial, imgs }: { initial: S; imgs: string[] }) {
+export function StudentView({ initial, imgs, email }: { initial: S; imgs: string[]; email: string }) {
   const id = initial.id;
   const router = useRouter();
   const toast = useToast();
   const [s, setS] = useState<S>(initial);
+  const [manualCheckOpen, setManualCheckOpen] = useState(false);
   const p = buildProfile(s);
 
   async function save() {
@@ -41,6 +43,7 @@ export function StudentView({ initial, imgs }: { initial: S; imgs: string[] }) {
         actions={
           <div className="flex flex-wrap gap-2">
             <Link href="/admin/results" className="clay-btn-soft"><ArrowLeft size={18} /> Back to results</Link>
+            {!s.excluded && <Button variant="soft" onClick={() => setManualCheckOpen(true)}><ClipboardCheck size={18} /> Hand Check</Button>}
             <Link href={`/admin/students/${id}/report`} className="clay-btn"><FileText size={18} /> Open report</Link>
           </div>
         }
@@ -82,6 +85,7 @@ export function StudentView({ initial, imgs }: { initial: S; imgs: string[] }) {
             </li>))}</ul>
         </Card>
       </div>
+      {manualCheckOpen && <ManualCheckDialog students={s.excluded ? [] : [s]} initialStudentId={s.id} email={email} onClose={() => setManualCheckOpen(false)} />}
     </div>
   );
 }

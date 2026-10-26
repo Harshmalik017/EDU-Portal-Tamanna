@@ -1,14 +1,14 @@
 import { createServer } from "@/lib/supabase/server";
-import { PageHeader } from "@/components/ui";
 import { ResultsTable } from "@/components/features/ResultsTable";
 import type { Student } from "@/lib/types";
 
 export default async function Page() {
-  const { data } = await (await createServer()).from("students").select("id,name,class,school,gender,excluded,verification_status,scores(test_code,correct)");
+  const sb = await createServer();
+  const [{ data }, { data: { user } }] = await Promise.all([
+    sb.from("students").select("id,name,class,school,gender,excluded,verification_status,manual_scores,scores(test_code,correct)"),
+    sb.auth.getUser(),
+  ]);
   return (
-    <div className="space-y-6">
-      <PageHeader title="Student reports" />
-      <ResultsTable rows={(data ?? []) as unknown as Student[]} />
-    </div>
+    <ResultsTable rows={(data ?? []) as unknown as Student[]} email={user?.email ?? "admin"} />
   );
 }

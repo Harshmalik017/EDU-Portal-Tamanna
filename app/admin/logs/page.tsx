@@ -20,7 +20,7 @@ const KEY_NOTES = [
   },
   {
     title: "5. Hand check every 10–20 sheets",
-    text: "After checking a batch of 10–20 answer sheets, teachers must re-score them by hand with the official scoring key under Hand Check before sharing reports.",
+    text: "After checking a batch of 10–20 answer sheets, teachers must re-score them by hand with the official scoring key using Manual Check in Student Reports before sharing reports.",
   },
   {
     title: "6. Unscored & excluded sheets",

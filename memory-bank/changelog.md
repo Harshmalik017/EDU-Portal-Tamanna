@@ -1,6 +1,11 @@
 # Changelog
 Format: [Keep a Changelog](https://keepachangelog.com), versions follow [SemVer](https://semver.org). See `versioning.md`.
 
+## [0.9.6] - 2026-10-26
+### Changed
+- **Student reports and manual check**: moved individual manual score comparison into Student Reports, with a page-level action and per-student action; the former Hand Check route now redirects to Student Reports
+- **Report action**: added a light-blue View Report button to student rows
+
 ## [0.9.5] - 2026-10-26
 ### Changed
 - **Responsive content width**: remove narrow max-width constraints on admin pages and the landing page, using consistent responsive gutters across the available viewport

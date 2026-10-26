@@ -1,11 +1,12 @@
 "use client";
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowUpDown, Download, FileText, Printer, Search } from "lucide-react";
+import { ArrowUpDown, ClipboardCheck, Download, FileText, Printer, Search } from "lucide-react";
 import { TESTS } from "@/lib/tamanna/tests";
 import { bandOf, normalizeClass, stenOf } from "@/lib/tamanna/norms";
 import type { Student } from "@/lib/types";
-import { Badge, Button, Card, Input, Select } from "@/components/ui";
+import { Badge, Button, Card, Input, PageHeader, Select } from "@/components/ui";
+import { ManualCheckDialog } from "@/components/features/ManualCheckDialog";
 
 const PAGE = 20;
 const raw = (r: Student, c: string) => r.scores.find((s) => s.test_code === c)?.correct ?? null;
@@ -19,10 +20,12 @@ function Cell({ r, c }: { r: Student; c: string }) {
   return <span className="whitespace-nowrap">{v ?? "–"}{s && <span className={`ml-1 rounded-full px-1.5 text-[11px] font-bold ${tone[bandOf(s)]}`} title={`Sten ${s}, ${bandOf(s)}`}>{s}</span>}</span>;
 }
 
-export function ResultsTable({ rows }: { rows: Student[] }) {
+export function ResultsTable({ rows, email }: { rows: Student[]; email: string }) {
   const [q, setQ] = useState(""); const [cls, setCls] = useState("");
   const [sort, setSort] = useState<{ by: string; dir: 1 | -1 }>({ by: "name", dir: 1 });
   const [page, setPage] = useState(0);
+  const [manualCheck, setManualCheck] = useState<{ studentId?: string } | null>(null);
+  const eligibleStudents = rows.filter((row) => !row.excluded);
   const get = (r: Student, by: string): string | number => TESTS.some((t) => t.code === by) ? raw(r, by) ?? -1 : by === "status" ? status(r) : ((r as unknown as Record<string, string>)[by] ?? "");
   const shown = useMemo(() => rows
     .filter((r) => (!cls || normalizeClass(r.class) === cls) && `${r.name} ${r.school}`.toLowerCase().includes(q.toLowerCase()))
@@ -40,6 +43,8 @@ export function ResultsTable({ rows }: { rows: Student[] }) {
   }
 
   return (
+    <div className="space-y-6">
+    <PageHeader title="Student reports" actions={<Button variant="soft" disabled={!eligibleStudents.length} onClick={() => setManualCheck({})}><ClipboardCheck size={18} /> Manual Check</Button>} />
     <Card>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm font-semibold text-ink/80">{shown.length} students</p>
@@ -60,13 +65,16 @@ export function ResultsTable({ rows }: { rows: Student[] }) {
         <>
           <div className="hidden overflow-x-auto md:block">
             <table className="w-full text-left text-sm">
-              <thead><tr>{heads.map(([k, h]) => <th key={k} className="px-2 py-2"><button className="flex items-center gap-1 font-bold" onClick={() => setSort((s) => ({ by: k, dir: s.by === k ? (-s.dir as 1 | -1) : 1 }))}>{h}<ArrowUpDown size={12} /></button></th>)}<th className="px-2 py-2">Report</th></tr></thead>
+              <thead><tr>{heads.map(([k, h]) => <th key={k} className="px-2 py-2"><button className="flex items-center gap-1 font-bold" onClick={() => setSort((s) => ({ by: k, dir: s.by === k ? (-s.dir as 1 | -1) : 1 }))}>{h}<ArrowUpDown size={12} /></button></th>)}<th className="px-2 py-2">Actions</th></tr></thead>
               <tbody>{view.map((r) => (
                 <tr key={r.id} className="border-t border-white/70">
                   <td className="px-2 py-2 font-semibold"><Link className="underline" href={`/admin/students/${r.id}`}>{r.name}</Link></td><td className="px-2 py-2">{r.class}</td><td className="px-2 py-2">{r.school}</td>
                   {TESTS.map((t) => <td key={t.code} className="px-2 py-2"><Cell r={r} c={t.code} /></td>)}
                   <td className="px-2 py-2"><Badge tone={TONE[status(r)]}>{status(r)}</Badge></td>
-                  <td className="px-2 py-2"><Link aria-label={`Report for roll ${r.name}`} href={`/admin/students/${r.id}/report`}><FileText size={18} /></Link></td>
+                  <td className="px-2 py-2"><div className="flex items-center gap-2">
+                    <Button variant="soft" className="!min-h-9 !px-3 !py-1.5 text-xs" disabled={r.excluded} onClick={() => setManualCheck({ studentId: r.id })}><ClipboardCheck size={15} /> Hand Check</Button>
+                    <Link href={`/admin/students/${r.id}/report`} className="inline-flex min-h-9 items-center gap-1.5 rounded-xl bg-sky-100 px-3 py-1.5 text-xs font-bold text-sky-800 transition hover:bg-sky-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600"><FileText size={15} /> View Report</Link>
+                  </div></td>
                 </tr>))}</tbody>
             </table>
           </div>
@@ -75,7 +83,10 @@ export function ResultsTable({ rows }: { rows: Student[] }) {
               <div className="flex justify-between gap-2"><Link href={`/admin/students/${r.id}`} className="font-extrabold underline">Roll {r.name}</Link><Badge tone={TONE[status(r)]}>{status(r)}</Badge></div>
               <p className="text-xs">Class {r.class} · {r.school}</p>
               <p className="mt-2 grid grid-cols-3 gap-1 text-xs">{TESTS.map((t) => <span key={t.code}><b>{t.code}</b> <Cell r={r} c={t.code} /></span>)}</p>
-              <Link href={`/admin/students/${r.id}/report`} className="mt-3 inline-flex items-center gap-1 text-sm font-bold underline"><FileText size={16} /> Open report</Link>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Button variant="soft" className="!min-h-9 !px-3 !py-1.5 text-xs" disabled={r.excluded} onClick={() => setManualCheck({ studentId: r.id })}><ClipboardCheck size={15} /> Hand Check</Button>
+                <Link href={`/admin/students/${r.id}/report`} className="inline-flex min-h-9 items-center gap-1.5 rounded-xl bg-sky-100 px-3 py-1.5 text-xs font-bold text-sky-800 transition hover:bg-sky-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600"><FileText size={15} /> View Report</Link>
+              </div>
             </li>))}</ul>
           <div className="mt-4 flex items-center justify-between">
             <Button variant="soft" disabled={page === 0} onClick={() => setPage(page - 1)}>Previous</Button>
@@ -84,5 +95,7 @@ export function ResultsTable({ rows }: { rows: Student[] }) {
           </div>
         </>)}
     </Card>
+    {manualCheck && <ManualCheckDialog students={eligibleStudents} initialStudentId={manualCheck.studentId} email={email} onClose={() => setManualCheck(null)} />}
+    </div>
   );
 }
