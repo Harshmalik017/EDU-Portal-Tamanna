@@ -1,6 +1,11 @@
 # Changelog
 Format: [Keep a Changelog](https://keepachangelog.com), versions follow [SemVer](https://semver.org). See `versioning.md`.
 
+## [0.9.11] - 2026-10-26
+### Changed
+- **Sidebar and demo controls**: applied the Tamanna green theme to sidebar surfaces and styled Reset sample data as a button
+- **Student report actions**: replaced View Report text with Report, added Profile navigation, and added a red delete action that removes student files and records
+
 ## [0.9.10] - 2026-10-26
 ### Changed
 - **Student reports and dashboard gender counts**: show gender in the desktop and mobile student reports list and display Male and Female student counts on the dashboard

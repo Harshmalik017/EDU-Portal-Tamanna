@@ -1,12 +1,15 @@
 "use client";
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowUpDown, ClipboardCheck, Download, FileText, Printer, Search } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { ArrowUpDown, ClipboardCheck, Download, FileText, Printer, Search, Trash2, UserRound } from "lucide-react";
 import { TESTS } from "@/lib/tamanna/tests";
 import { bandOf, normalizeClass, stenOf } from "@/lib/tamanna/norms";
+import { supabase } from "@/lib/supabase/client";
 import type { Student } from "@/lib/types";
 import { Badge, Button, Card, Input, PageHeader, Select } from "@/components/ui";
 import { ManualCheckDialog } from "@/components/features/ManualCheckDialog";
+import { useToast } from "@/components/Toast";
 
 const PAGE = 20;
 const raw = (r: Student, c: string) => r.scores.find((s) => s.test_code === c)?.correct ?? null;
@@ -21,10 +24,13 @@ function Cell({ r, c }: { r: Student; c: string }) {
 }
 
 export function ResultsTable({ rows, email }: { rows: Student[]; email: string }) {
+  const router = useRouter();
+  const toast = useToast();
   const [q, setQ] = useState(""); const [cls, setCls] = useState("");
   const [sort, setSort] = useState<{ by: string; dir: 1 | -1 }>({ by: "name", dir: 1 });
   const [page, setPage] = useState(0);
   const [manualCheck, setManualCheck] = useState<{ studentId?: string } | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const eligibleStudents = rows.filter((row) => !row.excluded);
   const get = (r: Student, by: string): string | number => TESTS.some((t) => t.code === by) ? raw(r, by) ?? -1 : by === "status" ? status(r) : ((r as unknown as Record<string, string>)[by] ?? "");
   const shown = useMemo(() => rows
@@ -33,6 +39,29 @@ export function ResultsTable({ rows, email }: { rows: Student[]; email: string }
   const pages = Math.max(1, Math.ceil(shown.length / PAGE));
   const view = shown.slice(page * PAGE, page * PAGE + PAGE);
   const heads: [string, string][] = [["name", "Roll no."], ["class", "Class"], ["gender", "Gender"], ["school", "School"], ...TESTS.map((t) => [t.code, t.code] as [string, string]), ["status", "Check"]];
+
+  async function deleteStudent(student: Student) {
+    if (!confirm(`Delete roll ${student.name} and all scores? This cannot be undone.`)) return;
+    setDeletingId(student.id);
+    const { data: submissions, error: submissionError } = await supabase.from("submissions").select("image_paths").eq("student_id", student.id);
+    if (submissionError) {
+      setDeletingId(null);
+      return toast("Could not load student files before deletion.");
+    }
+    const paths = (submissions ?? []).flatMap((submission: { image_paths?: string[] | null }) => submission.image_paths ?? []);
+    if (paths.length) {
+      const { error: storageError } = await supabase.storage.from("sheets").remove(paths);
+      if (storageError) {
+        setDeletingId(null);
+        return toast("Could not delete student files.");
+      }
+    }
+    const { error } = await supabase.from("students").delete().eq("id", student.id);
+    setDeletingId(null);
+    if (error) return toast("Could not delete student.");
+    toast("Deleted");
+    router.refresh();
+  }
 
   function exportCsv() {
     const head = ["Roll number", "Class", "Gender", "School", ...TESTS.flatMap((t) => [`${t.code} score`, `${t.code} sten`, `${t.code} level`]), "Verification", "Excluded"];
@@ -75,7 +104,9 @@ export function ResultsTable({ rows, email }: { rows: Student[]; email: string }
                   <td className="border-b border-r border-(--line) px-3 py-2.5"><Badge tone={TONE[status(r)]}>{status(r)}</Badge></td>
                   <td className="border-b border-(--line) px-3 py-2.5"><div className="flex items-center gap-2">
                     <Button variant="soft" className="!min-h-9 !px-3 !py-1.5 text-xs" disabled={r.excluded} onClick={() => setManualCheck({ studentId: r.id })}><ClipboardCheck size={15} /> Hand Check</Button>
-                    <Link href={`/admin/students/${r.id}/report`} className="inline-flex min-h-9 items-center gap-1.5 rounded-xl bg-sky-100 px-3 py-1.5 text-xs font-bold text-sky-800 transition hover:bg-sky-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600"><FileText size={15} /> View Report</Link>
+                    <Link href={`/admin/students/${r.id}/report`} aria-label={`Report for roll ${r.name}`} title="Report" className="inline-flex min-h-9 items-center gap-1.5 rounded-xl bg-sky-100 px-3 py-1.5 text-xs font-bold text-sky-800 transition hover:bg-sky-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600"><FileText size={15} /> Report</Link>
+                    <Link href={`/admin/students/${r.id}`} className="inline-flex min-h-9 items-center gap-1.5 rounded-xl bg-brand-50 px-3 py-1.5 text-xs font-bold text-brand-700 transition hover:bg-brand-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"><UserRound size={15} /> Profile</Link>
+                    <button type="button" aria-label={`Delete roll ${r.name}`} title="Delete student" disabled={deletingId === r.id} onClick={() => deleteStudent(r)} className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-red-200 bg-red-50 text-red-700 transition hover:bg-red-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600 disabled:opacity-50"><Trash2 size={17} /></button>
                   </div></td>
                 </tr>))}</tbody>
             </table>
@@ -87,7 +118,9 @@ export function ResultsTable({ rows, email }: { rows: Student[]; email: string }
               <p className="mt-2 grid grid-cols-3 gap-1 text-xs">{TESTS.map((t) => <span key={t.code}><b>{t.code}</b> <Cell r={r} c={t.code} /></span>)}</p>
               <div className="mt-3 flex flex-wrap gap-2">
                 <Button variant="soft" className="!min-h-9 !px-3 !py-1.5 text-xs" disabled={r.excluded} onClick={() => setManualCheck({ studentId: r.id })}><ClipboardCheck size={15} /> Hand Check</Button>
-                <Link href={`/admin/students/${r.id}/report`} className="inline-flex min-h-9 items-center gap-1.5 rounded-xl bg-sky-100 px-3 py-1.5 text-xs font-bold text-sky-800 transition hover:bg-sky-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600"><FileText size={15} /> View Report</Link>
+                <Link href={`/admin/students/${r.id}/report`} className="inline-flex min-h-9 items-center gap-1.5 rounded-xl bg-sky-100 px-3 py-1.5 text-xs font-bold text-sky-800 transition hover:bg-sky-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600"><FileText size={15} /> Report</Link>
+                <Link href={`/admin/students/${r.id}`} className="inline-flex min-h-9 items-center gap-1.5 rounded-xl bg-brand-50 px-3 py-1.5 text-xs font-bold text-brand-700 transition hover:bg-brand-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"><UserRound size={15} /> Profile</Link>
+                <button type="button" aria-label={`Delete roll ${r.name}`} title="Delete student" disabled={deletingId === r.id} onClick={() => deleteStudent(r)} className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-red-200 bg-red-50 text-red-700 transition hover:bg-red-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600 disabled:opacity-50"><Trash2 size={17} /></button>
               </div>
             </li>))}</ul>
           <div className="mt-4 flex items-center justify-between">

@@ -36,7 +36,7 @@ export function Sidebar({ demo }: { demo: boolean }) {
 
   const nav = (
     <div className="flex h-full flex-col">
-      <div className="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-(--line) px-4">
+      <div className="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-brand-200 bg-brand-100/70 px-4">
         <Link href="/" aria-label="Tamanna home">
           <Image src="/brand/logo.png" alt="Tamanna" width={110} height={24} priority />
         </Link>
@@ -44,7 +44,7 @@ export function Sidebar({ demo }: { demo: boolean }) {
       <nav aria-label="Main menu" className="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain px-3 py-4">
         {GROUPS.map((g) => (
           <div key={g.label} className="space-y-1">
-            <p className="px-2.5 pb-1 text-[10px] font-bold uppercase tracking-widest text-ink/60">{g.label}</p>
+            <p className="px-2.5 pb-1 text-[10px] font-bold uppercase tracking-widest text-brand-700">{g.label}</p>
             {g.items.map(({ href, label, icon: Icon }) => {
               const isActive = active(href);
               return (
@@ -81,7 +81,7 @@ export function Sidebar({ demo }: { demo: boolean }) {
         <Menu size={18} />
       </button>
       {open && <div className="fixed inset-0 z-40 bg-[#25331a]/50 lg:hidden print:hidden" onClick={() => setOpen(false)} aria-hidden />}
-      <aside aria-label="Main menu" className={`fixed inset-y-0 left-0 z-50 flex w-72 flex-col overflow-hidden border-r border-(--line) bg-[#fbfdf4] transition-transform lg:z-20 lg:w-64 lg:translate-x-0 print:hidden ${open ? "translate-x-0" : "-translate-x-full"}`}>
+      <aside aria-label="Main menu" className={`fixed inset-y-0 left-0 z-50 flex w-72 flex-col overflow-hidden border-r border-brand-200 bg-brand-50 transition-transform lg:z-20 lg:w-64 lg:translate-x-0 print:hidden ${open ? "translate-x-0" : "-translate-x-full"}`}>
         {open && <button aria-label="Close menu" onClick={() => setOpen(false)} className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-lg bg-red-600 text-white shadow-sm hover:bg-red-700"><X size={16} /></button>}
         {nav}
       </aside>

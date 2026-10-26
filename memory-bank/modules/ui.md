@@ -4,5 +4,6 @@ Admin content and the landing page use the available viewport width with respons
 The dashboard omits scan and print shortcuts and no longer prompts for batch hand checks; demo mode is labeled "Demo Data" in the sidebar.
 Dashboard performance charts use level-colored legend pills and bar labels, with student counts listed beneath each bar.
 The desktop Student Reports table uses a brand-green header and clear cell borders; it stays horizontally scrollable when needed.
+Sidebar surfaces use the Tamanna green palette. The demo reset control is a button; Student Reports actions include Hand Check, Report, Profile, and delete.
 Routes: `/admin` dashboard, `/admin/results` (student reports and single-student manual checks), `/admin/students/[id]`, `/admin/scan` (check answer sheets), `/admin/key` (answer key), `/admin/logs` (key notes about the portal + recent sheet activity). The old `/admin/verify` route redirects to Student Reports.
 Pending: dark mode, Hindi labels, auto-capture in camera, service worker (offline).
