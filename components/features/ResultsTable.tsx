@@ -32,7 +32,7 @@ export function ResultsTable({ rows, email }: { rows: Student[]; email: string }
     .sort((a, b) => { const x = get(a, sort.by), y = get(b, sort.by); return (x > y ? 1 : x < y ? -1 : 0) * sort.dir; }), [rows, q, cls, sort]);  
   const pages = Math.max(1, Math.ceil(shown.length / PAGE));
   const view = shown.slice(page * PAGE, page * PAGE + PAGE);
-  const heads: [string, string][] = [["name", "Roll no."], ["class", "Class"], ["school", "School"], ...TESTS.map((t) => [t.code, t.code] as [string, string]), ["status", "Check"]];
+  const heads: [string, string][] = [["name", "Roll no."], ["class", "Class"], ["gender", "Gender"], ["school", "School"], ...TESTS.map((t) => [t.code, t.code] as [string, string]), ["status", "Check"]];
 
   function exportCsv() {
     const head = ["Roll number", "Class", "Gender", "School", ...TESTS.flatMap((t) => [`${t.code} score`, `${t.code} sten`, `${t.code} level`]), "Verification", "Excluded"];
@@ -63,15 +63,17 @@ export function ResultsTable({ rows, email }: { rows: Student[]; email: string }
       </div>
       {!shown.length ? <p className="py-10 text-center">No results.</p> : (
         <>
-          <div className="hidden overflow-x-auto md:block">
-            <table className="w-full text-left text-sm">
-              <thead><tr>{heads.map(([k, h]) => <th key={k} className="px-2 py-2"><button className="flex items-center gap-1 font-bold" onClick={() => setSort((s) => ({ by: k, dir: s.by === k ? (-s.dir as 1 | -1) : 1 }))}>{h}<ArrowUpDown size={12} /></button></th>)}<th className="px-2 py-2">Actions</th></tr></thead>
+          <div className="hidden overflow-x-auto rounded-xl border border-(--line) md:block">
+            <table className="min-w-[1200px] w-full border-collapse text-left text-sm">
+              <thead className="bg-brand-100 text-brand-700">
+                <tr>{heads.map(([k, h]) => <th key={k} scope="col" className="border-b border-r border-(--line) px-3 py-3 last:border-r-0"><button className="flex items-center gap-1 font-bold" onClick={() => setSort((s) => ({ by: k, dir: s.by === k ? (-s.dir as 1 | -1) : 1 }))}>{h}<ArrowUpDown size={12} /></button></th>)}<th scope="col" className="border-b border-(--line) px-3 py-3">Actions</th></tr>
+              </thead>
               <tbody>{view.map((r) => (
-                <tr key={r.id} className="border-t border-white/70">
-                  <td className="px-2 py-2 font-semibold"><Link className="underline" href={`/admin/students/${r.id}`}>{r.name}</Link></td><td className="px-2 py-2">{r.class}</td><td className="px-2 py-2">{r.school}</td>
-                  {TESTS.map((t) => <td key={t.code} className="px-2 py-2"><Cell r={r} c={t.code} /></td>)}
-                  <td className="px-2 py-2"><Badge tone={TONE[status(r)]}>{status(r)}</Badge></td>
-                  <td className="px-2 py-2"><div className="flex items-center gap-2">
+                <tr key={r.id} className="transition-colors hover:bg-brand-50/70">
+                  <td className="border-b border-r border-(--line) px-3 py-2.5 font-semibold"><Link className="underline" href={`/admin/students/${r.id}`}>{r.name}</Link></td><td className="border-b border-r border-(--line) px-3 py-2.5">{r.class}</td><td className="border-b border-r border-(--line) px-3 py-2.5">{r.gender}</td><td className="border-b border-r border-(--line) px-3 py-2.5">{r.school}</td>
+                  {TESTS.map((t) => <td key={t.code} className="border-b border-r border-(--line) px-3 py-2.5"><Cell r={r} c={t.code} /></td>)}
+                  <td className="border-b border-r border-(--line) px-3 py-2.5"><Badge tone={TONE[status(r)]}>{status(r)}</Badge></td>
+                  <td className="border-b border-(--line) px-3 py-2.5"><div className="flex items-center gap-2">
                     <Button variant="soft" className="!min-h-9 !px-3 !py-1.5 text-xs" disabled={r.excluded} onClick={() => setManualCheck({ studentId: r.id })}><ClipboardCheck size={15} /> Hand Check</Button>
                     <Link href={`/admin/students/${r.id}/report`} className="inline-flex min-h-9 items-center gap-1.5 rounded-xl bg-sky-100 px-3 py-1.5 text-xs font-bold text-sky-800 transition hover:bg-sky-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600"><FileText size={15} /> View Report</Link>
                   </div></td>
@@ -81,7 +83,7 @@ export function ResultsTable({ rows, email }: { rows: Student[]; email: string }
           <ul className="space-y-3 md:hidden">{view.map((r) => (
             <li key={r.id} className="clay-inset p-4">
               <div className="flex justify-between gap-2"><Link href={`/admin/students/${r.id}`} className="font-extrabold underline">Roll {r.name}</Link><Badge tone={TONE[status(r)]}>{status(r)}</Badge></div>
-              <p className="text-xs">Class {r.class} · {r.school}</p>
+              <p className="text-xs">Class {r.class} · {r.gender} · {r.school}</p>
               <p className="mt-2 grid grid-cols-3 gap-1 text-xs">{TESTS.map((t) => <span key={t.code}><b>{t.code}</b> <Cell r={r} c={t.code} /></span>)}</p>
               <div className="mt-3 flex flex-wrap gap-2">
                 <Button variant="soft" className="!min-h-9 !px-3 !py-1.5 text-xs" disabled={r.excluded} onClick={() => setManualCheck({ studentId: r.id })}><ClipboardCheck size={15} /> Hand Check</Button>

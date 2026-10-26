@@ -12,7 +12,8 @@ export function demoKey() {
   return rows;
 }
 
-const PEOPLE: [string, string, string][] = [
+type DemoGender = "Male" | "Female";
+const PEOPLE: readonly [string, string, DemoGender][] = [
   ["101", "IX", "Female"], ["102", "X", "Male"], ["103", "IX", "Female"], ["104", "X", "Male"], ["105", "X", "Female"],
   ["106", "IX", "Male"], ["107", "X", "Female"], ["108", "X", "Male"], ["109", "IX", "Female"], ["110", "X", "Male"],
   ["111", "IX", "Female"], ["112", "IX", "Male"], ["113", "X", "Female"], ["114", "X", "Male"], ["115", "IX", "Female"],

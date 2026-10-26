@@ -1,5 +1,8 @@
 # Module: UI
 Layout: `components/layout/Sidebar` (left menu with non-technical teacher labels, drawer on mobile), `components/layout/TopBar`, `app/admin/layout.tsx`. Shared: `components/ui` (Button, Card with header slots, Badge, StatCard, PageHeader, Input, Select, Skeleton), `Toast` (useToast), `CameraCapture`, `DemoBanner`, `VersionBadge`.
 Admin content and the landing page use the available viewport width with responsive gutters rather than a narrow fixed max width. The mobile sidebar locks background scrolling while open and keeps overflow scrolling within the menu. The landing page uses a hamburger toggle to expand its mobile section menu; selecting a section closes it. Visible demo indicators use a pulse animation that is disabled for reduced-motion preferences. The login page includes Home links in its top bar and footer.
+The dashboard omits scan and print shortcuts and no longer prompts for batch hand checks; demo mode is labeled "Demo Data" in the sidebar.
+Dashboard performance charts use level-colored legend pills and bar labels, with student counts listed beneath each bar.
+The desktop Student Reports table uses a brand-green header and clear cell borders; it stays horizontally scrollable when needed.
 Routes: `/admin` dashboard, `/admin/results` (student reports and single-student manual checks), `/admin/students/[id]`, `/admin/scan` (check answer sheets), `/admin/key` (answer key), `/admin/logs` (key notes about the portal + recent sheet activity). The old `/admin/verify` route redirects to Student Reports.
 Pending: dark mode, Hindi labels, auto-capture in camera, service worker (offline).

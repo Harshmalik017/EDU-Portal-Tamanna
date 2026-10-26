@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { AlertTriangle, ClipboardCheck, FileText, ScanLine, Users } from "lucide-react";
+import { AlertTriangle, ClipboardCheck, FileText, UserRound, Users, UsersRound } from "lucide-react";
 import { createServer } from "@/lib/supabase/server";
 import { TESTS } from "@/lib/tamanna/tests";
 import { bandOf, normalizeClass, stenOf } from "@/lib/tamanna/norms";
@@ -32,28 +32,36 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
     <div className="space-y-6">
       <PageHeader title="Dashboard"
         actions={<div className="clay-inset flex gap-1 p-1" aria-label="Filter by class">{[["", "All classes"], ["IX", "Class IX"], ["X", "Class X"]].map(([v, l]) => pill(v, l))}</div>} />
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         <StatCard icon={Users} label="Students checked" value={rows.length} tone="green" />
+        <StatCard icon={UserRound} label="Male students" value={rows.filter((s) => s.gender === "Male").length} tone="blue" />
+        <StatCard icon={UsersRound} label="Female students" value={rows.filter((s) => s.gender === "Female").length} tone="violet" />
         <StatCard icon={ClipboardCheck} label="Verified by hand" value={count("verified")} hint={`${pending} waiting`} tone="blue" />
         <StatCard icon={AlertTriangle} label="Score differences" value={count("mismatch")} tone="amber" />
         <StatCard icon={FileText} label="Excluded sheets" value={all.filter((s) => s.excluded).length} tone="violet" />
       </div>
-      {pending >= 10 && (
-        <Card className="flex flex-wrap items-center justify-between gap-3 !border-amber-300"><p className="font-semibold">{pending} student reports are waiting for a hand check.</p>
-          <Link href="/admin/verify" className="clay-btn"><ClipboardCheck size={18} /> Hand check a batch</Link></Card>)}
-      <div className="flex flex-wrap gap-3">
-        <Link href="/admin/scan" className="clay-btn"><ScanLine size={18} /> Check answer sheet</Link>
-        <Link href={`/admin/reports${cls ? `?class=${cls}` : ""}`} className="clay-btn-soft"><FileText size={18} /> Print reports</Link>
-      </div>
       {rows.length === 0 ? <Card className="text-center">No students yet.</Card> : (
-        <Card title="Performance by sub-test" description="Low (1–3) · Average (4–7) · High (8–10)">
+        <Card title="Performance by sub-test">
+          <div className="mb-5 flex flex-wrap gap-2" aria-label="Performance levels">
+            <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-900">Low (1–3)</span>
+            <span className="rounded-full bg-sky-100 px-3 py-1 text-xs font-bold text-sky-900">Average (4–7)</span>
+            <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-bold text-green-900">High (8–10)</span>
+          </div>
           <ul className="space-y-4">{perTest.map((t) => (
             <li key={t.code}>
               <div className="mb-1 flex justify-between text-sm"><span className="font-semibold">{t.code} <span className="font-normal">{t.name}</span></span><span>Average marks {t.avg.toFixed(1)} / {t.questions}</span></div>
-              <div className="clay-inset flex h-5 overflow-hidden" role="img" aria-label={`${t.code}: ${t.b.High} high, ${t.b.Average} average, ${t.b.Low} low`}>
-                {t.b.High > 0 && <div className="bg-green-600" style={{ flex: t.b.High }} />}{t.b.Average > 0 && <div className="bg-sky-600" style={{ flex: t.b.Average }} />}{t.b.Low > 0 && <div className="bg-amber-500" style={{ flex: t.b.Low }} />}
+              <div className="clay-inset flex h-8 overflow-hidden" role="img" aria-label={`${t.code}: ${t.b.High} high students, ${t.b.Average} average students, ${t.b.Low} low students`}>
+                {(["High", "Average", "Low"] as const).map((level) => t.b[level] > 0 && (
+                  <div key={level} className={`flex min-w-fit items-center justify-center px-2 text-[10px] font-bold text-white ${level === "High" ? "bg-green-600" : level === "Average" ? "bg-sky-600" : "bg-amber-500"}`} style={{ flex: t.b[level] }}>
+                    {level}
+                  </div>
+                ))}
               </div>
-              <p className="mt-1 text-xs">High {t.b.High} · Average {t.b.Average} · Low {t.b.Low}</p>
+              <p className="mt-1 flex flex-wrap gap-x-3 text-xs">
+                <span className="font-semibold text-green-800">High {t.b.High} students</span>
+                <span className="font-semibold text-sky-800">Average {t.b.Average} students</span>
+                <span className="font-semibold text-amber-900">Low {t.b.Low} students</span>
+              </p>
             </li>))}</ul>
         </Card>)}
     </div>

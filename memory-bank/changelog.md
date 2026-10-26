@@ -1,6 +1,23 @@
 # Changelog
 Format: [Keep a Changelog](https://keepachangelog.com), versions follow [SemVer](https://semver.org). See `versioning.md`.
 
+## [0.9.10] - 2026-10-26
+### Changed
+- **Student reports and dashboard gender counts**: show gender in the desktop and mobile student reports list and display Male and Female student counts on the dashboard
+- **Demo records**: explicitly type all demo student genders and document the 12/12 sample distribution
+
+## [0.9.9] - 2026-10-26
+### Changed
+- **Student reports table**: added a brand-green table header, defined cell borders, and row hover styling while retaining horizontal scrolling on smaller screens
+
+## [0.9.8] - 2026-10-26
+### Changed
+- **Dashboard performance chart**: added level-colored legend pills and labels inside each bar; moved student counts below the bars with matching level colors
+
+## [0.9.7] - 2026-10-26
+### Changed
+- **Dashboard and demo label**: removed scan, print-report, and hand-check prompt actions from the dashboard; renamed the sidebar indicator to Demo Data
+
 ## [0.9.6] - 2026-10-26
 ### Changed
 - **Student reports and manual check**: moved individual manual score comparison into Student Reports, with a page-level action and per-student action; the former Hand Check route now redirects to Student Reports
