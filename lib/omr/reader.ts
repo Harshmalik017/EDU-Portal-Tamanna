@@ -1,18 +1,82 @@
 import { OPTIONS } from "@/lib/tamanna/tests";
-import { DEFAULT_TEMPLATE, REF_WIDTH, REF_HEIGHT, type Column } from "@/lib/omr/template";
+import { DEFAULT_TEMPLATE, HEADER_MASK_RATIO, REF_WIDTH, REF_HEIGHT, type Column } from "@/lib/omr/template";
+import * as pdfjs from "pdfjs-dist/legacy/build/pdf.mjs";
+
+pdfjs.GlobalWorkerOptions.workerSrc = new URL("pdfjs-dist/legacy/build/pdf.worker.mjs", import.meta.url).toString();
 
 export type Marked = string | null | "MULTI";
 export type PageResult = Record<string, Marked[]>; // test code -> marked option per question (index 0 = Q1)
 export type Quality = { ok: boolean; issues: string[] };
 export type Inspection = { answers: PageResult; quality: Quality; overlay: string; crop: (test: string, q: number) => string | null };
 
+async function normalizedPage(source: CanvasImageSource, name: string) {
+  const canvas = document.createElement("canvas");
+  canvas.width = REF_WIDTH;
+  canvas.height = REF_HEIGHT;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Could not prepare the answer-sheet page.");
+  ctx.fillStyle = "#fff";
+  ctx.fillRect(0, 0, REF_WIDTH, REF_HEIGHT);
+  ctx.drawImage(source, 0, 0, REF_WIDTH, REF_HEIGHT);
+  ctx.fillStyle = "#000";
+  ctx.fillRect(0, 0, REF_WIDTH, Math.ceil(REF_HEIGHT * HEADER_MASK_RATIO));
+  const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.92));
+  if (!blob) throw new Error("Could not prepare the answer-sheet page.");
+  return new File([blob], name, { type: "image/jpeg" });
+}
+
+export async function redactPage(file: File | Blob, page: 1 | 2) {
+  const bitmap = await createImageBitmap(file);
+  try {
+    return await normalizedPage(bitmap, `answer-sheet-page-${page}.jpg`);
+  } finally {
+    bitmap.close();
+  }
+}
+
+export async function renderPdfPages(file: File): Promise<[File, File]> {
+  const pdf = await pdfjs.getDocument({
+    data: new Uint8Array(await file.arrayBuffer()),
+    isEvalSupported: false,
+  }).promise;
+  try {
+    if (pdf.numPages !== 2) throw new Error("Answer-sheet PDFs must contain exactly two pages.");
+    const rendered: File[] = [];
+    for (const number of [1, 2] as const) {
+      const page = await pdf.getPage(number);
+      const unitViewport = page.getViewport({ scale: 1 });
+      const rotation = unitViewport.width > unitViewport.height ? (page.rotate + 90) % 360 : page.rotate;
+      const orientedViewport = page.getViewport({ scale: 1, rotation });
+      const viewport = page.getViewport({ scale: REF_WIDTH / orientedViewport.width, rotation });
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.ceil(viewport.width);
+      canvas.height = Math.ceil(viewport.height);
+      const ctx = canvas.getContext("2d", { alpha: false });
+      if (!ctx) throw new Error("Could not render the answer-sheet page.");
+      ctx.fillStyle = "#fff";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      await page.render({ canvasContext: ctx, viewport }).promise;
+      rendered.push(await normalizedPage(canvas, `answer-sheet-page-${number}.jpg`));
+      page.cleanup();
+      canvas.width = 0;
+      canvas.height = 0;
+    }
+    return [rendered[0], rendered[1]];
+  } finally {
+    await pdf.destroy();
+  }
+}
+
 export async function load(file: File | Blob) {
   const bmp = await createImageBitmap(file);
   const canvas = document.createElement("canvas");
   canvas.width = REF_WIDTH; canvas.height = REF_HEIGHT;
   const ctx = canvas.getContext("2d", { willReadFrequently: true })!;
-  ctx.drawImage(bmp, 0, 0, REF_WIDTH, REF_HEIGHT);
-  bmp.close();
+  try {
+    ctx.drawImage(bmp, 0, 0, REF_WIDTH, REF_HEIGHT);
+  } finally {
+    bmp.close();
+  }
   const { data } = ctx.getImageData(0, 0, REF_WIDTH, REF_HEIGHT);
   const gray = new Uint8ClampedArray(REF_WIDTH * REF_HEIGHT);
   for (let i = 0; i < gray.length; i++) gray[i] = 0.299 * data[i * 4] + 0.587 * data[i * 4 + 1] + 0.114 * data[i * 4 + 2];

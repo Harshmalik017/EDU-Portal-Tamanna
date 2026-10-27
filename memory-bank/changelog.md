@@ -1,6 +1,12 @@
 # Changelog
 Format: [Keep a Changelog](https://keepachangelog.com), versions follow [SemVer](https://semver.org). See `versioning.md`.
 
+## [0.10.0] - 2026-10-27
+### Added
+- **Answer-sheet scanning**: upload one two-page PDF or scan pages sequentially; student-name areas are masked before review and storage
+### Changed
+- **Demo data**: reduced the sample dataset to one male Class IX student with school information blank
+
 ## [0.9.17] - 2026-10-26
 ### Changed
 - **Dashboard and demo banner**: expanded dashboard summary cards across the row and renamed the notice to "Demo Data Mode: showing sample student records."

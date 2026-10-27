@@ -10,7 +10,7 @@ Analysis must use **only** the Tamanna test booklet / Guide for Teachers and Par
 ## Scope (v0.4)
 - Landing page + admin login
 - Dashboard, results (sort, search, paginate), student detail, answer key editor, calibration (v0.3.0)
-- Scan or upload 2 pages per student (page 21: LA, AR, VR, MR; page 22: NA, SA, PA)
+- Scan both answer-sheet pages sequentially or upload one two-page PDF (page 21: LA, AR, VR, MR; page 22: NA, SA, PA)
 - Per-test scoring: correct / wrong / blank / double-marked
 - Results table + CSV export
 - Responsive on phone, tablet, desktop

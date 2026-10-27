@@ -1,6 +1,6 @@
 {
   "name": "tamanna-portal",
-  "version": "0.9.17",
+  "version": "0.10.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -14,22 +14,23 @@
     "ci": "npm run typecheck && npm run check:norms && npm run check:report && npm run build"
   },
   "dependencies": {
+    "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.45.0",
     "clsx": "^2.1.1",
     "lucide-react": "^0.451.0",
     "next": "16.4.2",
+    "pdfjs-dist": "^4.10.38",
     "react": "^19.1.10",
-    "react-dom": "^19.1.10",
-    "@supabase/ssr": "^0.5.2"
+    "react-dom": "^19.1.10"
   },
   "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.3",
     "@types/node": "^20.14.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "typescript": "^5.5.4",
-    "tsx": "^4.19.0",
     "tailwindcss": "^4.3.3",
-    "@tailwindcss/postcss": "^4.3.3"
+    "tsx": "^4.19.0",
+    "typescript": "^5.5.4"
   },
   "engines": {
     "node": ">=20.9"
