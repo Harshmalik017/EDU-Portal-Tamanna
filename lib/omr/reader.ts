@@ -114,19 +114,27 @@ export function checkQuality(gray: Uint8ClampedArray): Quality {
   return { ok: issues.length === 0, issues };
 }
 
-const bubbleXY = (c: Column, i: number, k: number) => ({
-  x: c.xA + k * c.xStep,
-  y: c.y0 + i * c.pitch + Math.floor(i / c.breakEvery) * c.breakGap,
-});
+const bubbleXY = (c: Column, i: number, k: number) => {
+  const y = c.y0 + i * c.pitch + Math.floor(i / c.breakEvery) * c.breakGap;
+  return { x: c.xA + k * c.xStep + c.xSlope * (y - c.y0), y };
+};
 
-function meanGray(gray: Uint8ClampedArray, cx: number, cy: number, r = 6) {
-  let total = 0, sum = 0;
+function bubbleStats(gray: Uint8ClampedArray, cx: number, cy: number, r = 4) {
+  let total = 0, sum = 0, sumSquared = 0;
   for (let y = Math.round(cy - r); y <= cy + r; y++)
     for (let x = Math.round(cx - r); x <= cx + r; x++) {
       if (x < 0 || y < 0 || x >= REF_WIDTH || y >= REF_HEIGHT || (x - cx) ** 2 + (y - cy) ** 2 > r * r) continue;
-      sum += gray[y * REF_WIDTH + x]; total++;
+      const value = gray[y * REF_WIDTH + x];
+      sum += value;
+      sumSquared += value * value;
+      total++;
     }
-  return sum / Math.max(total, 1);
+  const mean = sum / Math.max(total, 1);
+  return { mean, variance: sumSquared / Math.max(total, 1) - mean * mean };
+}
+
+export function isFilledBubble(mean: number, variance: number, baseline: number) {
+  return mean < 175 && baseline - mean >= 20 && variance < 5000;
 }
 
 /** Read one page and return answers, a quality report and a debug overlay image (data URL). */
@@ -146,9 +154,9 @@ export async function inspectPage(file: File | Blob, page: 1 | 2, template: Colu
   for (const col of template.filter((c) => c.page === page)) {
     answers[col.test] ??= [];
     for (let i = 0; i < col.count; i++) {
-      const means = OPTIONS.map((_, k) => { const p = bubbleXY(col, i, k); return meanGray(gray, p.x, p.y); });
-      const background = [...means].sort((a, b) => a - b)[2];
-      const filled = means.map((m, k) => (background - m > Math.max(35, background * 0.18) ? k : -1)).filter((k) => k >= 0);
+      const samples = OPTIONS.map((_, k) => { const p = bubbleXY(col, i, k); return bubbleStats(gray, p.x, p.y); });
+      const background = [...samples].sort((a, b) => a.mean - b.mean)[2].mean;
+      const filled = samples.map((sample, k) => (isFilledBubble(sample.mean, sample.variance, background) ? k : -1)).filter((k) => k >= 0);
       const q = col.firstQ + i - 1;
       answers[col.test][q] = filled.length === 0 ? null : filled.length > 1 ? "MULTI" : OPTIONS[filled[0]];
       // overlay: green = read, red = double-marked, orange outline = blank

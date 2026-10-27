@@ -11,5 +11,13 @@ export async function getKey(): Promise<Key> {
 export async function getTemplate(): Promise<Column[]> {
   const { data } = await (await createServer()).from("settings").select("value").eq("key", "template").maybeSingle();
   const v = data?.value;
-  return Array.isArray(v) && v.length === DEFAULT_TEMPLATE.length ? (v as Column[]) : DEFAULT_TEMPLATE;
+  if (!Array.isArray(v) || v.length !== DEFAULT_TEMPLATE.length) return DEFAULT_TEMPLATE;
+  return v.map((saved, index) => {
+    const column = saved && typeof saved === "object" ? saved as Partial<Column> : {};
+    return {
+      ...DEFAULT_TEMPLATE[index],
+      ...column,
+      xSlope: typeof column.xSlope === "number" && Number.isFinite(column.xSlope) ? column.xSlope : DEFAULT_TEMPLATE[index].xSlope,
+    };
+  });
 }

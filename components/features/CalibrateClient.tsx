@@ -10,9 +10,10 @@ import { useToast } from "@/components/Toast";
 const FIELDS: { k: keyof Column; label: string; min: number; max: number; step: number }[] = [
   { k: "xA", label: "Left edge (option A)", min: 0, max: REF_WIDTH, step: 0.5 },
   { k: "xStep", label: "Gap between options", min: 15, max: 40, step: 0.1 },
+  { k: "xSlope", label: "Horizontal drift per vertical pixel", min: -0.05, max: 0.05, step: 0.001 },
   { k: "y0", label: "Top (question 1)", min: 0, max: REF_HEIGHT, step: 0.5 },
   { k: "pitch", label: "Gap between rows", min: 12, max: 30, step: 0.1 },
-  { k: "breakGap", label: "Extra gap after each part", min: 0, max: 12, step: 0.1 },
+  { k: "breakGap", label: "Extra gap after each part", min: 0, max: 40, step: 0.1 },
 ];
 
 export function CalibrateClient({ initial }: { initial: Column[] }) {
@@ -54,7 +55,7 @@ export function CalibrateClient({ initial }: { initial: Column[] }) {
         <div className="flex gap-2">{([1, 2] as const).map((p) => <button key={p} onClick={() => { setPage(p); setIdx(tpl.findIndex((c) => c.page === p)); }} className={(page === p ? "clay-btn" : "clay-btn-soft") + " flex-1 !py-2"}>Page {20 + p}</button>)}</div>
         <div className="flex flex-wrap gap-2">{cols.map(({ c, i }) => <button key={i} onClick={() => setIdx(i)} className={(i === curIdx ? "clay-btn" : "clay-btn-soft") + " !px-3 !py-2 text-sm"}>{c.test}{c.firstQ > 1 ? ` ${c.firstQ}+` : ""}</button>)}</div>
         {cur && FIELDS.map((f) => (
-          <label key={f.k} className="block text-sm font-semibold">{f.label}: {Number(cur[f.k]).toFixed(1)}
+          <label key={f.k} className="block text-sm font-semibold">{f.label}: {Number(cur[f.k]).toFixed(f.k === "xSlope" ? 3 : 1)}
             <input type="range" min={f.min} max={f.max} step={f.step} value={Number(cur[f.k])} onChange={(e) => upd(f.k, Number(e.target.value))} className="w-full" /></label>))}
         <div className="flex gap-3">
           <Button onClick={async () => { const { error } = await supabase.from("settings").upsert({ key: "template", value: tpl }); toast(error ? "Could not save." : "Calibration saved"); }}><Save size={18} /> Save</Button>

@@ -1,17 +1,18 @@
 {
   "name": "tamanna-portal",
-  "version": "0.12.5",
+  "version": "0.12.6",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "check:norms": "tsx scripts/check-norms.ts",
+    "check:omr": "tsx scripts/check-omr.ts",
     "check:report": "tsx --tsconfig tsconfig.json scripts/smoke-report.tsx",
     "predev": "node scripts/setup.js",
     "setup": "node scripts/setup.js",
     "typecheck": "tsc --noEmit",
-    "ci": "npm run typecheck && npm run check:norms && npm run check:report && npm run build"
+    "ci": "npm run typecheck && npm run check:norms && npm run check:omr && npm run check:report && npm run build"
   },
   "dependencies": {
     "@supabase/ssr": "^0.5.2",

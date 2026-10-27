@@ -30,6 +30,7 @@ export function ScanClient({ initialKey, template }: { initialKey: Key; template
   const [insp, setInsp] = useState<Partial<Record<N, Inspection>>>({});
   const [answers, setAnswers] = useState<PageResult | null>(null);
   const key = initialKey;
+  const displayKey: Key = isDemo() ? {} : key;
   const urls = useRef<Partial<Record<N, string>>>({});
   const [showBlank, setShowBlank] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -221,10 +222,11 @@ export function ScanClient({ initialKey, template }: { initialKey: Key; template
             variant="inline"
             originalPages={([1, 2] as N[]).flatMap((n) => previews[n] ? [{ label: `Page ${n}`, url: previews[n]! }] : [])}
             responses={answers}
+            answerKey={displayKey}
             roll={info.name}
           />
         )}
-        {answers && <AnswerReview responses={answers} answerKey={key} />}
+        {answers && <AnswerReview responses={answers} answerKey={displayKey} />}
         {answers && (
           <Card>
             <div className="mb-3 flex items-center justify-between gap-2">

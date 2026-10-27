@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { createServer } from "@/lib/supabase/server";
 import { StudentView } from "@/components/features/StudentView";
-import type { Student } from "@/lib/types";
+import type { Key, Student } from "@/lib/types";
 import type { PageResult } from "@/lib/omr/reader";
 import { getKey } from "@/lib/supabase/data";
 import { isDemo } from "@/lib/supabase/env";
@@ -12,7 +12,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
   const [{ data: s }, { data: { user } }, answerKey] = await Promise.all([
     sb.from("students").select("*,scores(*)").eq("id", id).maybeSingle(),
     sb.auth.getUser(),
-    getKey(),
+    isDemo() ? Promise.resolve({} as Key) : getKey(),
   ]);
   if (!s) notFound();
   const { data: sub, error: submissionError } = await sb.from("submissions").select("image_paths,responses").eq("student_id", id).order("created_at", { ascending: false }).limit(1).maybeSingle();

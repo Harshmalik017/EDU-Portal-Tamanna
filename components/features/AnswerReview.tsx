@@ -12,7 +12,7 @@ export function AnswerReview({ responses, answerKey }: { responses: PageResult; 
   return (
     <Card>
       <h2 className="mb-1 text-xl font-extrabold">Student responses and answer key</h2>
-      <p className="mb-4 text-sm">Blue responses are correct. Red responses are incorrect or have multiple marks. The correct answer is shown for each question.</p>
+      <p className="mb-4 text-sm">Green responses are correct. Light red responses are incorrect or have multiple marks. The correct answer is shown when an answer key is available.</p>
       <div className="space-y-3">
         {TESTS.map((test) => {
           const studentAnswers = responses[test.code] ?? [];
@@ -45,7 +45,7 @@ export function AnswerReview({ responses, answerKey }: { responses: PageResult; 
                       return (
                         <tr key={question} className="border-t border-(--line)">
                           <th scope="row" className="px-4 py-2 font-semibold">{question + 1}</th>
-                          <td className={`px-4 py-2 font-bold ${isCorrect ? "text-blue-800" : isWrong ? "text-red-700" : "text-ink/70"}`}>
+                          <td className={`px-4 py-2 font-bold ${isCorrect ? "bg-green-50 text-green-800" : isWrong ? "bg-red-50 text-red-800" : "text-ink/70"}`}>
                             {answerLabel(response)}{isCorrect ? " · Correct" : isWrong ? " · Incorrect" : ""}
                           </td>
                           <td className="px-4 py-2 font-semibold text-brand-800">{correct ?? "Not available"}</td>

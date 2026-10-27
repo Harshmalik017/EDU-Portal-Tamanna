@@ -4,6 +4,7 @@ import { Card } from "@/components/ui";
 import { Download, X } from "lucide-react";
 import { TESTS } from "@/lib/tamanna/tests";
 import type { PageResult } from "@/lib/omr/reader";
+import type { Key } from "@/lib/types";
 
 type OriginalPage = { label: string; url: string };
 type SheetPage = 1 | 2;
@@ -18,7 +19,7 @@ const sectionNames: Record<string, string> = {
   PA: "प्रत्यक्षण अभिक्षमता",
 };
 
-function ThemeSheet({ responses, roll, page }: { responses: PageResult; roll?: string; page: SheetPage }) {
+function ThemeSheet({ responses, answerKey, roll, page }: { responses: PageResult; answerKey: Key; roll?: string; page: SheetPage }) {
   const tests = TESTS.filter((test) => page === 1 ? ["LA", "AR", "VR", "MR"].includes(test.code) : ["NA", "SA", "PA"].includes(test.code));
   return (
     <div className="mx-auto max-w-4xl border-4 border-brand-700 bg-white p-3 text-ink shadow-lg sm:p-5">
@@ -43,20 +44,38 @@ function ThemeSheet({ responses, roll, page }: { responses: PageResult; roll?: s
                     {Array.from({ length: end - start + 1 }, (_, index) => {
                       const question = start + index;
                       const answer = responses[test.code]?.[question - 1];
+                      const correctAnswer = answerKey[test.code]?.[question - 1];
                       return (
                         <li key={question} className="flex items-center justify-between gap-1 px-2 py-1 text-[11px]">
                           <span className="w-6 shrink-0 font-bold">{question}.</span>
                           <div className="flex gap-1.5">
-                            {["A", "B", "C", "D"].map((option) => (
-                              <span
-                                key={option}
-                                aria-label={`${test.code} question ${question}, ${option}${answer === option ? ", marked" : ""}`}
-                                className={`grid h-5 w-5 place-items-center rounded-full border text-[9px] font-bold ${answer === option ? "border-blue-800 bg-blue-700 text-white" : "border-slate-400 bg-white text-slate-600"}`}
-                              >
-                                {option}
-                              </span>
-                            ))}
-                            {answer === "MULTI" && <span className="self-center text-[9px] font-extrabold text-red-700">MULTI</span>}
+                            {["A", "B", "C", "D"].map((option) => {
+                              const selected = answer === option;
+                              const correct = correctAnswer === option;
+                              const correctSelection = selected && correct;
+                              const incorrectSelection = selected && !!correctAnswer && !correct;
+                              const responseWithoutKey = selected && !correctAnswer;
+                              return (
+                                <span
+                                  key={option}
+                                  aria-label={`${test.code} question ${question}, ${option}${correctSelection ? ", correct student response" : incorrectSelection ? ", incorrect student response" : responseWithoutKey ? ", student response" : ""}${correct ? ", correct answer" : ""}`}
+                                  className={`grid h-5 w-5 place-items-center rounded-full border text-[9px] font-bold ${
+                                    correctSelection
+                                      ? "border-green-800 bg-green-700 text-white"
+                                      : incorrectSelection
+                                        ? "border-red-300 bg-red-100 text-red-900"
+                                        : correct
+                                          ? "border-green-600 bg-green-50 text-green-900"
+                                          : responseWithoutKey
+                                            ? "border-blue-800 bg-blue-700 text-white"
+                                            : "border-slate-400 bg-white text-slate-600"
+                                  }`}
+                                >
+                                  {option}
+                                </span>
+                              );
+                            })}
+                            {answer === "MULTI" && <span className="self-center rounded bg-red-100 px-1 text-[9px] font-extrabold text-red-800">MULTI</span>}
                           </div>
                         </li>
                       );
@@ -69,7 +88,8 @@ function ThemeSheet({ responses, roll, page }: { responses: PageResult; roll?: s
         })}
       </div>
       <footer className="mt-3 space-y-2 border-t border-brand-200 pt-2 text-center text-[10px] font-semibold">
-        <p>नीला: विद्यार्थी का उत्तर · लाल: एक से अधिक उत्तर · सफेद: कोई उत्तर नहीं / Blue: student response · Red: multiple marks · White: blank</p>
+        <p>हरा: सही उत्तर · हल्का लाल: गलत उत्तर · हरा घेरा: उत्तर कुंजी · नीला: कुंजी उपलब्ध न होने पर विद्यार्थी का उत्तर / Green: correct · Light red: incorrect · Green outline: answer key · Blue: response when no key is available</p>
+        <p>एक से अधिक उत्तर पुस्तिका के नियमों के अनुसार नहीं गिने जाते / Multiple marks are not scored under the guide.</p>
         <p>भरा हुआ गोला चुना गया उत्तर दर्शाता है / A filled bubble shows the selected response</p>
       </footer>
     </div>
@@ -108,7 +128,7 @@ function OriginalSheet({ pages }: { pages: OriginalPage[] }) {
   );
 }
 
-function SheetDisplay({ pages, pdfUrl, responses, roll }: { pages: OriginalPage[]; pdfUrl?: string | null; responses: PageResult; roll?: string }) {
+function SheetDisplay({ pages, pdfUrl, responses, answerKey, roll }: { pages: OriginalPage[]; pdfUrl?: string | null; responses: PageResult; answerKey: Key; roll?: string }) {
   const [page, setPage] = useState<SheetPage>(1);
   return (
     <div className="space-y-3">
@@ -120,7 +140,7 @@ function SheetDisplay({ pages, pdfUrl, responses, roll }: { pages: OriginalPage[
         </section>
         <section className="min-w-0 space-y-2">
           <h3 className="font-bold">Theme UI</h3>
-          <ThemeSheet responses={responses} roll={roll} page={page} />
+          <ThemeSheet responses={responses} answerKey={answerKey} roll={roll} page={page} />
         </section>
       </div>
     </div>
@@ -131,12 +151,14 @@ export function OMRSheetPreview({
   originalPages,
   originalPdfUrl,
   responses,
+  answerKey,
   roll,
   variant,
 }: {
   originalPages: OriginalPage[];
   originalPdfUrl?: string | null;
   responses: PageResult;
+  answerKey: Key;
   roll?: string;
   variant: "inline" | "button";
 }) {
@@ -163,7 +185,7 @@ export function OMRSheetPreview({
           <section className="space-y-3">
             <h3 className="font-bold">Tamanna theme UI sheet</h3>
             <PagePicker page={inlinePage} onChange={setInlinePage} pdfUrl={originalPdfUrl} />
-            <ThemeSheet responses={responses} roll={roll} page={inlinePage} />
+            <ThemeSheet responses={responses} answerKey={answerKey} roll={roll} page={inlinePage} />
           </section>
         </div>
       </Card>
@@ -183,7 +205,7 @@ export function OMRSheetPreview({
             <button type="button" aria-label="Close OMR sheet" onClick={() => dialogRef.current?.close()} className="rounded-lg p-2 hover:bg-brand-100 focus-visible:outline-2 focus-visible:outline-brand-700"><X size={20} /></button>
           </header>
           <div className="space-y-4 p-4 sm:p-6">
-            <SheetDisplay pages={originalPages} pdfUrl={originalPdfUrl} responses={responses} roll={roll} />
+            <SheetDisplay pages={originalPages} pdfUrl={originalPdfUrl} responses={responses} answerKey={answerKey} roll={roll} />
             <p className="text-xs text-ink/70">Student name area is masked in original stored scans.</p>
           </div>
         </dialog>

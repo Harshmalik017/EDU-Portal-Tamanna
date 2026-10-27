@@ -1,6 +1,11 @@
 # Changelog
 Format: [Keep a Changelog](https://keepachangelog.com), versions follow [SemVer](https://semver.org). See `versioning.md`.
 
+## [0.12.6] - 2026-10-27
+### Fixed
+- **OMR detection**: sample filled bubble interiors, account for page skew, and restore the missing responses in the bundled demo scan
+- **OMR correctness colors**: show correct answers in green and incorrect responses in light red when a real answer key is available; keep invented demo-key results neutral
+
 ## [0.12.5] - 2026-10-27
 ### Changed
 - **OMR comparison**: enlarge the original scanned page and dialog, use four Theme UI columns on wide screens, and place the original scan download beside the page controls

@@ -1,14 +1,16 @@
 import { createServer } from "@/lib/supabase/server";
 import { ResultsTable } from "@/components/features/ResultsTable";
-import type { Student } from "@/lib/types";
+import type { Key, Student } from "@/lib/types";
 import type { PageResult } from "@/lib/omr/reader";
 import { isDemo } from "@/lib/supabase/env";
+import { getKey } from "@/lib/supabase/data";
 
 export default async function Page() {
   const sb = await createServer();
-  const [{ data, error: studentsError }, { data: { user } }] = await Promise.all([
+  const [{ data, error: studentsError }, { data: { user } }, answerKey] = await Promise.all([
     sb.from("students").select("id,name,class,school,gender,excluded,verification_status,manual_scores,scores(test_code,correct)"),
     sb.auth.getUser(),
+    isDemo() ? Promise.resolve({} as Key) : getKey(),
   ]);
   if (studentsError) throw new Error("Could not load student reports.", { cause: studentsError });
   const students = (data ?? []) as unknown as Student[];
@@ -60,6 +62,6 @@ export default async function Page() {
     }
   }
   return (
-    <ResultsTable rows={students} email={user?.email ?? "admin"} omrSheets={omrSheets} />
+    <ResultsTable rows={students} email={user?.email ?? "admin"} answerKey={answerKey} omrSheets={omrSheets} />
   );
 }
