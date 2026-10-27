@@ -33,10 +33,10 @@ function ThemeSheet({ responses, answerKey, roll, page }: { responses: PageResul
         {tests.map((test) => {
           const segments = test.code === "PA" ? [[1, 30], [31, 60]] as const : [[1, test.questions]] as const;
           return (
-            <section key={test.code} className="overflow-hidden border-2 border-brand-600">
-              <header className="bg-brand-700 px-2 py-2 text-center text-white">
-                <p className="text-sm font-extrabold">{test.code} · {test.name}</p>
-                <p lang="hi" className="text-xs font-semibold">{sectionNames[test.code]}</p>
+            <section key={test.code} className={`min-w-0 overflow-hidden border-2 border-brand-600 ${test.code === "PA" ? "sm:col-span-2 lg:col-span-2" : ""}`}>
+              <header className="grid min-h-16 content-center gap-1 bg-brand-700 px-2 py-2 text-center text-white">
+                <p className="break-words text-sm font-extrabold leading-tight">{test.code} · {test.name}</p>
+                <p lang="hi" className="break-words text-xs font-semibold leading-tight">{sectionNames[test.code]}</p>
               </header>
               <div className={`grid ${segments.length > 1 ? "grid-cols-2 divide-x divide-brand-200" : ""}`}>
                 {segments.map(([start, end]) => (

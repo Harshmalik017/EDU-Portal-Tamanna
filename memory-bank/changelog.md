@@ -1,6 +1,10 @@
 # Changelog
 Format: [Keep a Changelog](https://keepachangelog.com), versions follow [SemVer](https://semver.org). See `versioning.md`.
 
+## [0.12.7] - 2026-10-27
+### Fixed
+- **Theme OMR page two**: give the PA section two columns and wrap bilingual headings to prevent overlap; clarify green correct, light-red incorrect, and unkeyed response colors
+
 ## [0.12.6] - 2026-10-27
 ### Fixed
 - **OMR detection**: classify filled bubble interiors using brightness, row-relative contrast, and variance; account for page skew; preserve older saved calibrations; and restore every response in the bundled demo scan
