@@ -15,6 +15,14 @@
   h1, h2, h3 { letter-spacing: -0.01em; }
 }
 :root { --ink: #25331a; --line: #dbe5bd; }
+* {
+  scrollbar-color: var(--color-brand-600) var(--color-brand-50);
+  scrollbar-width: thin;
+}
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-track { background: var(--color-brand-50); }
+*::-webkit-scrollbar-thumb { background: var(--color-brand-600); border: 2px solid var(--color-brand-50); border-radius: 999px; }
+*::-webkit-scrollbar-thumb:hover { background: var(--color-brand-700); }
 body {
   color: var(--ink);
   min-height: 100dvh;

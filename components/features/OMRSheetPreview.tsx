@@ -28,7 +28,7 @@ function ThemeSheet({ responses, roll, page }: { responses: PageResult; roll?: s
         <p className="text-xs font-semibold">उत्तर पत्रक / Answer Sheet · पृष्ठ {page} / Page {page}</p>
         <p className="mt-2 text-left text-xs font-semibold">अनुक्रमांक / Roll No.: {roll || "________________"}</p>
       </header>
-      <div className="mt-3 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+      <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {tests.map((test) => {
           const segments = test.code === "PA" ? [[1, 30], [31, 60]] as const : [[1, test.questions]] as const;
           return (
@@ -76,29 +76,31 @@ function ThemeSheet({ responses, roll, page }: { responses: PageResult; roll?: s
   );
 }
 
-function PagePicker({ page, onChange }: { page: SheetPage; onChange: (page: SheetPage) => void }) {
+function PagePicker({ page, onChange, pdfUrl }: { page: SheetPage; onChange: (page: SheetPage) => void; pdfUrl?: string | null }) {
   return (
-    <div className="flex gap-2">
-      {([1, 2] as const).map((number) => (
-        <button key={number} type="button" onClick={() => onChange(number)} aria-pressed={page === number}
-          className={`rounded-lg px-3 py-2 text-sm font-bold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-700 ${page === number ? "bg-brand-700 text-white" : "bg-brand-50 text-brand-800 hover:bg-brand-100"}`}>
-          Page {number}
-        </button>
-      ))}
+    <div className="flex flex-wrap items-center justify-end gap-3">
+      <div className="flex gap-2">
+        {([1, 2] as const).map((number) => (
+          <button key={number} type="button" onClick={() => onChange(number)} aria-pressed={page === number}
+            className={`rounded-lg px-3 py-2 text-sm font-bold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-700 ${page === number ? "bg-brand-700 text-white" : "bg-brand-50 text-brand-800 hover:bg-brand-100"}`}>
+            Page {number}
+          </button>
+        ))}
+      </div>
+      {pdfUrl && <a href={pdfUrl} target="_blank" rel="noreferrer" className="clay-btn-soft w-fit"><Download size={17} /> Download Original Scanned</a>}
     </div>
   );
 }
 
-function OriginalSheet({ pages, pdfUrl }: { pages: OriginalPage[]; pdfUrl?: string | null }) {
+function OriginalSheet({ pages }: { pages: OriginalPage[] }) {
   if (!pages.length) return <p className="clay-inset p-4 text-sm">No uploaded or captured sheet is available for this student.</p>;
   return (
     <div className="space-y-3">
-      {pdfUrl && <a href={pdfUrl} target="_blank" rel="noreferrer" className="clay-btn-soft w-fit"><Download size={17} /> Open masked PDF</a>}
-      <div className="grid gap-3 md:grid-cols-2">
+      <div className={`grid gap-3 ${pages.length > 1 ? "md:grid-cols-2" : "grid-cols-1"}`}>
         {pages.map((page) => (
           <figure key={page.url} className="min-w-0 rounded-xl border border-(--line) bg-white p-2">
             <figcaption className="mb-2 text-sm font-bold">{page.label}</figcaption>
-            <img src={page.url} alt={`${page.label}, student identifying area masked`} className="max-h-[70dvh] w-full rounded-lg object-contain" />
+            <img src={page.url} alt={`${page.label}, student identifying area masked`} className="max-h-[78dvh] w-full rounded-lg object-contain" />
           </figure>
         ))}
       </div>
@@ -110,11 +112,11 @@ function SheetDisplay({ pages, pdfUrl, responses, roll }: { pages: OriginalPage[
   const [page, setPage] = useState<SheetPage>(1);
   return (
     <div className="space-y-3">
-      <PagePicker page={page} onChange={setPage} />
-      <div className="grid items-start gap-4 lg:grid-cols-2">
+      <PagePicker page={page} onChange={setPage} pdfUrl={pdfUrl} />
+      <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]">
         <section className="min-w-0 space-y-2">
           <h3 className="font-bold">Original upload</h3>
-          <OriginalSheet pages={pages.filter((item) => item.label === `Page ${page}`)} pdfUrl={pdfUrl} />
+          <OriginalSheet pages={pages.filter((item) => item.label === `Page ${page}`)} />
         </section>
         <section className="min-w-0 space-y-2">
           <h3 className="font-bold">Theme UI</h3>
@@ -156,11 +158,11 @@ export function OMRSheetPreview({
         <div className="space-y-6">
           <section className="space-y-3">
             <h3 className="font-bold">Original uploaded / captured sheet</h3>
-            <OriginalSheet pages={originalPages} pdfUrl={originalPdfUrl} />
+            <OriginalSheet pages={originalPages} />
           </section>
           <section className="space-y-3">
             <h3 className="font-bold">Tamanna theme UI sheet</h3>
-            <PagePicker page={inlinePage} onChange={setInlinePage} />
+            <PagePicker page={inlinePage} onChange={setInlinePage} pdfUrl={originalPdfUrl} />
             <ThemeSheet responses={responses} roll={roll} page={inlinePage} />
           </section>
         </div>
@@ -175,7 +177,7 @@ export function OMRSheetPreview({
       </button>
       {open && (
         <dialog ref={dialogRef} aria-labelledby="omr-preview-title" onClose={() => setOpen(false)} onClick={(event) => { if (event.target === dialogRef.current) dialogRef.current?.close(); }}
-          className="m-auto max-h-[calc(100dvh-1.5rem)] w-[calc(100%-1.5rem)] max-w-6xl overflow-y-auto rounded-2xl border border-(--line) bg-[#fbfdf4] p-0 text-ink shadow-2xl backdrop:bg-[#25331a]/50">
+          className="m-auto max-h-[calc(100dvh-1.5rem)] w-[calc(100%-1rem)] max-w-7xl overflow-y-auto rounded-2xl border border-(--line) bg-[#fbfdf4] p-0 text-ink shadow-2xl backdrop:bg-[#25331a]/50">
           <header className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-(--line) bg-[#fbfdf4] px-4 py-3 sm:px-6">
             <h2 id="omr-preview-title" className="text-lg font-extrabold">OMR sheet · Roll {roll}</h2>
             <button type="button" aria-label="Close OMR sheet" onClick={() => dialogRef.current?.close()} className="rounded-lg p-2 hover:bg-brand-100 focus-visible:outline-2 focus-visible:outline-brand-700"><X size={20} /></button>

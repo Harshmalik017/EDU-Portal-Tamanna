@@ -1,6 +1,11 @@
 # Changelog
 Format: [Keep a Changelog](https://keepachangelog.com), versions follow [SemVer](https://semver.org). See `versioning.md`.
 
+## [0.12.5] - 2026-10-27
+### Changed
+- **OMR comparison**: enlarge the original scanned page and dialog, use four Theme UI columns on wide screens, and place the original scan download beside the page controls
+- **Scrollbars**: apply the Tamanna green theme to scrollbars throughout the portal
+
 ## [0.12.4] - 2026-10-27
 ### Changed
 - **Report navigation**: keep Back to Student Reports on the left and move print to the right; remove Back to profile
