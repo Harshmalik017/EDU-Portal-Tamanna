@@ -1,4 +1,5 @@
 import { TESTS } from "@/lib/tamanna/tests";
+import responses from "./student-responses.json";
 
 export type Row = Record<string, unknown>;
 export type Db = Record<string, Row[]>;
@@ -32,7 +33,13 @@ function seed(): Db {
     const st: Row = { id, name, class: cls, gender, school: "", excluded: false, exclude_reason: null, verification_status: "verified",
       verified_by: "demo@tamanna.local", verified_at: new Date(now - 3600e3).toISOString(), manual_scores: raw, verification_note: null, created_at: createdAt };
     students.push(st);
-    submissions.push({ id: `sub-${i + 1}`, student_id: id, responses: {}, image_paths: [], created_at: createdAt });
+    submissions.push({
+      id: `sub-${i + 1}`,
+      student_id: id,
+      responses,
+      image_paths: ["demo/omr/side-1.jpg", "demo/omr/side-2.jpg", "demo/omr/answer-sheet.pdf"],
+      created_at: createdAt,
+    });
   });
   return { students, scores, submissions, answer_keys: demoKey(), settings: [] };
 }

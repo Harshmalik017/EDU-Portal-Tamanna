@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { Card } from "@/components/ui";
-import { X } from "lucide-react";
+import { Download, X } from "lucide-react";
 import { TESTS } from "@/lib/tamanna/tests";
 import type { PageResult } from "@/lib/omr/reader";
 
@@ -52,7 +52,7 @@ function ThemeSheet({ responses, roll, page }: { responses: PageResult; roll?: s
                               <span
                                 key={option}
                                 aria-label={`${test.code} question ${question}, ${option}${answer === option ? ", marked" : ""}`}
-                                className={`grid h-5 w-5 place-items-center rounded-full border text-[9px] font-bold ${answer === option ? "border-brand-800 bg-brand-700 text-white" : "border-slate-400 bg-white text-slate-600"}`}
+                                className={`grid h-5 w-5 place-items-center rounded-full border text-[9px] font-bold ${answer === option ? "border-blue-800 bg-blue-700 text-white" : "border-slate-400 bg-white text-slate-600"}`}
                               >
                                 {option}
                               </span>
@@ -69,8 +69,9 @@ function ThemeSheet({ responses, roll, page }: { responses: PageResult; roll?: s
           );
         })}
       </div>
-      <footer className="mt-3 border-t border-brand-200 pt-2 text-center text-[10px] font-semibold">
-        भरा हुआ गोला चुना गया उत्तर दर्शाता है / A filled bubble shows the selected response
+      <footer className="mt-3 space-y-2 border-t border-brand-200 pt-2 text-center text-[10px] font-semibold">
+        <p>नीला: विद्यार्थी का उत्तर · लाल: एक से अधिक उत्तर · सफेद: कोई उत्तर नहीं / Blue: student response · Red: multiple marks · White: blank</p>
+        <p>भरा हुआ गोला चुना गया उत्तर दर्शाता है / A filled bubble shows the selected response</p>
       </footer>
     </div>
   );
@@ -89,27 +90,30 @@ function PagePicker({ page, onChange }: { page: SheetPage; onChange: (page: Shee
   );
 }
 
-function OriginalSheet({ pages }: { pages: OriginalPage[] }) {
+function OriginalSheet({ pages, pdfUrl }: { pages: OriginalPage[]; pdfUrl?: string | null }) {
   if (!pages.length) return <p className="clay-inset p-4 text-sm">No uploaded or captured sheet is available for this student.</p>;
   return (
-    <div className="grid gap-3 md:grid-cols-2">
-      {pages.map((page) => (
-        <figure key={page.url} className="min-w-0 rounded-xl border border-(--line) bg-white p-2">
-          <figcaption className="mb-2 text-sm font-bold">{page.label}</figcaption>
-          <img src={page.url} alt={`${page.label}, student identifying area masked`} className="max-h-[70dvh] w-full rounded-lg object-contain" />
-        </figure>
-      ))}
+    <div className="space-y-3">
+      {pdfUrl && <a href={pdfUrl} target="_blank" rel="noreferrer" className="clay-btn-soft w-fit"><Download size={17} /> Open masked PDF</a>}
+      <div className="grid gap-3 md:grid-cols-2">
+        {pages.map((page) => (
+          <figure key={page.url} className="min-w-0 rounded-xl border border-(--line) bg-white p-2">
+            <figcaption className="mb-2 text-sm font-bold">{page.label}</figcaption>
+            <img src={page.url} alt={`${page.label}, student identifying area masked`} className="max-h-[70dvh] w-full rounded-lg object-contain" />
+          </figure>
+        ))}
+      </div>
     </div>
   );
 }
 
-function SheetDisplay({ view, pages, responses, roll }: { view: View; pages: OriginalPage[]; responses: PageResult; roll?: string }) {
+function SheetDisplay({ view, pages, pdfUrl, responses, roll }: { view: View; pages: OriginalPage[]; pdfUrl?: string | null; responses: PageResult; roll?: string }) {
   const [page, setPage] = useState<SheetPage>(1);
   return (
     <div className="space-y-3">
       <PagePicker page={page} onChange={setPage} />
       {view === "original"
-        ? <OriginalSheet pages={pages.filter((item) => item.label === `Page ${page}`)} />
+        ? <OriginalSheet pages={pages.filter((item) => item.label === `Page ${page}`)} pdfUrl={pdfUrl} />
         : <ThemeSheet responses={responses} roll={roll} page={page} />}
     </div>
   );
@@ -117,11 +121,13 @@ function SheetDisplay({ view, pages, responses, roll }: { view: View; pages: Ori
 
 export function OMRSheetPreview({
   originalPages,
+  originalPdfUrl,
   responses,
   roll,
   variant,
 }: {
   originalPages: OriginalPage[];
+  originalPdfUrl?: string | null;
   responses: PageResult;
   roll?: string;
   variant: "inline" | "button";
@@ -145,7 +151,7 @@ export function OMRSheetPreview({
         <div className="space-y-6">
           <section className="space-y-3">
             <h3 className="font-bold">Original uploaded / captured sheet</h3>
-            <OriginalSheet pages={originalPages} />
+            <OriginalSheet pages={originalPages} pdfUrl={originalPdfUrl} />
           </section>
           <section className="space-y-3">
             <h3 className="font-bold">Tamanna theme UI sheet</h3>
@@ -178,7 +184,7 @@ export function OMRSheetPreview({
                 </button>
               ))}
             </div>
-            <SheetDisplay view={view} pages={originalPages} responses={responses} roll={roll} />
+            <SheetDisplay view={view} pages={originalPages} pdfUrl={originalPdfUrl} responses={responses} roll={roll} />
             <p className="text-xs text-ink/70">Student name area is masked in original stored scans.</p>
           </div>
         </dialog>

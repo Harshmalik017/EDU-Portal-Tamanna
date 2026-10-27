@@ -44,7 +44,7 @@ export function makeClient(exec: Exec) {
       signOut: async () => ({ error: null }),
       resetPasswordForEmail: async () => ({ data: {}, error: null }),
     },
-    // Demo mode does not store photos: uploads succeed, there is nothing to show.
+    // Demo uploads are no-ops; bundled sample scans are served from public demo assets.
     storage: { from: () => ({
       upload: async () => ({ data: {}, error: null }),
       remove: async () => ({ data: [], error: null }),

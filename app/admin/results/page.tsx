@@ -12,8 +12,23 @@ export default async function Page() {
   ]);
   if (studentsError) throw new Error("Could not load student reports.", { cause: studentsError });
   const students = (data ?? []) as unknown as Student[];
-  const omrSheets: Record<string, { originals: { label: string; url: string }[]; responses: PageResult }> = {};
-  if (!isDemo() && students.length) {
+  const omrSheets: Record<string, { originals: { label: string; url: string }[]; responses: PageResult; pdfUrl?: string }> = {};
+  if (isDemo() && students.length) {
+    const { data: submissions, error: submissionsError } = await sb.from("submissions")
+      .select("student_id,image_paths,responses,created_at")
+      .order("created_at", { ascending: false });
+    if (submissionsError) throw new Error("Could not load demo OMR sheets.", { cause: submissionsError });
+    for (const submission of submissions ?? []) {
+      if (omrSheets[submission.student_id]) continue;
+      const paths: string[] = submission.image_paths ?? [];
+      const pdfPath = paths.find((path) => /\.pdf$/i.test(path));
+      omrSheets[submission.student_id] = {
+        responses: (submission.responses ?? {}) as PageResult,
+        originals: paths.filter((path) => /\.(jpe?g|png)$/i.test(path)).map((path, index) => ({ label: `Page ${index + 1}`, url: `/${path}` })),
+        pdfUrl: pdfPath ? `/${pdfPath}` : undefined,
+      };
+    }
+  } else if (students.length) {
     const { data: submissions, error: submissionsError } = await sb.from("submissions")
       .select("student_id,image_paths,responses,created_at")
       .in("student_id", students.map((student) => student.id))
@@ -26,7 +41,7 @@ export default async function Page() {
     const records = Array.from(latest, ([studentId, submission]) => ({
       studentId,
       responses: (submission.responses ?? {}) as PageResult,
-      paths: (submission.image_paths ?? []).filter((path) => /\.(jpe?g|png)$/i.test(path)),
+      paths: submission.image_paths ?? [],
     }));
     const allPaths = records.flatMap((record) => record.paths);
     const { data: signed, error: signedError } = allPaths.length
@@ -35,9 +50,12 @@ export default async function Page() {
     if (signedError) throw new Error("Could not load OMR sheet images.", { cause: signedError });
     const urls = new Map((signed ?? []).filter((file) => file.path && file.signedUrl).map((file) => [file.path!, file.signedUrl!]));
     for (const record of records) {
+      const imagePaths = record.paths.filter((path) => /\.(jpe?g|png)$/i.test(path));
+      const pdfPath = record.paths.find((path) => /\.pdf$/i.test(path));
       omrSheets[record.studentId] = {
         responses: record.responses,
-        originals: record.paths.map((path, index) => ({ label: `Page ${index + 1}`, url: urls.get(path) })).filter((page): page is { label: string; url: string } => !!page.url),
+        originals: imagePaths.map((path, index) => ({ label: `Page ${index + 1}`, url: urls.get(path) })).filter((page): page is { label: string; url: string } => !!page.url),
+        pdfUrl: pdfPath ? urls.get(pdfPath) : undefined,
       };
     }
   }

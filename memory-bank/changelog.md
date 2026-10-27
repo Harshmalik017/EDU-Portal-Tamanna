@@ -1,6 +1,12 @@
 # Changelog
 Format: [Keep a Changelog](https://keepachangelog.com), versions follow [SemVer](https://semver.org). See `versioning.md`.
 
+## [0.12.1] - 2026-10-27
+### Added
+- **Demo OMR record**: include the masked two-page student sheet, PDF record, and detected responses in Student Reports
+### Fixed
+- **OMR response preview**: color detected responses blue and multiple marks red in the themed sheet
+
 ## [0.12.0] - 2026-10-27
 ### Added
 - **OMR sheet preview**: show the original masked scan and a themed response sheet with Hindi and English section names after scanning and from Student Reports
