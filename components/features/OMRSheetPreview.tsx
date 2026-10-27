@@ -29,7 +29,7 @@ function ThemeSheet({ responses, roll, page }: { responses: PageResult; roll?: s
         <p className="text-xs font-semibold">उत्तर पत्रक / Answer Sheet · पृष्ठ {page} / Page {page}</p>
         <p className="mt-2 text-left text-xs font-semibold">अनुक्रमांक / Roll No.: {roll || "________________"}</p>
       </header>
-      <div className="mt-3 grid gap-3 md:grid-cols-2">
+      <div className="mt-3 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
         {tests.map((test) => {
           const segments = test.code === "PA" ? [[1, 30], [31, 60]] as const : [[1, test.questions]] as const;
           return (

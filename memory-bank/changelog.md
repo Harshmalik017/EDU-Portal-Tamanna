@@ -1,6 +1,11 @@
 # Changelog
 Format: [Keep a Changelog](https://keepachangelog.com), versions follow [SemVer](https://semver.org). See `versioning.md`.
 
+## [0.12.2] - 2026-10-27
+### Fixed
+- **OMR sheet masking**: reduce the identifying header mask so section headings remain visible
+- **Theme OMR layout**: show three sections per row on wide screens to better match the original sheet
+
 ## [0.12.1] - 2026-10-27
 ### Added
 - **Demo OMR record**: include the masked two-page student sheet, PDF record, and detected responses in Student Reports

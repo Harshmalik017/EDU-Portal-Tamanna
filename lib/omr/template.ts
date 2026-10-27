@@ -10,7 +10,7 @@ export type Column = {
 };
 export const REF_WIDTH = 924;
 export const REF_HEIGHT = 1300;
-export const HEADER_MASK_RATIO = 0.23;
+export const HEADER_MASK_RATIO = 0.14;
 export const DEFAULT_TEMPLATE: Column[] = [
   { test: "LA", page: 1, firstQ: 1, count: 30, xA: 135, xStep: 32, y0: 423, pitch: 24.9, breakEvery: 10, breakGap: 24 },
   { test: "AR", page: 1, firstQ: 1, count: 30, xA: 310, xStep: 32, y0: 423, pitch: 24.8, breakEvery: 30, breakGap: 0 },
