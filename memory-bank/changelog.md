@@ -3,8 +3,8 @@ Format: [Keep a Changelog](https://keepachangelog.com), versions follow [SemVer]
 
 ## [0.12.6] - 2026-10-27
 ### Fixed
-- **OMR detection**: sample filled bubble interiors, account for page skew, and restore the missing responses in the bundled demo scan
-- **OMR correctness colors**: show correct answers in green and incorrect responses in light red when a real answer key is available; keep invented demo-key results neutral
+- **OMR detection**: classify filled bubble interiors using brightness, row-relative contrast, and variance; account for page skew; preserve older saved calibrations; and restore every response in the bundled demo scan
+- **OMR correctness colors**: show correct responses in green and incorrect responses in light red when a real answer key is available; keep invented demo-key results neutral. Add `npm run check:omr` to verify detector cases and response counts for every test.
 
 ## [0.12.5] - 2026-10-27
 ### Changed

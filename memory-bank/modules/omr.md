@@ -1,7 +1,7 @@
 # Module: OMR (`lib/omr/reader.ts`, `lib/omr/template.ts`)
-- Image is resized to 924×1300 reference space; each bubble's inner disk is sampled at template coordinates, excluding the printed ring and option letter.
-- A bubble is marked when its inner disk is dark, at least 20 gray levels below its row baseline, and has the low pixel variance expected of a solid fill.
-- Template coordinates support horizontal drift per vertical pixel so the sample scan's skew is corrected consistently in reading, overlays, crops, and calibration.
+- Image is resized to 924×1300 reference space; each option is sampled in a radius-4 inner disk to avoid the printed bubble ring and option letter. A sample is marked when its mean gray is below 175, at least 20 gray levels below the row baseline (the third-lowest of four option means), and its pixel variance is below 5000.
+- Template coordinates support horizontal drift per vertical pixel: `x = xA + optionIndex * xStep + xSlope * (y - y0)`. This shared geometry keeps reading, overlays, crops, and calibration aligned on skewed scans.
+- The default template is calibrated to the bundled scan. A saved template from before `xSlope` was introduced inherits each column's default slope when loaded, preserving old calibration settings.
 - 0 marked = blank, >1 = `MULTI` (counted wrong, flagged).
 - The scanner accepts one two-page PDF or captures the two pages sequentially. PDF rendering and header masking happen in the browser; extra PDF pages are rejected. Redacted page images and a masked PDF archive are saved with the student.
 - The header mask covers the top 14% of each page before previews, OMR, and storage. Keep the redaction high enough to protect student details while leaving printed section headings visible.
@@ -10,6 +10,7 @@
 - In demo mode, the sample student's actual masked pages and PDF are bundled under `public/demo/omr/`, and the themed sheet uses the corresponding OMR detections from `lib/demo/student-responses.json`. The demo answer key is invented, so it is not shown as a correctness result; responses stay blue and multiple marks are red. With a real answer key, correct responses are green, incorrect responses are light red, and the keyed option is outlined green.
 ## Known limits / TODO
 - **Template values are calibrated against the supplied scan; other scanner formats may need calibration.**
+- Detection thresholds have been verified against the bundled two-page scan, not a representative set of scanners or camera photos. Review the checked-bubble overlay and manually correct uncertain reads before saving.
 - No perspective correction: photo must be flat and cropped to the page edges. Add corner markers + warp (OpenCV.js) next.
 - Practice questions are not scored. PA has 60 questions across two columns.
 - Debug overlay (v0.2.0) is the calibration tool: if circles miss the printed bubbles, adjust `lib/omr/template.ts`.
