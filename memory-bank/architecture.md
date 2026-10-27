@@ -11,7 +11,7 @@ Auth: `proxy.ts` (session refresh + redirect) → `admin/layout.tsx` (`is_admin(
 ## Network rules
 - Read data on the server once per navigation; client calls only for writes/uploads.
 - Images are compressed before upload; originals never leave the browser.
-- Answer-sheet PDFs are rendered in the browser; the name area is masked before scoring or page-image upload, and the original PDF is never stored.
+- Answer-sheet PDFs are rendered in the browser; the name area is masked before scoring or storage. A redacted PDF archive is stored privately with the student's page images; the original PDF is never stored.
 - Signed URLs expire in 1 hour; bucket is private.
 ## Security
 RLS on every table via `is_admin()`; `admins` table has no API policies; views use `security_invoker`; only the public anon key is in the browser; security headers in `next.config.js`.

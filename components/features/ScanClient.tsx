@@ -11,6 +11,7 @@ import { OPTIONS } from "@/lib/tamanna/tests";
 import { isDemo } from "@/lib/supabase/env";
 import { sampleAnswers } from "@/lib/demo/sample";
 import { Button, Card, Input, Select } from "@/components/ui";
+import { AnswerReview } from "@/components/features/AnswerReview";
 import { useToast } from "@/components/Toast";
 
 const EMPTY = { name: "", class: "", gender: "", school: "" };
@@ -22,6 +23,7 @@ export function ScanClient({ initialKey, template }: { initialKey: Key; template
   const toast = useToast();
   const [files, setFiles] = useState<Partial<Record<N, File>>>({});
   const [previews, setPreviews] = useState<Partial<Record<N, string>>>({});
+  const [pdfArchive, setPdfArchive] = useState<File | null>(null);
   const [cam, setCam] = useState(false);
   const [info, setInfo] = useState(EMPTY);
   const [insp, setInsp] = useState<Partial<Record<N, Inspection>>>({});
@@ -50,6 +52,7 @@ export function ScanClient({ initialKey, template }: { initialKey: Key; template
     urls.current = nextUrls;
     setFiles(next);
     setPreviews(nextUrls);
+    setPdfArchive(null);
     setInsp({}); setAnswers(null);
   }
 
@@ -57,7 +60,9 @@ export function ScanClient({ initialKey, template }: { initialKey: Key; template
     setBusy(true);
     setPages({});
     try {
-      setPages(await renderPdfPages(file));
+      const { pages, archive } = await renderPdfPages(file);
+      setPages({ 1: pages[0], 2: pages[1] });
+      setPdfArchive(archive);
     } catch {
       toast("Could not read the PDF. Select a valid two-page answer sheet.");
     } finally {
@@ -117,6 +122,15 @@ export function ScanClient({ initialKey, template }: { initialKey: Key; template
       if (e) {
         const cleanupFailed = await rollbackStudent(st.id, paths);
         setBusy(false); return toast(cleanupFailed ? "Could not save the scanned pages. Cleanup was incomplete." : "Could not save the scanned pages. Nothing was kept.");
+      }
+      paths.push(path);
+    }
+    if (pdfArchive) {
+      const path = `${st.id}/answer-sheet.pdf`;
+      const { error: pdfError } = await supabase.storage.from("sheets").upload(path, pdfArchive, { contentType: "application/pdf" });
+      if (pdfError) {
+        const cleanupFailed = await rollbackStudent(st.id, paths);
+        setBusy(false); return toast(cleanupFailed ? "Could not save the PDF record. Cleanup was incomplete." : "Could not save the PDF record. Nothing was kept.");
       }
       paths.push(path);
     }
@@ -201,6 +215,7 @@ export function ScanClient({ initialKey, template }: { initialKey: Key; template
             </>
           )}
         </Card>
+        {answers && <AnswerReview responses={answers} answerKey={key} />}
         {answers && (
           <Card>
             <div className="mb-3 flex items-center justify-between gap-2">

@@ -1,6 +1,7 @@
 import { OPTIONS } from "@/lib/tamanna/tests";
 import { DEFAULT_TEMPLATE, HEADER_MASK_RATIO, REF_WIDTH, REF_HEIGHT, type Column } from "@/lib/omr/template";
 import * as pdfjs from "pdfjs-dist/legacy/build/pdf.mjs";
+import { PDFDocument } from "pdf-lib";
 
 pdfjs.GlobalWorkerOptions.workerSrc = new URL("pdfjs-dist/legacy/build/pdf.worker.mjs", import.meta.url).toString();
 
@@ -8,6 +9,19 @@ export type Marked = string | null | "MULTI";
 export type PageResult = Record<string, Marked[]>; // test code -> marked option per question (index 0 = Q1)
 export type Quality = { ok: boolean; issues: string[] };
 export type Inspection = { answers: PageResult; quality: Quality; overlay: string; crop: (test: string, q: number) => string | null };
+
+async function archivePdf(pages: [File, File]) {
+  const document = await PDFDocument.create();
+  document.setTitle("Redacted answer sheet");
+  document.setSubject("Student answer sheet with identifying header masked");
+  for (const file of pages) {
+    const image = await document.embedJpg(await file.arrayBuffer());
+    const page = document.addPage([612, 612 * REF_HEIGHT / REF_WIDTH]);
+    page.drawImage(image, { x: 0, y: 0, width: page.getWidth(), height: page.getHeight() });
+  }
+  const bytes = await document.save();
+  return new File([Uint8Array.from(bytes)], "redacted-answer-sheet.pdf", { type: "application/pdf" });
+}
 
 async function normalizedPage(source: CanvasImageSource, name: string) {
   const canvas = document.createElement("canvas");
@@ -34,7 +48,7 @@ export async function redactPage(file: File | Blob, page: 1 | 2) {
   }
 }
 
-export async function renderPdfPages(file: File): Promise<[File, File]> {
+export async function renderPdfPages(file: File): Promise<{ pages: [File, File]; archive: File }> {
   const pdf = await pdfjs.getDocument({
     data: new Uint8Array(await file.arrayBuffer()),
     isEvalSupported: false,
@@ -61,7 +75,8 @@ export async function renderPdfPages(file: File): Promise<[File, File]> {
       canvas.width = 0;
       canvas.height = 0;
     }
-    return [rendered[0], rendered[1]];
+    const pages: [File, File] = [rendered[0], rendered[1]];
+    return { pages, archive: await archivePdf(pages) };
   } finally {
     await pdf.destroy();
   }

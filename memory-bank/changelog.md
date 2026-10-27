@@ -1,6 +1,13 @@
 # Changelog
 Format: [Keep a Changelog](https://keepachangelog.com), versions follow [SemVer](https://semver.org). See `versioning.md`.
 
+## [0.11.0] - 2026-10-27
+### Added
+- **Student answer review**: show each detected response beside its keyed answer on the scan and student profile pages; incorrect responses are red and correct responses blue
+- **PDF records**: keep a private, name-masked copy of each uploaded answer-sheet PDF with the student's scanned pages
+### Changed
+- **PDF upload**: process both pages and reject PDFs with additional pages for one student
+
 ## [0.10.0] - 2026-10-27
 ### Added
 - **Answer-sheet scanning**: upload one two-page PDF or scan pages sequentially; student-name areas are masked before review and storage

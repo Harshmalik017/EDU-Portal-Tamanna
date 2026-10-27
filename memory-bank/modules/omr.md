@@ -2,8 +2,9 @@
 - Image is resized to 924×1300 reference space; each bubble is sampled at template coordinates.
 - A bubble is "marked" if it is darker than the unfilled baseline by max(35, 18% of baseline) in its row.
 - 0 marked = blank, >1 = `MULTI` (counted wrong, flagged).
-- The scanner accepts one two-page PDF or captures the two pages sequentially. PDF rendering and header masking happen in the browser; only redacted page images are saved.
+- The scanner accepts one two-page PDF or captures the two pages sequentially. PDF rendering and header masking happen in the browser; extra PDF pages are rejected. Redacted page images and a masked PDF archive are saved with the student.
 - The header mask covers the top 23% of each page before previews, OMR, and storage. The student name is never captured in the student record.
+- Scanned answer review lists each student response alongside its answer-key option on the scan and student-profile pages.
 ## Known limits / TODO
 - **Template values are calibrated against the supplied scan; other scanner formats may need calibration.**
 - No perspective correction: photo must be flat and cropped to the page edges. Add corner markers + warp (OpenCV.js) next.
