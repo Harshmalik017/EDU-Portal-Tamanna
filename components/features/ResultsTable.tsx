@@ -2,7 +2,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, ArrowUpDown, ClipboardCheck, Download, FileText, Printer, Search, Table2, Trash2, UserRound } from "lucide-react";
+import { AlertTriangle, ArrowUpDown, ClipboardCheck, FileSpreadsheet, FileText, Printer, Search, Table2, Trash2, UserRound } from "lucide-react";
 import { TESTS } from "@/lib/tamanna/tests";
 import { bandOf, normalizeClass, stenOf } from "@/lib/tamanna/norms";
 import { supabase } from "@/lib/supabase/client";
@@ -91,10 +91,15 @@ export function ResultsTable({ rows, email, omrSheets }: { rows: Student[]; emai
         <p className="text-sm font-semibold text-ink/80">{shown.length} students</p>
         <div className="flex flex-wrap gap-2">
           <Link href={`/admin/reports${cls ? `?class=${cls}` : ""}`} className="clay-btn-soft"><Printer size={18} /> Print all reports</Link>
-          <Button variant="soft" onClick={exportCsv} disabled={!shown.length}><Download size={18} /> Download list</Button>
+          <Button onClick={exportCsv} disabled={!shown.length} className="!border-green-700 !bg-green-700 !text-white hover:!bg-green-800 focus-visible:!outline-green-700"><FileSpreadsheet size={18} /> Download CSV</Button>
         </div>
       </div>
-      <p className="mb-3 text-xs">Marks and Sten score (Low 1–3 · Average 4–7 · High 8–10)</p>
+      <div className="mb-4 flex flex-wrap items-center gap-2 text-xs">
+        <span className="font-semibold text-ink/80">Marks and Sten score</span>
+        <span className="rounded-full border border-amber-300 bg-amber-50 px-2.5 py-1 font-bold text-amber-900">Low · 1–3</span>
+        <span className="rounded-full border border-blue-300 bg-blue-50 px-2.5 py-1 font-bold text-blue-900">Average · 4–7</span>
+        <span className="rounded-full border border-green-300 bg-green-50 px-2.5 py-1 font-bold text-green-900">High · 8–10</span>
+      </div>
       <div className="mb-4 grid items-end gap-3 sm:grid-cols-[1fr_180px]">
         <div className="relative">
           <Search size={18} className="pointer-events-none absolute bottom-3.5 left-4 text-ink/60" />

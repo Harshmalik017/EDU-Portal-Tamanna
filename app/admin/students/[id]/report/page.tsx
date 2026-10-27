@@ -12,7 +12,10 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
   if (!data) notFound();
   return (
     <div>
-      <div className="no-print mb-4 flex flex-wrap gap-3"><PrintButton /><Link href="/admin/results" className="clay-btn-soft"><ArrowLeft size={18} /> Back to Student Reports</Link><Link href={`/admin/students/${id}`} className="clay-btn-soft">Back to profile</Link></div>
+      <div className="no-print mb-4 flex flex-wrap items-center justify-between gap-3">
+        <Link href="/admin/results" className="clay-btn-soft"><ArrowLeft size={18} /> Back to Student Reports</Link>
+        <PrintButton />
+      </div>
       <ReportPages s={data as unknown as Student} />
     </div>
   );

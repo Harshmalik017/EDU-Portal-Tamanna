@@ -7,7 +7,6 @@ import type { PageResult } from "@/lib/omr/reader";
 
 type OriginalPage = { label: string; url: string };
 type SheetPage = 1 | 2;
-type View = "original" | "theme";
 
 const sectionNames: Record<string, string> = {
   LA: "भाषा अभिक्षमता",
@@ -107,14 +106,21 @@ function OriginalSheet({ pages, pdfUrl }: { pages: OriginalPage[]; pdfUrl?: stri
   );
 }
 
-function SheetDisplay({ view, pages, pdfUrl, responses, roll }: { view: View; pages: OriginalPage[]; pdfUrl?: string | null; responses: PageResult; roll?: string }) {
+function SheetDisplay({ pages, pdfUrl, responses, roll }: { pages: OriginalPage[]; pdfUrl?: string | null; responses: PageResult; roll?: string }) {
   const [page, setPage] = useState<SheetPage>(1);
   return (
     <div className="space-y-3">
       <PagePicker page={page} onChange={setPage} />
-      {view === "original"
-        ? <OriginalSheet pages={pages.filter((item) => item.label === `Page ${page}`)} pdfUrl={pdfUrl} />
-        : <ThemeSheet responses={responses} roll={roll} page={page} />}
+      <div className="grid items-start gap-4 lg:grid-cols-2">
+        <section className="min-w-0 space-y-2">
+          <h3 className="font-bold">Original upload</h3>
+          <OriginalSheet pages={pages.filter((item) => item.label === `Page ${page}`)} pdfUrl={pdfUrl} />
+        </section>
+        <section className="min-w-0 space-y-2">
+          <h3 className="font-bold">Theme UI</h3>
+          <ThemeSheet responses={responses} roll={roll} page={page} />
+        </section>
+      </div>
     </div>
   );
 }
@@ -133,7 +139,6 @@ export function OMRSheetPreview({
   variant: "inline" | "button";
 }) {
   const [open, setOpen] = useState(false);
-  const [view, setView] = useState<View>("original");
   const [inlinePage, setInlinePage] = useState<SheetPage>(1);
   const dialogRef = useRef<HTMLDialogElement>(null);
 
@@ -176,15 +181,7 @@ export function OMRSheetPreview({
             <button type="button" aria-label="Close OMR sheet" onClick={() => dialogRef.current?.close()} className="rounded-lg p-2 hover:bg-brand-100 focus-visible:outline-2 focus-visible:outline-brand-700"><X size={20} /></button>
           </header>
           <div className="space-y-4 p-4 sm:p-6">
-            <div className="flex flex-wrap gap-2" role="group" aria-label="OMR sheet versions">
-              {([["original", "Original upload"], ["theme", "Theme UI"]] as const).map(([id, label]) => (
-                <button key={id} type="button" aria-pressed={view === id} onClick={() => setView(id)}
-                  className={`rounded-xl px-4 py-2 text-sm font-bold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-700 ${view === id ? "bg-brand-700 text-white" : "bg-brand-50 text-brand-800 hover:bg-brand-100"}`}>
-                  {label}
-                </button>
-              ))}
-            </div>
-            <SheetDisplay view={view} pages={originalPages} pdfUrl={originalPdfUrl} responses={responses} roll={roll} />
+            <SheetDisplay pages={originalPages} pdfUrl={originalPdfUrl} responses={responses} roll={roll} />
             <p className="text-xs text-ink/70">Student name area is masked in original stored scans.</p>
           </div>
         </dialog>

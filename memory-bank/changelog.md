@@ -1,6 +1,14 @@
 # Changelog
 Format: [Keep a Changelog](https://keepachangelog.com), versions follow [SemVer](https://semver.org). See `versioning.md`.
 
+## [0.12.4] - 2026-10-27
+### Changed
+- **Report navigation**: keep Back to Student Reports on the left and move print to the right; remove Back to profile
+- **Results exports and legend**: label CSV export clearly, style it green, and show performance ranges as colored pills
+- **OMR comparison**: display the same selected original page beside its Theme UI page in the sheet dialog
+### Fixed
+- **Sten chart**: move band labels outside the plot so they no longer overlap the final bar
+
 ## [0.12.3] - 2026-10-27
 ### Changed
 - **Student reports**: use a single report title, remove the verification stamp, and redesign score meanings and suggestions as cited, color-coded icon cards
