@@ -12,6 +12,7 @@ import { isDemo } from "@/lib/supabase/env";
 import { sampleAnswers } from "@/lib/demo/sample";
 import { Button, Card, Input, Select } from "@/components/ui";
 import { AnswerReview } from "@/components/features/AnswerReview";
+import { OMRSheetPreview } from "@/components/features/OMRSheetPreview";
 import { useToast } from "@/components/Toast";
 
 const EMPTY = { name: "", class: "", gender: "", school: "" };
@@ -215,6 +216,14 @@ export function ScanClient({ initialKey, template }: { initialKey: Key; template
             </>
           )}
         </Card>
+        {answers && (
+          <OMRSheetPreview
+            variant="inline"
+            originalPages={([1, 2] as N[]).flatMap((n) => previews[n] ? [{ label: `Page ${n}`, url: previews[n]! }] : [])}
+            responses={answers}
+            roll={info.name}
+          />
+        )}
         {answers && <AnswerReview responses={answers} answerKey={key} />}
         {answers && (
           <Card>

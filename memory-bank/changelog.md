@@ -1,6 +1,12 @@
 # Changelog
 Format: [Keep a Changelog](https://keepachangelog.com), versions follow [SemVer](https://semver.org). See `versioning.md`.
 
+## [0.12.0] - 2026-10-27
+### Added
+- **OMR sheet preview**: show the original masked scan and a themed response sheet with Hindi and English section names after scanning and from Student Reports
+### Fixed
+- **OMR section labels**: make bilingual section names clear in the themed sheet preview
+
 ## [0.11.0] - 2026-10-27
 ### Added
 - **Student answer review**: show each detected response beside its keyed answer on the scan and student profile pages; incorrect responses are red and correct responses blue

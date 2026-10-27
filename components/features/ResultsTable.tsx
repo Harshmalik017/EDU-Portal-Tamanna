@@ -9,6 +9,8 @@ import { supabase } from "@/lib/supabase/client";
 import type { Student } from "@/lib/types";
 import { Badge, Button, Card, Input, PageHeader, Select, StatCard } from "@/components/ui";
 import { ManualCheckDialog } from "@/components/features/ManualCheckDialog";
+import { OMRSheetPreview } from "@/components/features/OMRSheetPreview";
+import type { PageResult } from "@/lib/omr/reader";
 import { useToast } from "@/components/Toast";
 
 const PAGE = 20;
@@ -23,7 +25,7 @@ function Cell({ r, c }: { r: Student; c: string }) {
   return <span className="whitespace-nowrap">{v ?? "–"}{s && <span className={`ml-1 rounded-full px-1.5 text-[11px] font-bold ${tone[bandOf(s)]}`} title={`Sten ${s}, ${bandOf(s)}`}>{s}</span>}</span>;
 }
 
-export function ResultsTable({ rows, email }: { rows: Student[]; email: string }) {
+export function ResultsTable({ rows, email, omrSheets }: { rows: Student[]; email: string; omrSheets: Record<string, { originals: { label: string; url: string }[]; responses: PageResult }> }) {
   const router = useRouter();
   const toast = useToast();
   const [q, setQ] = useState(""); const [cls, setCls] = useState("");
@@ -116,6 +118,7 @@ export function ResultsTable({ rows, email }: { rows: Student[]; email: string }
                     {!r.excluded && <Button variant="soft" className="!min-h-9 !px-3 !py-1.5 text-xs" onClick={() => setManualCheck({ studentId: r.id })}><ClipboardCheck size={15} />{r.verification_status && r.verification_status !== "pending" ? "Recheck" : "Hand Check"}</Button>}
                     <Link href={`/admin/students/${r.id}/report`} aria-label={`Report for roll ${r.name}`} title="Report" className="inline-flex min-h-9 items-center gap-1.5 rounded-xl bg-sky-100 px-3 py-1.5 text-xs font-bold text-sky-800 transition hover:bg-sky-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600"><FileText size={15} /> Report</Link>
                     <Link href={`/admin/students/${r.id}`} className="inline-flex min-h-9 items-center gap-1.5 rounded-xl bg-brand-50 px-3 py-1.5 text-xs font-bold text-brand-700 transition hover:bg-brand-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"><UserRound size={15} /> Profile</Link>
+                    <OMRSheetPreview variant="button" originalPages={omrSheets[r.id]?.originals ?? []} responses={omrSheets[r.id]?.responses ?? {}} roll={r.name} />
                     <button type="button" aria-label={`Delete roll ${r.name}`} title="Delete student" disabled={deletingId === r.id} onClick={() => deleteStudent(r)} className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-red-200 bg-red-50 text-red-700 transition hover:bg-red-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600 disabled:opacity-50"><Trash2 size={17} /></button>
                   </div></td>
                 </tr>))}</tbody>
@@ -130,6 +133,7 @@ export function ResultsTable({ rows, email }: { rows: Student[]; email: string }
                 {!r.excluded && <Button variant="soft" className="!min-h-9 !px-3 !py-1.5 text-xs" onClick={() => setManualCheck({ studentId: r.id })}><ClipboardCheck size={15} />{r.verification_status && r.verification_status !== "pending" ? "Recheck" : "Hand Check"}</Button>}
                 <Link href={`/admin/students/${r.id}/report`} className="inline-flex min-h-9 items-center gap-1.5 rounded-xl bg-sky-100 px-3 py-1.5 text-xs font-bold text-sky-800 transition hover:bg-sky-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600"><FileText size={15} /> Report</Link>
                 <Link href={`/admin/students/${r.id}`} className="inline-flex min-h-9 items-center gap-1.5 rounded-xl bg-brand-50 px-3 py-1.5 text-xs font-bold text-brand-700 transition hover:bg-brand-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"><UserRound size={15} /> Profile</Link>
+                <OMRSheetPreview variant="button" originalPages={omrSheets[r.id]?.originals ?? []} responses={omrSheets[r.id]?.responses ?? {}} roll={r.name} />
                 <button type="button" aria-label={`Delete roll ${r.name}`} title="Delete student" disabled={deletingId === r.id} onClick={() => deleteStudent(r)} className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-red-200 bg-red-50 text-red-700 transition hover:bg-red-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600 disabled:opacity-50"><Trash2 size={17} /></button>
               </div>
             </li>))}</ul>
