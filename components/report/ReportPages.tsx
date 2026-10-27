@@ -1,23 +1,49 @@
-import { Check } from "lucide-react";
+import {
+  BookOpen,
+  Box,
+  BriefcaseBusiness,
+  Calculator,
+  ChartNoAxesColumn,
+  Check,
+  Cog,
+  Compass,
+  Lightbulb,
+  MessageSquareText,
+  ScanSearch,
+  Shapes,
+  type LucideIcon,
+} from "lucide-react";
 import { NOTES, DESCRIPTIONS } from "@/lib/tamanna/booklet";
 import { buildProfile } from "@/lib/tamanna/profile";
+import type { Band } from "@/lib/tamanna/norms";
 import type { Student } from "@/lib/types";
 import { StenChart } from "./StenChart";
 
 const pill = { Low: "bg-amber-100 text-amber-900", Average: "bg-blue-100 text-blue-900", High: "bg-green-100 text-green-900" } as const;
+const cardTone: Record<Band, string> = {
+  Low: "border-amber-200 bg-amber-50",
+  Average: "border-sky-200 bg-sky-50",
+  High: "border-green-200 bg-green-50",
+};
+const testIcon: Record<string, LucideIcon> = {
+  LA: BookOpen,
+  AR: Shapes,
+  VR: MessageSquareText,
+  MR: Cog,
+  NA: Calculator,
+  SA: Box,
+  PA: ScanSearch,
+};
 
 function Head({ n, roll }: { n: number; roll: string }) {
   return (
-    <header className="mb-4 flex items-end justify-between border-b-2 border-brand-600 pb-2">
+    <header className="report-header mb-4 flex items-end justify-between border-b-2 border-brand-600 pb-2">
       <div className="flex items-center gap-3">
         <div className="flex flex-col items-start">
           <img src="/brand/logo.png" alt="Tamanna" className="h-8 w-auto" />
           <span className="text-[9px] font-semibold leading-none text-brand-700">Uttar Pradesh</span>
         </div>
-        <div>
-          <p className="text-xs font-bold text-brand-700">Tamanna: An Aptitude Test</p>
-          <h2 className="text-xl font-extrabold">Aptitude Test Report Sheet</h2>
-        </div>
+        {n === 1 && <h2 className="text-xl font-extrabold">Aptitude Test Report</h2>}
       </div>
       <p className="text-xs font-semibold">Roll {roll} · Page {n} of 3</p>
     </header>
@@ -27,9 +53,6 @@ function Head({ n, roll }: { n: number; roll: string }) {
 /** A 3-page personal report. Content comes only from the Tamanna booklet (see lib/tamanna/booklet.ts). */
 export function ReportPages({ s }: { s: Student }) {
   const p = buildProfile(s);
-  const date = (d?: string | null) => (d ? new Date(d).toLocaleDateString("en-GB") : "");
-  const status = s.verification_status === "verified" ? `Verified by ${s.verified_by ?? "teacher"} on ${date(s.verified_at)}`
-    : s.verification_status === "mismatch" ? "Score difference found during hand check. Recheck before sharing." : "Pending hand check";
   return (
     <>
       <section className="report-page">
@@ -86,54 +109,69 @@ export function ReportPages({ s }: { s: Student }) {
         </p>
         <h3 className="mb-1 mt-5 text-center text-sm font-extrabold uppercase tracking-wide">Aptitude Profile</h3>
         <StenChart rows={p.rows} />
-        <p className="mt-1 text-xs font-semibold">{status}</p>
       </section>
 
       <section className="report-page">
         <Head n={2} roll={s.name} />
-        <h3 className="mb-3 text-lg font-extrabold">What each score means</h3>
-        <ul className="space-y-3">{p.rows.map((r) => (
-          <li key={r.code} className="rounded-2xl border border-brand-100 p-3 text-sm">
-            <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
-              <span className="font-extrabold">{r.name} ({r.code})</span>
-              {r.band && (
-                <span className={`inline-flex items-center gap-1 rounded-full px-3 py-0.5 text-xs font-bold ${pill[r.band]}`}>
-                  <Check size={12} /> Sten {r.sten} · {r.band}{r.nearHigh ? " (Close to High)" : ""}
+        <h3 className="mb-1 text-lg font-extrabold">What each score means</h3>
+        <p className="mb-3 text-[10px] italic text-ink/70">Source: Tamanna Guide for Teachers and Parents, Section 2 and Appendices VI–VIII.</p>
+        <ul className="meaning-grid grid grid-cols-2 gap-2">{p.rows.map((r) => {
+          const Icon = testIcon[r.code];
+          return (
+            <li key={r.code} className={`meaning-card rounded-xl border p-2.5 text-[11px] leading-snug ${r.band ? cardTone[r.band] : "border-slate-200 bg-slate-50"}`}>
+              <div className="mb-1 flex items-start justify-between gap-2">
+                <span className="flex items-center gap-1.5 font-extrabold">
+                  <Icon size={16} aria-hidden="true" className="shrink-0 text-brand-700" />
+                  {r.name} ({r.code})
                 </span>
-              )}
-            </div>
-            <p>{r.band ? DESCRIPTIONS[r.code][r.band] : "No Sten score available for this sub-test."}</p>
-            {r.giveReccs && (
-              <div className="mt-2 rounded-xl bg-brand-50/80 px-3 py-2 text-xs">
-                <p>
-                  <b>Recommended subjects{r.nearHigh ? ` (Average score close to High bracket of ${r.highMin}+)` : ""}:</b>{" "}
-                  {p.subjectsFor(r.code).join(", ")}.
-                </p>
-                <p className="mt-1">
-                  <b>Related fields:</b> {p.areas(r.code)}.
-                </p>
+                {r.band && (
+                  <span className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-bold ${pill[r.band]}`}>
+                    <Check size={11} /> Sten {r.sten} · {r.band}{r.nearHigh ? " · Near high" : ""}
+                  </span>
+                )}
               </div>
-            )}
-          </li>))}</ul>
+              <p>{r.band ? DESCRIPTIONS[r.code][r.band] : "No Sten score available for this sub-test."}</p>
+              {r.giveReccs && (
+                <div className="recommendations-copy mt-1.5 border-t border-current/10 pt-1.5 text-[10px]">
+                  <p><b>Subjects{r.nearHigh ? ` (near High: ${r.highMin}+)` : ""}:</b> {p.subjectsFor(r.code).join(", ")}.</p>
+                  <p className="mt-1"><b>Related fields:</b> {p.areas(r.code)}.</p>
+                </div>
+              )}
+            </li>
+          );
+        })}</ul>
       </section>
 
       <section className="report-page">
         <Head n={3} roll={s.name} />
-        <h3 className="mb-2 text-lg font-extrabold">Suggestions / Remarks</h3>
-        <div className="space-y-2.5">
-          {p.remarks.map((t, i) => <p key={i} className="text-sm leading-relaxed">{t}</p>)}
+        <h3 className="mb-1 text-lg font-extrabold">Suggestions / Remarks</h3>
+        <p className="mb-3 text-[10px] italic text-ink/70">
+          Source: Tamanna Guide for Teachers and Parents, Section 5 (p. 11), Appendices VII–VIII.
+        </p>
+        <div className="remarks-grid space-y-2">
+          {p.remarks.map((text, index) => {
+            const Icon = index === 0 ? ChartNoAxesColumn : index === 1 ? Lightbulb : Compass;
+            const tone = ["border-blue-200 bg-blue-50", "border-amber-200 bg-amber-50", "border-violet-200 bg-violet-50"][index % 3];
+            return (
+              <article key={index} className={`flex gap-3 rounded-xl border p-3 text-xs leading-relaxed ${tone}`}>
+                <Icon size={19} aria-hidden="true" className="mt-0.5 shrink-0 text-brand-700" />
+                <p>{text}</p>
+              </article>
+            );
+          })}
         </div>
         {p.highs.length === 0 && (
-          <p className="mt-2 text-xs italic text-ink/80">{NOTES.noHighSource}</p>
+          <p className="mt-2 text-[10px] italic text-ink/70">{NOTES.noHighSource}</p>
         )}
         {p.reccRows.length > 0 && (
           <>
-            <h4 className="mb-1 mt-5 text-sm font-extrabold">
-              Recommended occupations (Appendix VII — for High scores and Average scores close to High only)
+            <h4 className="mb-1 mt-4 flex items-center gap-2 text-sm font-extrabold">
+              <BriefcaseBusiness size={17} aria-hidden="true" className="text-brand-700" />
+              Recommended occupations
             </h4>
-            <ul className="grid grid-cols-1 gap-x-6 gap-y-1 text-sm sm:grid-cols-2">
+            <ul className="occupation-grid grid grid-cols-2 gap-x-4 gap-y-1.5 text-[11px]">
               {p.occupations.slice(0, 14).map((o) => (
-                <li key={o.name}>
+                <li key={o.name} className="rounded-lg border border-violet-100 bg-violet-50/70 px-2 py-1.5">
                   <b>{o.name}</b>{" "}
                   <span className="text-xs">
                     ({o.aptitudes.map((a) => (p.reccRows.some((h) => h.code === a) ? `${a}✓` : a)).join(", ")})
@@ -146,12 +184,12 @@ export function ReportPages({ s }: { s: Student }) {
             </p>
           </>
         )}
-        <div className="mt-5 space-y-1.5 rounded-2xl bg-brand-50 p-3.5 text-xs">
+        <div className="mt-3 space-y-1.5 rounded-xl border border-brand-200 bg-brand-50 p-3 text-[10px] leading-relaxed">
           <p className="font-bold">{NOTES.suggestive}</p>
           <p>{NOTES.cluster}</p>
         </div>
-        <p className="mt-10 text-right text-sm font-bold">Teacher&apos;s Signature: ______________________</p>
-        <p className="mt-6 text-[10px] text-ink/80">{NOTES.source}</p>
+        <p className="mt-5 text-right text-xs font-bold">Teacher&apos;s Signature: ______________________</p>
+        <p className="mt-3 text-[9px] italic leading-relaxed text-ink/70">{NOTES.source}</p>
       </section>
     </>
   );

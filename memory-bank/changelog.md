@@ -1,6 +1,11 @@
 # Changelog
 Format: [Keep a Changelog](https://keepachangelog.com), versions follow [SemVer](https://semver.org). See `versioning.md`.
 
+## [0.12.3] - 2026-10-27
+### Changed
+- **Student reports**: use a single report title, remove the verification stamp, and redesign score meanings and suggestions as cited, color-coded icon cards
+- **Report printing**: align all three pages to A4 portrait and refine the Sten chart typography and proportions
+
 ## [0.12.2] - 2026-10-27
 ### Fixed
 - **OMR sheet masking**: reduce the identifying header mask so section headings remain visible

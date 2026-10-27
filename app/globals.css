@@ -49,13 +49,27 @@ body::before { content: ""; position: fixed; inset: 0; z-index: -1; background: 
   box-shadow: 0 1px 2px rgba(60,90,20,.08), inset 0 1px 0 #fff;
 }
 
-.report-page { background: #fff; border-radius: 24px; padding: 28px; margin-bottom: 24px; box-shadow: 0 10px 30px rgba(86,120,30,.18); }
+.report-page { box-sizing: border-box; width: 190mm; max-width: 100%; min-height: 277mm; margin: 0 auto 20px; padding: 8mm; background: #fff; border-radius: 24px; box-shadow: 0 10px 30px rgba(86,120,30,.18); }
+.meaning-card, .remarks-grid article, .occupation-grid li { break-inside: avoid; page-break-inside: avoid; }
+.report-chart { max-height: 68mm; }
 @media print {
-  @page { size: A4; margin: 12mm; }
-  body { padding: 0; background: #fff; }
+  @page { size: A4 portrait; margin: 10mm; }
+  html, body { width: 190mm; margin: 0 !important; padding: 0 !important; background: #fff !important; }
   body::before, .no-print { display: none !important; }
   main { max-width: none !important; padding: 0 !important; }
-  .report-page { box-shadow: none; border-radius: 0; padding: 0; margin: 0; break-after: page; }
+  .report-page { width: 190mm; max-width: none; height: 265mm; min-height: 265mm; box-shadow: none; border: 0; border-radius: 0; padding: 6mm; margin: 0; overflow: hidden; break-after: page; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
   .report-page:last-child { break-after: auto; }
+  .report-page h2 { font-size: 15pt; }
+  .report-page h3 { font-size: 12pt; }
+  .report-header { margin-bottom: 4mm; }
+  .report-page table { font-size: 9pt; }
+  .report-page table th, .report-page table td { padding: 1.5mm 2mm; }
+  .report-page .meaning-card { padding: 2mm; font-size: 8pt; line-height: 1.2; }
+  .report-page .meaning-card p { margin-top: 1mm; }
+  .report-page .meaning-card .recommendations-copy { font-size: 7pt; }
+  .report-page .remarks-grid article { padding: 2.5mm; font-size: 8.5pt; line-height: 1.25; }
+  .report-page .occupation-grid { font-size: 8pt; }
+  .report-page .occupation-grid li { padding: 1mm 1.5mm; }
+  .report-chart { max-height: 52mm; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
