@@ -10,6 +10,8 @@
 
 Why client-side OMR: Vercel free functions have tight limits and no OpenCV; reading in the browser is free and fast. Upgrade path: OpenCV.js or a Python service if perspective correction is needed.
 
-Quality: `npm run typecheck`, `npm run check:norms`, `npm run check:report` (ESLint was removed in 0.5.0 because its dependencies caused npm vulnerability warnings).
+Quality: ESLint with `typescript-eslint` for lint-only checks. `npm run ci` remains an optional full validation command. For v0.14.0 the user requested lint only, no tests/build/typecheck locally; Vercel runs the production build without the optional check suite.
 
-Local PDF imports use pinned PDF.js and `@napi-rs/canvas` as development dependencies; no PDF/OCR service receives student documents. Node 20.16+ (24 recommended). Run `npm run check:import` for identity, key, and reading checks. Runtime records are Supabase-only; missing settings show setup guidance.
+Local PDF imports use PDF.js and the development dependency `@napi-rs/canvas`; no PDF/OCR service receives student documents. Node 24.x is pinned in `package.json` and `.nvmrc`. Run `npm run check:import` for identity, key, and reading checks. Runtime records are Supabase-only; missing settings show setup guidance.
+
+Vercel installs with `npm ci`. Its Linux install/build commands remove only the obsolete `NPM_CONFIG_CACHE_DIR` / `npm_config_cache_dir` variables; supported npm cache configuration remains intact. `allowScripts` approves only the installed, reviewed esbuild version. Next.js already optimizes lucide-react imports by default; no explicit experimental override is needed.

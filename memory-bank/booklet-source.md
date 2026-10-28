@@ -27,7 +27,7 @@ Total score across sub-tests, percentiles, ranks, class averages as a judgement,
 4. Pattern rule needs 10+ answered items in a test (threshold is ours; the booklet gives no number).
 5. Condensed wording of Appendix VI/VII/Section 2 was written from images; compare with the printed booklet and check NCERT's permission for the app and printed reports.
 6. The **scoring key** (Appendix II) is not in the guide: principals request it from tamanna.ncert@ciet.nic.in. Enter it under Answer key. Practice items are not scored.
-7. Norm tables were transcribed from page images. Re-verify every cell against the booklet before use (`npm run check:norms` only checks structure and the Manju example).
+7. Norm tables were transcribed from page images. Re-verify every cell against the booklet before use (`npm run check:norms` checks structure, the Manju example, the four documented overlap baselines, and their lower-Sten first-match handling; unexpected changes fail CI).
 
 ## Landing page content (v0.5.1)
 All programme text on `/` comes from `lib/tamanna/program.ts`, condensed from the guide: Foreword (NCERT development, CBSE pilot, three components), Section 1 (aptitude, benefits), Section 2 (seven sub-tests), Section 4 (timing, procedure), Section 5-6 (Sten, example), Appendix I (items per sub-test), VII (careers), notes on pp.7, 11-13. Do not add facts from elsewhere. Item counts (30, PA 60) come from the sample answer sheet. The scoring-key email is printed in Appendix II.

@@ -1,7 +1,7 @@
 import { Card } from "@/components/ui";
 import { TESTS } from "@/lib/tamanna/tests";
 import type { Key } from "@/lib/types";
-import type { Marked, PageResult } from "@/lib/omr/reader";
+import type { PageResult } from "@/lib/omr/reader";
 
 function answerLabel(value: string | null | undefined) {
   if (value === "MULTI") return "Multiple marks";
@@ -9,7 +9,7 @@ function answerLabel(value: string | null | undefined) {
   return value ?? "Blank";
 }
 
-export function AnswerReview({ responses, answerKey, onChange }: { responses: PageResult; answerKey: Key; onChange?: (test: string, question: number, value: Marked) => void }) {
+export function AnswerReview({ responses, answerKey, onChange }: { responses: PageResult; answerKey: Key; onChange?: (responses: PageResult) => void }) {
   return (
     <Card>
       <h2 className="mb-1 text-xl font-extrabold">{onChange ? "Check marked answers" : "Student responses and answer key"}</h2>
@@ -49,7 +49,7 @@ export function AnswerReview({ responses, answerKey, onChange }: { responses: Pa
                         <tr key={question} className="border-t border-(--line)">
                           <th scope="row" className="px-4 py-2 font-semibold">{question + 1}</th>
                           <td className={`px-4 py-2 font-bold ${uncertain ? "bg-amber-50 text-amber-900" : isCorrect ? "bg-green-50 text-green-800" : isWrong || response === "MULTI" ? "bg-red-50 text-red-800" : "text-ink/70"}`}>
-                            {onChange ? <select aria-label={`${test.code} question ${question + 1}`} className="clay-inset min-h-11 px-2" value={response === undefined ? "UNCERTAIN" : response === null ? "BLANK" : response} onChange={(event) => onChange(test.code, question, event.target.value === "BLANK" ? null : event.target.value)}>
+                            {onChange ? <select aria-label={`${test.code} question ${question + 1}`} className="clay-inset min-h-11 px-2" value={response === undefined ? "UNCERTAIN" : response === null ? "BLANK" : response} onChange={(event) => onChange({ ...responses, [test.code]: Array.from({ length: test.questions }, (_, i) => i === question ? (event.target.value === "BLANK" ? null : event.target.value) : studentAnswers[i] === undefined ? "UNCERTAIN" : studentAnswers[i]) })}>
                               <option value="UNCERTAIN">Needs checking</option>
                               <option value="BLANK">Blank</option>
                               {["A", "B", "C", "D"].map((option) => <option key={option} value={option}>{option}</option>)}

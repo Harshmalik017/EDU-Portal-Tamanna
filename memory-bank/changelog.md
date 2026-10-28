@@ -1,6 +1,22 @@
 # Changelog
 Format: [Keep a Changelog](https://keepachangelog.com), versions follow [SemVer](https://semver.org). See `versioning.md`.
 
+## [0.14.0] - 2026-10-29
+### Added
+- Results-page profile dialogs without a scorecard, sharing the existing student detail form.
+- A Check answers button under Check, opening original scans and editable responses with atomic Confirm and score.
+- A private, admin-only, uncached endpoint for one student's sheet; requests cancel when its dialog closes.
+### Changed
+- Results SSR loads only compact student rows. Answer keys, submissions, and signed file links load on user action, not for every student upfront.
+- Lazy-load dialog code, share auth reads per server render, disable report/print prefetch, and show a results loading state.
+- Remove Verified by hand, Score differences, and Excluded sheets cards. Keep search, sorting, CSV, reports, OMR comparison, and hand checks.
+- Add ESLint for lint-only local validation. Vercel runs the production build without the optional test/check suite; manual testing is requested for this release.
+### Fixed
+- Pin Node to 24.x in the package manifest and local version file; install reproducibly with `npm ci` on Vercel.
+- Remove obsolete npm cache-dir environment settings from Vercel's install/build commands and explicitly approve only the reviewed esbuild install script.
+- Remove the redundant experimental lucide-react import setting; Next.js already optimizes it by default.
+- Label the four documented booklet overlaps as known source issues, preserve lower-Sten first-match behavior, and fail CI for unexpected norm problems or source-baseline changes. No scoring values changed.
+
 ## [0.13.0] - 2026-10-28
 ### Added
 - Private, resumable school-PDF import commands with stable five-digit rolls, separate names, editable demographics, checksum reconciliation, and explicit review reports.

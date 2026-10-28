@@ -4,7 +4,7 @@ Private school records, answer-sheet checking, and NCERT Tamanna reports. Next.j
 
 ## Run locally
 
-Use Node 20.16 or newer (Node 24 recommended).
+Use Node 24.x (`nvm use` reads `.nvmrc`).
 
 ```powershell
 npm install
@@ -68,6 +68,14 @@ Results and errors are recorded per PDF. `scoring-report.json` distinguishes sco
 
 Add **only** `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` to Vercel, then deploy. Provisioning/import commands use private local settings; Vercel does not need the admin password or owner keys.
 
+Node is pinned to 24.x. Vercel uses `npm ci` with the committed lockfile; its install and build commands remove the obsolete `NPM_CONFIG_CACHE_DIR` / `npm_config_cache_dir` setting before starting npm. Use `NPM_CONFIG_CACHE` / `npm_config_cache` if configuring an npm cache explicitly.
+
+The package manifest approves only the reviewed esbuild install script, pinned to its installed version. Review and renew that approval when upgrading esbuild; do not approve all dependency scripts.
+
+Results load student rows on the server. Profiles open as details-only dialogs. Use **Check answers** under **Check** to open original scans, correct responses, and **Confirm and score**. Sheets and private file links load only on demand; closing a dialog cancels its pending read. Reports do not prefetch.
+
+Vercel runs `npm run build`, not the optional test/check suite. For lint-only validation, run `npm run lint -- <changed source files>`. The full checks below remain available when explicitly wanted.
+
 Committing and pushing updates GitHub and can trigger Vercel deployment. It does **not** run database migrations or upload PDFs. Run the setup/import commands separately.
 
 ## Checks and source rules
@@ -81,6 +89,6 @@ npm run check:report
 npm run build
 ```
 
-Analysis uses only the NCERT Tamanna guide. No combined totals, ranks, or outside interpretations. See `memory-bank/booklet-source.md`. Known printed norm-table overlaps are reported by `check:norms`; they are not silently changed.
+Analysis uses only the NCERT Tamanna guide. No combined totals, ranks, or outside interpretations. See `memory-bank/booklet-source.md`. `check:norms` reports the four documented printed overlaps as known information and checks their lower-Sten first-match handling. New gaps, overlaps, or baseline changes fail CI. No printed scoring values are silently changed.
 
 Code: `lib/tamanna` for programme rules, `lib/omr` for reading, `lib/supabase` for connections, `components/features` for interactive screens. Start documentation at `memory-bank/index.md`. Version comes from `package.json`.

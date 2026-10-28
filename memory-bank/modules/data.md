@@ -8,5 +8,6 @@ Supabase stores `students`, `submissions`, `answer_keys`, `scores`, and `setting
 - `import_copy` atomically creates a student and submission. `score_copy` validates all 240 official answers and complete responses, rejects uncertain marks and stale keys, and saves all seven scores transactionally. `review_copy` updates checked responses and scores together; failed reviews roll back.
 - Key edits invalidate scores and hand verification. Class/gender edits reset verification and change the booklet norms.
 - `getKey` fetches the key once. `keyHashOf` fingerprints that exact snapshot, matching SQL `answer_key_hash`; scoring cannot silently use a newer key than the displayed one.
+- Results fetch no submissions, keys, or file URLs initially. `/api/admin/students/[id]/sheet` checks the signed-in user and admin role, loads only the latest submission plus key, and signs that student's files. Responses are private/no-store; cancellable queries follow the dialog's request signal.
 - Local scripts prepare, upload, reconcile, and score resumably. Keep manifests outside the repository. No import is a hand check.
 - Do not seed `supabase/answer_key.sql`: its old example rows are not the official key. Review and upload the supplied official key with `copies:key`.

@@ -130,7 +130,7 @@ function OriginalSheet({ pages }: { pages: OriginalPage[] }) {
   );
 }
 
-function SheetDisplay({ pages, pdfUrl, responses, answerKey, roll, name }: { pages: OriginalPage[]; pdfUrl?: string | null; responses: PageResult; answerKey: Key; roll?: string; name?: string }) {
+export function SheetDisplay({ pages, pdfUrl, responses, answerKey, roll, name }: { pages: OriginalPage[]; pdfUrl?: string | null; responses: PageResult; answerKey: Key; roll?: string; name?: string }) {
   const [page, setPage] = useState<SheetPage>(1);
   return (
     <div className="space-y-3">

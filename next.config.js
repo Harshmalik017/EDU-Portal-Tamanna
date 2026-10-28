@@ -9,7 +9,6 @@ module.exports = {
   reactStrictMode: true,
   poweredByHeader: false,
   env: { NEXT_PUBLIC_APP_VERSION: version },
-  experimental: { optimizePackageImports: ["lucide-react"] },
   async headers() {
     return [
       { source: "/(.*)", headers: security },

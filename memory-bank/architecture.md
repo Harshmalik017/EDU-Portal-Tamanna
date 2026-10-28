@@ -9,8 +9,10 @@
 | `/admin/scan` | Server fetch of key + template → client scanner | camera lazy-loaded, OMR runs in browser |
 Auth: `proxy.ts` (session refresh + redirect) → `admin/layout.tsx` (`is_admin()` check) → RLS (final authority).
 ## Network rules
-- Read data on the server once per navigation; client calls only for writes/uploads.
-- Images are compressed before upload; originals never leave the browser.
+- Read compact result rows on the server once per navigation, excluding lengthy per-question review notes. Fetch one student's sheet through the authenticated same-origin API only when its dialog opens; never preload all responses, answer keys, or signed URLs into results props.
+- Browser Supabase calls are user actions (writes/uploads). Sheet-dialog reads use an AbortController; close/unmount cancels them, and private responses use `Cache-Control: private, no-store`. Report links do not prefetch.
+- `createServer` and `getServerUser` use React request-scoped caching so layouts and pages share their session client/auth read, never cross-user global data.
+- Images are compressed before upload; original PDFs are stored unchanged in private storage.
 - Browser PDF rendering produces unmasked previews; the original PDF is stored unchanged in private Supabase storage. Local batch imports preserve every page and verify source/image checksums. No real student files are bundled publicly.
 - Signed URLs expire in 1 hour; bucket is private.
 ## Security
@@ -18,7 +20,7 @@ RLS on every table via `is_admin()`; `admins` table has no API policies; views u
 ## Known limits / next
 - Client-side OMR runs on the main thread (move to a Web Worker for batches).
 - Results are loaded in full and paginated in the browser (fine for thousands; move to server pagination beyond ~5k).
-- No strict CSP yet (needs nonces with Next inline scripts). No automated tests yet (add Vitest for `lib/omr/reader.ts` scoring).
+- No strict CSP yet (needs nonces with Next inline scripts). Script-based checks exist; Vercel builds without running them. v0.14.0 uses lint-only local validation and manual testing as requested.
 - Pages using the Supabase browser client ship ~60 kB extra JS; unavoidable for uploads and auth.
 
 ## Code layout (v0.7.0)

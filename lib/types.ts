@@ -1,3 +1,5 @@
+import type { PageResult } from "@/lib/omr/reader";
+
 export type ScoreRow = { test_code: string; correct: number; wrong?: number; blank?: number; flagged?: number };
 export type Verification = "pending" | "verified" | "mismatch";
 export type Student = {
@@ -8,3 +10,10 @@ export type Student = {
   manual_scores?: Record<string, number> | null; verification_note?: string | null;
 };
 export type Key = Record<string, (string | undefined)[]>;
+export type StudentSheet = {
+  originals: { label: string; url: string }[];
+  pdfUrl: string | null;
+  responses: PageResult;
+  answerKey: Key;
+  keyHash: string;
+};

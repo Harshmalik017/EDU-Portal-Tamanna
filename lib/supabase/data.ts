@@ -3,8 +3,10 @@ import { createHash } from "node:crypto";
 import { DEFAULT_TEMPLATE, type Column } from "@/lib/omr/template";
 import type { Key } from "@/lib/types";
 
-export async function getKey(): Promise<Key> {
-  const { data, error } = await (await createServer()).from("answer_keys").select("test_code,question_no,correct_option");
+export async function getKey(signal?: AbortSignal): Promise<Key> {
+  let query = (await createServer()).from("answer_keys").select("test_code,question_no,correct_option");
+  if (signal) query = query.abortSignal(signal);
+  const { data, error } = await query;
   if (error) throw new Error("Could not load the answer key.", { cause: error });
   const k: Key = {};
   (data ?? []).forEach((r) => ((k[r.test_code] ??= [])[r.question_no - 1] = r.correct_option));

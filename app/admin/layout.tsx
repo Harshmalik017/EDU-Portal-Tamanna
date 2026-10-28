@@ -2,15 +2,15 @@ import { redirect } from "next/navigation";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { TopBar } from "@/components/layout/TopBar";
 import { VersionBadge } from "@/components/VersionBadge";
-import { createServer } from "@/lib/supabase/server";
+import { createServer, getServerUser } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  const { data: isAdmin, error } = await (await createServer()).rpc("is_admin");
+  const sb = await createServer();
+  const [{ data: isAdmin, error }, { data }] = await Promise.all([sb.rpc("is_admin"), getServerUser()]);
   if (error) redirect("/setup?step=database");
   if (!isAdmin) redirect("/login?denied=1");
-  const { data } = await (await createServer()).auth.getUser();
   const userName = data.user?.email;
   return (
     <>
