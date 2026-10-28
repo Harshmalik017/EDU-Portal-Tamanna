@@ -1,9 +1,12 @@
 import { createBrowserClient } from "@supabase/ssr";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { createDemoBrowserClient } from "@/lib/demo/client";
-import { isDemo } from "@/lib/supabase/env";
+import { publicKey } from "@/lib/supabase/env";
 
-/** Browser client (singleton). In demo mode (no keys) it talks to the built-in sample data instead. */
-export const supabase: SupabaseClient = isDemo()
-  ? (createDemoBrowserClient() as unknown as SupabaseClient)
-  : createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
+let client: SupabaseClient | undefined;
+export const supabase = new Proxy({} as SupabaseClient, {
+  get(_target, property) {
+    client ??= createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, publicKey());
+    const value = Reflect.get(client, property);
+    return typeof value === "function" ? value.bind(client) : value;
+  },
+});

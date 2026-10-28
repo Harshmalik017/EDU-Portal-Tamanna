@@ -19,7 +19,7 @@ const sectionNames: Record<string, string> = {
   PA: "प्रत्यक्षण अभिक्षमता",
 };
 
-function ThemeSheet({ responses, answerKey, roll, page }: { responses: PageResult; answerKey: Key; roll?: string; page: SheetPage }) {
+function ThemeSheet({ responses, answerKey, roll, name, page }: { responses: PageResult; answerKey: Key; roll?: string; name?: string; page: SheetPage }) {
   const tests = TESTS.filter((test) => page === 1 ? ["LA", "AR", "VR", "MR"].includes(test.code) : ["NA", "SA", "PA"].includes(test.code));
   return (
     <div className="mx-auto max-w-4xl border-4 border-brand-700 bg-white p-3 text-ink shadow-lg sm:p-5">
@@ -28,6 +28,7 @@ function ThemeSheet({ responses, answerKey, roll, page }: { responses: PageResul
         <h3 className="mt-1 text-lg font-extrabold sm:text-2xl">अभिक्षमता परीक्षण / Aptitude Test</h3>
         <p className="text-xs font-semibold">उत्तर पत्रक / Answer Sheet · पृष्ठ {page} / Page {page}</p>
         <p className="mt-2 text-left text-xs font-semibold">अनुक्रमांक / Roll No.: {roll || "________________"}</p>
+        <p className="text-left text-xs font-semibold">Name: {name || "________________"}</p>
       </header>
       <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {tests.map((test) => {
@@ -76,6 +77,7 @@ function ThemeSheet({ responses, answerKey, roll, page }: { responses: PageResul
                               );
                             })}
                             {answer === "MULTI" && <span className="self-center rounded bg-red-100 px-1 text-[9px] font-extrabold text-red-800">MULTI</span>}
+                            {(answer === "UNCERTAIN" || answer === undefined) && <span className="self-center rounded bg-amber-100 px-1 text-[9px] font-extrabold text-amber-900" aria-label="Needs checking">?</span>}
                           </div>
                         </li>
                       );
@@ -120,7 +122,7 @@ function OriginalSheet({ pages }: { pages: OriginalPage[] }) {
         {pages.map((page) => (
           <figure key={page.url} className="min-w-0 rounded-xl border border-(--line) bg-white p-2">
             <figcaption className="mb-2 text-sm font-bold">{page.label}</figcaption>
-            <img src={page.url} alt={`${page.label}, student identifying area masked`} className="max-h-[78dvh] w-full rounded-lg object-contain" />
+            <img src={page.url} alt={`${page.label}, original scanned sheet`} className="max-h-[78dvh] w-full rounded-lg object-contain" />
           </figure>
         ))}
       </div>
@@ -128,7 +130,7 @@ function OriginalSheet({ pages }: { pages: OriginalPage[] }) {
   );
 }
 
-function SheetDisplay({ pages, pdfUrl, responses, answerKey, roll }: { pages: OriginalPage[]; pdfUrl?: string | null; responses: PageResult; answerKey: Key; roll?: string }) {
+function SheetDisplay({ pages, pdfUrl, responses, answerKey, roll, name }: { pages: OriginalPage[]; pdfUrl?: string | null; responses: PageResult; answerKey: Key; roll?: string; name?: string }) {
   const [page, setPage] = useState<SheetPage>(1);
   return (
     <div className="space-y-3">
@@ -140,7 +142,7 @@ function SheetDisplay({ pages, pdfUrl, responses, answerKey, roll }: { pages: Or
         </section>
         <section className="min-w-0 space-y-2">
           <h3 className="font-bold">Theme UI</h3>
-          <ThemeSheet responses={responses} answerKey={answerKey} roll={roll} page={page} />
+          <ThemeSheet responses={responses} answerKey={answerKey} roll={roll} name={name} page={page} />
         </section>
       </div>
     </div>
@@ -153,6 +155,7 @@ export function OMRSheetPreview({
   responses,
   answerKey,
   roll,
+  name,
   variant,
 }: {
   originalPages: OriginalPage[];
@@ -160,6 +163,7 @@ export function OMRSheetPreview({
   responses: PageResult;
   answerKey: Key;
   roll?: string;
+  name?: string;
   variant: "inline" | "button";
 }) {
   const [open, setOpen] = useState(false);
@@ -175,7 +179,6 @@ export function OMRSheetPreview({
       <Card className="space-y-4">
         <div>
           <h2 className="text-xl font-extrabold">OMR sheet</h2>
-          <p className="text-sm">Original masked scan and theme preview with English and Hindi section names.</p>
         </div>
         <div className="space-y-6">
           <section className="space-y-3">
@@ -185,7 +188,7 @@ export function OMRSheetPreview({
           <section className="space-y-3">
             <h3 className="font-bold">Tamanna theme UI sheet</h3>
             <PagePicker page={inlinePage} onChange={setInlinePage} pdfUrl={originalPdfUrl} />
-            <ThemeSheet responses={responses} answerKey={answerKey} roll={roll} page={inlinePage} />
+            <ThemeSheet responses={responses} answerKey={answerKey} roll={roll} name={name} page={inlinePage} />
           </section>
         </div>
       </Card>
@@ -201,12 +204,11 @@ export function OMRSheetPreview({
         <dialog ref={dialogRef} aria-labelledby="omr-preview-title" onClose={() => setOpen(false)} onClick={(event) => { if (event.target === dialogRef.current) dialogRef.current?.close(); }}
           className="m-auto max-h-[calc(100dvh-1.5rem)] w-[calc(100%-1rem)] max-w-7xl overflow-y-auto rounded-2xl border border-(--line) bg-[#fbfdf4] p-0 text-ink shadow-2xl backdrop:bg-[#25331a]/50">
           <header className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-(--line) bg-[#fbfdf4] px-4 py-3 sm:px-6">
-            <h2 id="omr-preview-title" className="text-lg font-extrabold">OMR sheet · Roll {roll}</h2>
+            <h2 id="omr-preview-title" className="text-lg font-extrabold">OMR sheet · {name || "Name pending"} · Roll {roll}</h2>
             <button type="button" aria-label="Close OMR sheet" onClick={() => dialogRef.current?.close()} className="rounded-lg p-2 hover:bg-brand-100 focus-visible:outline-2 focus-visible:outline-brand-700"><X size={20} /></button>
           </header>
           <div className="space-y-4 p-4 sm:p-6">
-            <SheetDisplay pages={originalPages} pdfUrl={originalPdfUrl} responses={responses} answerKey={answerKey} roll={roll} />
-            <p className="text-xs text-ink/70">Student name area is masked in original stored scans.</p>
+            <SheetDisplay pages={originalPages} pdfUrl={originalPdfUrl} responses={responses} answerKey={answerKey} roll={roll} name={name} />
           </div>
         </dialog>
       )}

@@ -4,8 +4,8 @@ import { Card, PageHeader } from "@/components/ui";
 
 const KEY_NOTES = [
   {
-    title: "1. Student privacy (Roll number only)",
-    text: "Student names are never asked for, stored, or printed. Every answer sheet and report is identified only by the student's roll number.",
+    title: "1. Student privacy",
+    text: "Names, roll numbers, and original sheets are stored privately. Only school admins can open them. Original PDFs are not masked or redacted.",
   },
   {
     title: "2. NCERT Tamanna Guide is the only source",
@@ -37,9 +37,9 @@ export default async function Page() {
   const sb = await createServer();
   const [{ data: subs }, { data: students }] = await Promise.all([
     sb.from("submissions").select("id, created_at, student_id").order("created_at", { ascending: false }).limit(50),
-    sb.from("students").select("id, name, class"),
+    sb.from("students").select("id, name, roll_number, class"),
   ]);
-  const byId = new Map((students ?? []).map((s: { id: string; name: string; class: string | null }) => [s.id, s]));
+  const byId = new Map((students ?? []).map((s: { id: string; name: string; roll_number: string; class: string | null }) => [s.id, s]));
   const rows = (subs ?? []) as { id: string; created_at: string; student_id: string }[];
   return (
     <div className="space-y-6">
@@ -61,7 +61,7 @@ export default async function Page() {
               const s = byId.get(r.student_id);
               return (
                 <li key={r.id} className="flex flex-wrap items-center justify-between gap-3 py-2.5 text-sm">
-                  <span className="font-semibold">{s?.name ? `Roll ${s.name}` : "Unknown roll no."}</span>
+                  <span className="font-semibold">{s ? `${s.name || "Name pending"} · ${s.roll_number}` : "Unknown student"}</span>
                   <span className="text-ink/70">{s?.class ? `Class ${s.class}` : "—"}</span>
                   <span className="text-ink/60">{new Date(r.created_at).toLocaleString()}</span>
                 </li>

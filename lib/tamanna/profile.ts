@@ -25,7 +25,7 @@ function normReference(cls: "IX" | "X" | null, group: Group): string {
   return `Class ${cls} ${gLabel} (Guide for Teachers and Parents, ${appendix}, Table ${tableNo})`;
 }
 
-export function buildProfile(s: Pick<Student, "name" | "class" | "gender" | "scores">) {
+export function buildProfile(s: Pick<Student, "name" | "roll_number" | "class" | "gender" | "scores">) {
   const cls = normalizeClass(s.class);
   const group = groupOf(s.gender);
   const rows: ProfileRow[] = TESTS.map((t) => {
@@ -71,7 +71,9 @@ export function buildProfile(s: Pick<Student, "name" | "class" | "gender" | "sco
   const normLabel = normReference(cls, group);
 
   const remarks: string[] = [];
-  if (!cls) {
+  if (rows.some((r) => r.raw === null)) {
+    remarks.push(`Roll ${s.roll_number}: scores are pending. Complete sheet checking and scoring before interpreting this report.`);
+  } else if (!cls) {
     remarks.push("Class must be IX or X to convert scores into Sten scores. Update the student's class.");
   } else if (!highs.length) {
     // Summary paragraph matching the NCERT Section 5 report format
@@ -79,7 +81,7 @@ export function buildProfile(s: Pick<Student, "name" | "class" | "gender" | "sco
     if (avgs.length) parts.push(`average on ${list(avgs.map((r) => r.name))}`);
     if (lows.length) parts.push(`low on ${list(lows.map((r) => r.name))}`);
     const bandSummary = parts.length ? ` Performance is ${parts.join(", and ")}.` : "";
-    remarks.push(`Roll ${s.name} has not scored high (Sten 8–10) on any of the seven sub-tests.${bandSummary}`);
+    remarks.push(`Roll ${s.roll_number} has not scored high (Sten 8–10) on any of the seven sub-tests.${bandSummary}`);
 
     if (nearHighs.length > 0) {
       remarks.push(
@@ -97,7 +99,7 @@ export function buildProfile(s: Pick<Student, "name" | "class" | "gender" | "sco
     const otherSummary = otherParts.length ? ` Performance is ${otherParts.join(", and ")}.` : "";
 
     remarks.push(
-      `Roll ${s.name} shows high aptitude in ${list(names)}.${otherSummary} Based on high scores, the student is likely to do well in subjects such as ${list(highSubjects.slice(0, 12))}.`
+      `Roll ${s.roll_number} shows high aptitude in ${list(names)}.${otherSummary} Based on high scores, the student is likely to do well in subjects such as ${list(highSubjects.slice(0, 12))}.`
     );
 
     if (nearHighs.length > 0) {

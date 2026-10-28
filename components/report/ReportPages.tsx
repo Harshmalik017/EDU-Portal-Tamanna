@@ -35,7 +35,7 @@ const testIcon: Record<string, LucideIcon> = {
   PA: ScanSearch,
 };
 
-function Head({ n, roll }: { n: number; roll: string }) {
+function Head({ n, roll, name }: { n: number; roll: string; name: string }) {
   return (
     <header className="report-header mb-4 flex items-end justify-between border-b-2 border-brand-600 pb-2">
       <div className="flex items-center gap-3">
@@ -45,7 +45,7 @@ function Head({ n, roll }: { n: number; roll: string }) {
         </div>
         {n === 1 && <h2 className="text-xl font-extrabold">Aptitude Test Report</h2>}
       </div>
-      <p className="text-xs font-semibold">Roll {roll} · Page {n} of 3</p>
+      <p className="max-w-[45%] text-right text-xs font-semibold">{name || "Name pending"} · Roll {roll} · Page {n} of 3</p>
     </header>
   );
 }
@@ -56,12 +56,15 @@ export function ReportPages({ s }: { s: Student }) {
   return (
     <>
       <section className="report-page">
-        <Head n={1} roll={s.name} />
+        <Head n={1} roll={s.roll_number} name={s.name} />
         <dl className="mb-4 grid grid-cols-2 gap-x-6 gap-y-1.5 rounded-xl border border-(--line) bg-brand-50/50 p-3 text-sm">
-          <div><dt className="inline font-bold">Roll No.: </dt><dd className="inline">{s.name}</dd></div>
+          <div><dt className="inline font-bold">Roll No.: </dt><dd className="inline">{s.roll_number}</dd></div>
+          <div><dt className="inline font-bold">Name: </dt><dd className="inline">{s.name || "Name pending"}</dd></div>
           <div><dt className="inline font-bold">Class: </dt><dd className="inline">{s.class}</dd></div>
           <div><dt className="inline font-bold">Gender: </dt><dd className="inline">{s.gender}</dd></div>
           <div><dt className="inline font-bold">School: </dt><dd className="inline">{s.school || "As recorded on answer sheet"}</dd></div>
+          <div><dt className="inline font-bold">Block: </dt><dd className="inline">{s.block || "Not recorded"}</dd></div>
+          <div><dt className="inline font-bold">District: </dt><dd className="inline">{s.district || "Not recorded"}</dd></div>
         </dl>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[520px] border-collapse border border-(--line) text-sm">
@@ -112,7 +115,7 @@ export function ReportPages({ s }: { s: Student }) {
       </section>
 
       <section className="report-page">
-        <Head n={2} roll={s.name} />
+        <Head n={2} roll={s.roll_number} name={s.name} />
         <h3 className="mb-1 text-lg font-extrabold">What each score means</h3>
         <p className="mb-3 text-[10px] italic text-ink/70">Source: Tamanna Guide for Teachers and Parents, Section 2 and Appendices VI–VIII.</p>
         <ul className="meaning-grid grid grid-cols-2 gap-2">{p.rows.map((r) => {
@@ -143,7 +146,7 @@ export function ReportPages({ s }: { s: Student }) {
       </section>
 
       <section className="report-page">
-        <Head n={3} roll={s.name} />
+        <Head n={3} roll={s.roll_number} name={s.name} />
         <h3 className="mb-1 text-lg font-extrabold">Suggestions / Remarks</h3>
         <p className="mb-3 text-[10px] italic text-ink/70">
           Source: Tamanna Guide for Teachers and Parents, Section 5 (p. 11), Appendices VII–VIII.

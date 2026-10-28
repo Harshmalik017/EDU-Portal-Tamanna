@@ -1,27 +1,13 @@
-import { OPTIONS } from "@/lib/tamanna/tests";
-import { DEFAULT_TEMPLATE, HEADER_MASK_RATIO, REF_WIDTH, REF_HEIGHT, type Column } from "@/lib/omr/template";
+import { OPTIONS, TESTS } from "@/lib/tamanna/tests";
+import { COPY_GRID, PART_BREAKS, DEFAULT_TEMPLATE, REF_WIDTH, REF_HEIGHT, type Column } from "@/lib/omr/template";
 import * as pdfjs from "pdfjs-dist/legacy/build/pdf.mjs";
-import { PDFDocument } from "pdf-lib";
 
-pdfjs.GlobalWorkerOptions.workerSrc = new URL("pdfjs-dist/legacy/build/pdf.worker.mjs", import.meta.url).toString();
+if (typeof window !== "undefined") pdfjs.GlobalWorkerOptions.workerSrc = new URL("pdfjs-dist/legacy/build/pdf.worker.mjs", import.meta.url).toString();
 
 export type Marked = string | null | "MULTI";
 export type PageResult = Record<string, Marked[]>; // test code -> marked option per question (index 0 = Q1)
 export type Quality = { ok: boolean; issues: string[] };
 export type Inspection = { answers: PageResult; quality: Quality; overlay: string; crop: (test: string, q: number) => string | null };
-
-async function archivePdf(pages: [File, File]) {
-  const document = await PDFDocument.create();
-  document.setTitle("Redacted answer sheet");
-  document.setSubject("Student answer sheet with identifying header masked");
-  for (const file of pages) {
-    const image = await document.embedJpg(await file.arrayBuffer());
-    const page = document.addPage([612, 612 * REF_HEIGHT / REF_WIDTH]);
-    page.drawImage(image, { x: 0, y: 0, width: page.getWidth(), height: page.getHeight() });
-  }
-  const bytes = await document.save();
-  return new File([Uint8Array.from(bytes)], "redacted-answer-sheet.pdf", { type: "application/pdf" });
-}
 
 async function normalizedPage(source: CanvasImageSource, name: string) {
   const canvas = document.createElement("canvas");
@@ -32,14 +18,12 @@ async function normalizedPage(source: CanvasImageSource, name: string) {
   ctx.fillStyle = "#fff";
   ctx.fillRect(0, 0, REF_WIDTH, REF_HEIGHT);
   ctx.drawImage(source, 0, 0, REF_WIDTH, REF_HEIGHT);
-  ctx.fillStyle = "#000";
-  ctx.fillRect(0, 0, REF_WIDTH, Math.ceil(REF_HEIGHT * HEADER_MASK_RATIO));
   const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.92));
   if (!blob) throw new Error("Could not prepare the answer-sheet page.");
   return new File([blob], name, { type: "image/jpeg" });
 }
 
-export async function redactPage(file: File | Blob, page: 1 | 2) {
+export async function preparePage(file: File | Blob, page: 1 | 2) {
   const bitmap = await createImageBitmap(file);
   try {
     return await normalizedPage(bitmap, `answer-sheet-page-${page}.jpg`);
@@ -76,7 +60,7 @@ export async function renderPdfPages(file: File): Promise<{ pages: [File, File];
       canvas.height = 0;
     }
     const pages: [File, File] = [rendered[0], rendered[1]];
-    return { pages, archive: await archivePdf(pages) };
+    return { pages, archive: file };
   } finally {
     await pdf.destroy();
   }
@@ -183,7 +167,16 @@ export async function inspectPage(file: File | Blob, page: 1 | 2, template: Colu
 }
 
 export type Score = { test: string; correct: number; wrong: number; blank: number; flagged: number };
+export function validateKey(key: Record<string, (string | undefined)[]>): void {
+  if (Object.keys(key).length !== TESTS.length || Object.keys(key).some((code) => !TESTS.some((test) => test.code === code))) throw new Error("Could not score. The official key needs all seven tests.");
+  for (const { code, questions } of TESTS) {
+    const answers = key[code];
+    if (!answers || answers.length !== questions || Array.from({ length: questions }, (_, i) => answers[i]).some((answer) => !answer || !OPTIONS.some((option) => option === answer))) throw new Error(`Could not score. ${code} needs ${questions} valid official answers.`);
+  }
+}
 export function score(marked: PageResult, key: Record<string, (string | undefined)[]>): Score[] {
+  validateKey(key);
+  if (Object.values(marked).some((answers) => answers.some((answer) => answer !== null && answer !== "MULTI" && !OPTIONS.some((option) => option === answer)))) throw new Error("Could not score. Review uncertain responses first.");
   return Object.entries(marked).map(([test, answers]) => {
     const k = key[test] ?? [];
     let correct = 0, wrong = 0, blank = 0, flagged = 0;
@@ -198,11 +191,109 @@ export function score(marked: PageResult, key: Record<string, (string | undefine
   });
 }
 
+export type Bubble = { x: number; y: number; diameter: number };
+export type CopyReading = { answers: PageResult; issues: string[]; rows: Bubble[][][] };
+
+function readCopyAtThreshold(gray: Uint8ClampedArray, page: 1 | 2, threshold: number): CopyReading {
+  if (gray.length !== REF_WIDTH * REF_HEIGHT) throw new Error("Could not read. Unexpected image dimensions.");
+  const seen = new Uint8Array(gray.length), components: Bubble[] = [], stack: number[] = [];
+  for (let start = COPY_GRID.minY * REF_WIDTH; start < COPY_GRID.maxY * REF_WIDTH; start++) {
+    if (seen[start] || gray[start] > threshold) continue;
+    stack.push(start); seen[start] = 1;
+    let minX = REF_WIDTH, maxX = 0, minY = REF_HEIGHT, maxY = 0, count = 0;
+    while (stack.length) {
+      const i = stack.pop()!, x = i % REF_WIDTH, y = Math.floor(i / REF_WIDTH);
+      minX = Math.min(minX, x); maxX = Math.max(maxX, x); minY = Math.min(minY, y); maxY = Math.max(maxY, y); count++;
+      for (const n of [x > 0 ? i - 1 : -1, x < REF_WIDTH - 1 ? i + 1 : -1, i - REF_WIDTH, i + REF_WIDTH]) {
+        if (n < 0 || n >= gray.length || seen[n] || gray[n] > threshold) continue;
+        seen[n] = 1; stack.push(n);
+      }
+    }
+    const w = maxX - minX + 1, h = maxY - minY + 1;
+    if (w >= COPY_GRID.minDiameter && h >= COPY_GRID.minDiameter && w <= COPY_GRID.maxDiameter && h <= COPY_GRID.maxDiameter && w / h > 0.65 && w / h < 1.5 && count > 22) {
+      components.push({ x: (minX + maxX) / 2, y: (minY + maxY) / 2, diameter: (w + h) / 2 });
+    }
+  }
+  components.sort((a, b) => a.x - b.x);
+  const quartets: Bubble[][] = [];
+  for (const a of components) {
+    for (const b of components.filter((p) => Math.abs(p.y - a.y) <= COPY_GRID.rowTolerance && p.x - a.x >= COPY_GRID.minStep && p.x - a.x <= COPY_GRID.maxStep)) {
+      const step = b.x - a.x, slope = (b.y - a.y) / step;
+      const find = (k: number) => components.find((p) => Math.abs(p.x - (a.x + k * step)) <= COPY_GRID.stepTolerance && Math.abs(p.y - (a.y + k * step * slope)) <= COPY_GRID.rowTolerance);
+      const c = find(2), d = find(3);
+      if (c && d) { quartets.push([a, b, c, d]); break; }
+    }
+  }
+  const groups: Bubble[][][] = [];
+  for (const row of quartets) {
+    let group = groups.find((g) => Math.abs(g[0][0].x - row[0].x) < COPY_GRID.columnTolerance);
+    if (!group) { group = []; groups.push(group); }
+    if (!group.some((r) => Math.abs(r[0].y - row[0].y) < COPY_GRID.rowTolerance)) group.push(row);
+  }
+  for (const group of groups.filter((g) => g.length >= 20)) {
+    const reference = [...group];
+    const steps = reference.map((row) => (row[3].x - row[0].x) / 3).sort((a, b) => a - b);
+    const step = steps[Math.floor(steps.length / 2)];
+    for (const p of components) {
+      if (group.some((row) => Math.abs(row[0].y - p.y) <= COPY_GRID.rowTolerance)) continue;
+      const nearest = reference.reduce((a, b) => Math.abs(a[0].y - p.y) < Math.abs(b[0].y - p.y) ? a : b);
+      for (let k = 0; k < 4; k++) {
+        const xA = p.x - k * step;
+        if (Math.abs(xA - nearest[0].x) > COPY_GRID.columnTolerance / 2) continue;
+        const slope = (nearest[3].y - nearest[0].y) / 3, yA = p.y - k * slope;
+        const matched = Array.from({ length: 4 }, (_, j) => components.find((b) => Math.abs(b.x - (xA + j * step)) <= COPY_GRID.stepTolerance && Math.abs(b.y - (yA + j * slope)) <= COPY_GRID.rowTolerance));
+        if (matched.filter(Boolean).length < 3) continue;
+        group.push(matched.map((b, j) => b ?? { x: xA + j * step, y: yA + j * slope, diameter: nearest[j].diameter }));
+        break;
+      }
+    }
+  }
+  const columns = groups.filter((g) => g.length >= COPY_GRID.rows).sort((a, b) => a[0][0].x - b[0][0].x);
+  const issues: string[] = [], answers: PageResult = {};
+  if (columns.length !== COPY_GRID.columns) return { answers, issues: [`Side ${page}: could not locate all four complete answer columns (${groups.map((g) => g.length).join(", ")} rows).`], rows: groups };
+  for (const [index, column] of columns.entries()) {
+    const rows = column.sort((a, b) => a[0].y - b[0].y).slice(-COPY_GRID.rows);
+    const gaps = rows.slice(1).map((row, i) => row[0].y - rows[i][0].y);
+    const pitch = [...gaps].sort((a, b) => a - b)[Math.floor(gaps.length / 2)], test = COPY_GRID.tests[page][index];
+    if (gaps.some((gap, i) => gap < pitch * 0.65 || gap > pitch * (PART_BREAKS[test].includes(i + 1) ? 2.7 : 1.5))) issues.push(`Side ${page}: column ${index + 1} has irregular row spacing.`);
+    answers[test] ??= [];
+    for (const row of rows) {
+      const density = row.map((b) => {
+        const radius = b.diameter * 0.38;
+        let dark = 0, count = 0;
+        for (let y = Math.floor(b.y - radius); y <= b.y + radius; y++) for (let x = Math.floor(b.x - radius); x <= b.x + radius; x++) {
+          if ((x - b.x) ** 2 + (y - b.y) ** 2 > radius ** 2) continue;
+          count++; if (gray[y * REF_WIDTH + x] < 150) dark++;
+        }
+        return dark / count;
+      });
+      const filled = density.map((value, k) => value > 0.72 ? k : -1).filter((k) => k >= 0);
+      const uncertain = density.some((d) => d > 0.55 && d <= 0.72);
+      if (uncertain) issues.push(`${test} question ${answers[test].length + 1}: faint or uncertain mark.`);
+      answers[test].push(uncertain ? "UNCERTAIN" : filled.length > 1 ? "MULTI" : filled.length ? OPTIONS[filled[0]] : null);
+    }
+  }
+  return { answers, issues, rows: columns };
+}
+
+export function readCopy(gray: Uint8ClampedArray, page: 1 | 2): CopyReading {
+  const candidates = [150, 170, 190, 210, 230].map((threshold) => readCopyAtThreshold(gray, page, threshold));
+  const complete = candidates.filter((c) => Object.values(c.answers).reduce((n, a) => n + a.length, 0) === 120 && !c.issues.some((issue) => issue.includes("irregular row spacing")));
+  if (!complete.length) return candidates.sort((a, b) => b.rows.reduce((n, r) => n + r.length, 0) - a.rows.reduce((n, r) => n + r.length, 0))[0];
+  const best = complete.sort((a, b) => a.issues.length - b.issues.length)[0];
+  for (const [test, answers] of Object.entries(best.answers)) answers.forEach((value, i) => {
+    if (complete.some((candidate) => candidate.answers[test]?.[i] !== value)) {
+      best.answers[test][i] = "UNCERTAIN"; best.issues.push(`${test} question ${i + 1}: reading changes with image threshold.`);
+    }
+  });
+  return best;
+}
+
 /** Booklet rule: exclude sheets with an obvious pattern (all one option, or two options alternating). Needs 10+ answers per test. */
 export function detectPatterns(marked: PageResult): string[] {
   const out: string[] = [];
   for (const [test, list] of Object.entries(marked)) {
-    const given = Array.from(list, (v) => (v && v !== "MULTI" ? v : null)).filter(Boolean) as string[];
+    const given = Array.from(list, (v) => (v && OPTIONS.some((option) => option === v) ? v : null)).filter(Boolean) as string[];
     if (given.length < 10) continue;
     const set = Array.from(new Set(given));
     if (set.length === 1) out.push(`${test}: every answer is ${set[0]}`);

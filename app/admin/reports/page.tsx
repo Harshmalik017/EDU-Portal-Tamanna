@@ -7,7 +7,7 @@ import type { Student } from "@/lib/types";
 /** Prints every included student's report (optionally one class). Use the browser's "Save as PDF". */
 export default async function Page({ searchParams }: { searchParams: Promise<{ class?: string }> }) {
   const sp = await searchParams;
-  const { data } = await (await createServer()).from("students").select("*,scores(*)").eq("excluded", false).order("name");
+  const { data } = await (await createServer()).from("students").select("*,scores(*)").eq("excluded", false).order("roll_number");
   const cls = normalizeClass(sp.class);
   const rows = ((data ?? []) as unknown as Student[]).filter((s) => !cls || normalizeClass(s.class) === cls);
   return (

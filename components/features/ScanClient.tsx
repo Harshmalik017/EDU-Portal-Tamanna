@@ -3,24 +3,22 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { Camera, Upload, Save, AlertTriangle, CheckCircle2, Trash2 } from "lucide-react";
 import { supabase } from "@/lib/supabase/client";
-import { detectPatterns, inspectPage, redactPage, renderPdfPages, score, type Inspection, type Marked, type PageResult } from "@/lib/omr/reader";
+import { detectPatterns, inspectPage, preparePage, renderPdfPages, score, validateKey, type Inspection, type Marked, type PageResult } from "@/lib/omr/reader";
 import type { Column } from "@/lib/omr/template";
 import type { Key } from "@/lib/types";
 import { compress } from "@/lib/omr/image";
 import { OPTIONS } from "@/lib/tamanna/tests";
-import { isDemo } from "@/lib/supabase/env";
-import { sampleAnswers } from "@/lib/demo/sample";
 import { Button, Card, Input, Select } from "@/components/ui";
 import { AnswerReview } from "@/components/features/AnswerReview";
 import { OMRSheetPreview } from "@/components/features/OMRSheetPreview";
 import { useToast } from "@/components/Toast";
 
-const EMPTY = { name: "", class: "", gender: "", school: "" };
+const EMPTY = { name: "", roll_number: "", class: "X", gender: "Male", school: "Pt. Deen Dayal Upadhyay Rajkiya Model Inter College, Jajaur", block: "Sidhauli", district: "Sitapur" };
 const CameraCapture = dynamic(() => import("@/components/CameraCapture").then((m) => m.CameraCapture), { ssr: false });
 const CLASSES = ["IX", "X"]; // Tamanna is for classes IX and X
 type N = 1 | 2;
 
-export function ScanClient({ initialKey, template }: { initialKey: Key; template: Column[] }) {
+export function ScanClient({ initialKey, template, keyHash }: { initialKey: Key; template: Column[]; keyHash: string }) {
   const toast = useToast();
   const [files, setFiles] = useState<Partial<Record<N, File>>>({});
   const [previews, setPreviews] = useState<Partial<Record<N, string>>>({});
@@ -30,14 +28,15 @@ export function ScanClient({ initialKey, template }: { initialKey: Key; template
   const [insp, setInsp] = useState<Partial<Record<N, Inspection>>>({});
   const [answers, setAnswers] = useState<PageResult | null>(null);
   const key = initialKey;
-  const displayKey: Key = isDemo() ? {} : key;
+  const displayKey = key;
   const urls = useRef<Partial<Record<N, string>>>({});
   const [showBlank, setShowBlank] = useState(false);
   const [busy, setBusy] = useState(false);
   const [exclude, setExclude] = useState(false);
 
   useEffect(() => () => { Object.values(urls.current).forEach((u) => u && URL.revokeObjectURL(u)); }, []);
-  const scores = useMemo(() => (answers ? score(answers, key) : []), [answers, key]);
+  const keyError = useMemo(() => { try { validateKey(key); return ""; } catch (error) { return error instanceof Error ? error.message : "Could not read the answer key."; } }, [key]);
+  const scores = useMemo(() => answers && !keyError ? score(answers, key) : [], [answers, key, keyError]);
   const patterns = useMemo(() => (answers ? detectPatterns(answers) : []), [answers]);
   const issues = ([1, 2] as N[]).flatMap((n) => (insp[n]?.quality.issues ?? []).map((i) => `Page ${n}: ${i}`));
 
@@ -81,7 +80,7 @@ export function ScanClient({ initialKey, template }: { initialKey: Key; template
     setCam(false);
     setBusy(true);
     try {
-      const [first, second] = await Promise.all([redactPage(captured[0], 1), redactPage(captured[1], 2)]);
+      const [first, second] = await Promise.all([preparePage(captured[0], 1), preparePage(captured[1], 2)]);
       setPages({ 1: first, 2: second });
     } catch {
       toast("Could not prepare the scan. Capture both pages again.");
@@ -96,7 +95,7 @@ export function ScanClient({ initialKey, template }: { initialKey: Key; template
     try {
       const [a, b] = await Promise.all([inspectPage(files[1], 1, template), inspectPage(files[2], 2, template)]);
       setInsp({ 1: a, 2: b }); setAnswers({ ...a.answers, ...b.answers });
-      if (!Object.keys(key).length) toast("No answer key yet.");
+      if (keyError) toast(keyError);
     } catch {
       toast("Could not read the answer sheet. Capture or upload it again.");
     } finally {
@@ -108,17 +107,19 @@ export function ScanClient({ initialKey, template }: { initialKey: Key; template
     setAnswers((prev) => prev && { ...prev, [test]: prev[test].map((x, i) => (i === q ? v : x)) });
 
   async function save() {
-    if (!answers || !info.name.trim()) return toast("Enter roll number.");
+    if (!answers || !/^\d{5}$/.test(info.roll_number.trim())) return toast("Enter a five-digit roll number.");
+    if (!info.name.trim()) return toast("Enter student name.");
     if (!info.class || !info.gender) return toast("Select class and gender.");
+    if (keyError) return toast(keyError);
     setBusy(true);
-    const { data: dup, error: duplicateError } = await supabase.from("students").select("id").eq("name", info.name).eq("class", info.class).eq("school", info.school).limit(1);
+    const { data: dup, error: duplicateError } = await supabase.from("students").select("id").eq("roll_number", info.roll_number.trim()).eq("class", info.class).eq("school", info.school).limit(1);
     if (duplicateError) { setBusy(false); return toast("Could not check for a duplicate roll number."); }
-    if (dup?.length && !confirm("This roll number already exists in this class and school. Save anyway?")) return setBusy(false);
+    if (dup?.length) { setBusy(false); return toast("Could not save. This roll number already exists."); }
     const { data: st, error } = await supabase.from("students").insert({ ...info, excluded: exclude, exclude_reason: exclude ? patterns.join("; ") : null }).select("id").single();
     if (error || !st) { setBusy(false); return toast("Could not save. Try again."); }
     const paths: string[] = [];
     for (const n of [1, 2] as N[]) {
-      if (!files[n]) continue; // demo "sample answers" have no photos
+      if (!files[n]) continue;
       const path = `${st.id}/side-${n}.jpg`;
       const { error: e } = await supabase.storage.from("sheets").upload(path, await compress(files[n]!), { contentType: "image/jpeg" });
       if (e) {
@@ -136,11 +137,9 @@ export function ScanClient({ initialKey, template }: { initialKey: Key; template
       }
       paths.push(path);
     }
-    const [r1, r2] = await Promise.all([
-      supabase.from("submissions").insert({ student_id: st.id, responses: answers, image_paths: paths }),
-      supabase.from("scores").insert(scores.map((s) => ({ student_id: st.id, test_code: s.test, correct: s.correct, wrong: s.wrong, blank: s.blank, flagged: s.flagged }))),
-    ]);
-    if (r1.error || r2.error) {
+    const { error: submissionError } = await supabase.from("submissions").insert({ student_id: st.id, responses: answers, image_paths: paths.filter((path) => !path.endsWith(".pdf")), pdf_path: paths.find((path) => path.endsWith(".pdf")) ?? null });
+    const { error: scoreError } = submissionError ? { error: submissionError } : await supabase.rpc("score_copy", { p_student_id: st.id, p_expected_key_hash: keyHash });
+    if (scoreError) {
       const cleanupFailed = await rollbackStudent(st.id, paths);
       setBusy(false); return toast(cleanupFailed ? "Could not save the report. Cleanup was incomplete." : "Could not save the report. Nothing was kept.");
     }
@@ -157,7 +156,8 @@ export function ScanClient({ initialKey, template }: { initialKey: Key; template
       <Card className="space-y-4">
         <h2 className="text-lg font-bold">Student details</h2>
         <div className="grid gap-3 sm:grid-cols-2">
-          <Input label="Roll number" placeholder="e.g. 101" value={info.name} onChange={(e) => setInfo({ ...info, name: e.target.value })} />
+          <Input label="Roll number" placeholder="e.g. 10001" value={info.roll_number} onChange={(e) => setInfo({ ...info, roll_number: e.target.value })} />
+          <Input label="Student name" value={info.name} onChange={(e) => setInfo({ ...info, name: e.target.value })} />
           <Select label="Class" options={CLASSES} value={info.class} onChange={(e) => setInfo({ ...info, class: e.target.value })} />
           <Select label="Gender" options={["Male", "Female", "Not specified"]} value={info.gender} onChange={(e) => setInfo({ ...info, gender: e.target.value })} />
           <Input label="School" value={info.school} onChange={(e) => setInfo({ ...info, school: e.target.value })} />
@@ -165,7 +165,7 @@ export function ScanClient({ initialKey, template }: { initialKey: Key; template
         <div className="clay-inset space-y-3 p-4" onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); const file = e.dataTransfer.files?.[0]; if (file) void loadPdf(file); }}>
           <div>
             <p className="font-bold">Answer sheet</p>
-            <p className="text-sm">Upload one two-page PDF. The student-name area is masked before checking and saving.</p>
+            <p className="text-sm">Upload one two-page PDF. The original is saved unchanged.</p>
           </div>
           <div className="flex flex-wrap gap-2">
             <label className="clay-btn-soft cursor-pointer !py-2"><Upload size={18} /> Upload one PDF
@@ -178,14 +178,13 @@ export function ScanClient({ initialKey, template }: { initialKey: Key; template
             <div className="grid gap-3 sm:grid-cols-2">
               {([1, 2] as N[]).map((n) => previews[n] && <figure key={n} className="space-y-1">
                 <figcaption className="text-sm font-semibold">Page {n}</figcaption>
-                <img src={previews[n]} alt={`Redacted preview of page ${n}`} className="max-h-64 w-full rounded-lg object-contain" />
+                <img src={previews[n]} alt={`Original preview of page ${n}`} className="max-h-64 w-full rounded-lg object-contain" />
               </figure>)}
             </div>
           )}
         </div>
         <div className="flex flex-wrap gap-3">
           <Button onClick={process} disabled={busy || (!files[1] || !files[2])}>{busy ? "Reading…" : "Check sheet"}</Button>
-          {isDemo() && <Button variant="soft" className="animate-pulse" onClick={() => { setPages({}); setAnswers(sampleAnswers(key)); setInsp({}); setInfo((i) => (i.name ? i : { name: "101", class: "IX", gender: "Male", school: "" })); }}>Load sample sheet</Button>}
         </div>
         {issues.length > 0 && <ul className="space-y-1 text-sm font-semibold text-amber-800">{issues.map((i) => <li key={i} className="flex gap-2"><AlertTriangle size={16} className="mt-0.5 shrink-0" />{i}</li>)}</ul>}
         {insp[1] && (
@@ -223,7 +222,8 @@ export function ScanClient({ initialKey, template }: { initialKey: Key; template
             originalPages={([1, 2] as N[]).flatMap((n) => previews[n] ? [{ label: `Page ${n}`, url: previews[n]! }] : [])}
             responses={answers}
             answerKey={displayKey}
-            roll={info.name}
+            roll={info.roll_number}
+            name={info.name}
           />
         )}
         {answers && <AnswerReview responses={answers} answerKey={displayKey} />}

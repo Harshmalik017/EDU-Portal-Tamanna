@@ -1,12 +1,18 @@
 import { createServer } from "@/lib/supabase/server";
+import { createHash } from "node:crypto";
 import { DEFAULT_TEMPLATE, type Column } from "@/lib/omr/template";
 import type { Key } from "@/lib/types";
 
 export async function getKey(): Promise<Key> {
-  const { data } = await (await createServer()).from("answer_keys").select("test_code,question_no,correct_option");
+  const { data, error } = await (await createServer()).from("answer_keys").select("test_code,question_no,correct_option");
+  if (error) throw new Error("Could not load the answer key.", { cause: error });
   const k: Key = {};
   (data ?? []).forEach((r) => ((k[r.test_code] ??= [])[r.question_no - 1] = r.correct_option));
   return k;
+}
+export function keyHashOf(key: Key): string {
+  const rows = Object.keys(key).sort().flatMap((test) => key[test].map((answer, i) => `${test}:${i + 1}:${answer}`));
+  return createHash("sha256").update(rows.join("|")).digest("hex");
 }
 export async function getTemplate(): Promise<Column[]> {
   const { data } = await (await createServer()).from("settings").select("value").eq("key", "template").maybeSingle();

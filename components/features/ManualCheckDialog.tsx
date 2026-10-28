@@ -45,6 +45,7 @@ export function ManualCheckDialog({
 
   async function save() {
     if (!student) return toast("Select a student.");
+    if (student.scores.length !== TESTS.length) return toast("Could not verify. Check the answers and score this sheet first.");
     const invalid = TESTS.find((test) => {
       const value = scores[test.code];
       const score = Number(value);
@@ -66,7 +67,7 @@ export function ManualCheckDialog({
     }).eq("id", student.id);
     setBusy(false);
     if (error) return toast("Could not save manual check.");
-    toast(matched ? `Roll ${student.name}: verified` : `Roll ${student.name}: mismatch recorded`);
+    toast(matched ? `Roll ${student.roll_number}: verified` : `Roll ${student.roll_number}: mismatch recorded`);
     onClose();
     router.refresh();
   }
@@ -94,7 +95,7 @@ export function ManualCheckDialog({
             className="clay-inset mt-1 w-full px-4 py-3 outline-hidden focus:ring-2 focus:ring-brand-600"
           >
             <option value="">Select a student</option>
-            {students.map((item) => <option key={item.id} value={item.id}>Roll {item.name} · Class {item.class} · {item.school}</option>)}
+            {students.map((item) => <option key={item.id} value={item.id}>{item.name || "Name pending"} · {item.roll_number} · Class {item.class}</option>)}
           </select>
         </label>
         {student && (
@@ -102,7 +103,7 @@ export function ManualCheckDialog({
             <p className="text-sm text-ink/80">Count correct answers by hand for each sub-test, then compare with the portal’s scores.</p>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               {TESTS.map((test) => {
-                const appScore = student.scores.find((score) => score.test_code === test.code)?.correct ?? 0;
+                const appScore = student.scores.find((score) => score.test_code === test.code)?.correct ?? "–";
                 return (
                   <label key={test.code} className="clay-inset block p-3 text-sm font-semibold">
                     {test.code} <span className="font-normal text-ink/75">(portal: {appScore}/{test.questions})</span>

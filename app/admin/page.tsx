@@ -31,7 +31,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
       <PageHeader title="Dashboard" icon={ChartColumn}
         actions={<div className="clay-inset flex gap-1 p-1" aria-label="Filter by class">{[["", "All classes"], ["IX", "Class IX"], ["X", "Class X"]].map(([v, l]) => pill(v, l))}</div>} />
       <div className="grid gap-4 sm:grid-cols-3">
-        <StatCard icon={Users} label="Students checked" value={rows.length} tone="green" />
+        <StatCard icon={Users} label="Students" value={rows.length} tone="green" />
         <StatCard icon={UserRound} label="Male students" value={rows.filter((s) => s.gender === "Male").length} tone="blue" />
         <StatCard icon={UsersRound} label="Female students" value={rows.filter((s) => s.gender === "Female").length} tone="violet" />
       </div>
@@ -44,7 +44,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
           </div>
           <ul className="grid gap-x-6 gap-y-5 md:grid-cols-2">{perTest.map((t) => (
             <li key={t.code}>
-              <div className="mb-1 flex justify-between text-sm"><span className="font-semibold">{t.code} <span className="font-normal">{t.name}</span></span><span>Average marks {t.avg.toFixed(1)} / {t.questions}</span></div>
+              <div className="mb-1 flex justify-between text-sm"><span className="font-semibold">{t.code} <span className="font-normal">{t.name}</span></span><span>{t.n ? `${t.n} scored · Average marks ${t.avg.toFixed(1)} / ${t.questions}` : "Scores pending"}</span></div>
               <div className="clay-inset flex h-8 overflow-hidden" role="img" aria-label={`${t.code}: ${t.b.High} high students, ${t.b.Average} average students, ${t.b.Low} low students`}>
                 {(["High", "Average", "Low"] as const).map((level) => t.b[level] > 0 && (
                   <div key={level} className={`flex min-w-fit items-center justify-center px-2 text-[10px] font-bold text-white ${level === "High" ? "bg-green-600" : level === "Average" ? "bg-sky-600" : "bg-amber-500"}`} style={{ flex: t.b[level] }}>

@@ -11,7 +11,7 @@ Auth: `proxy.ts` (session refresh + redirect) → `admin/layout.tsx` (`is_admin(
 ## Network rules
 - Read data on the server once per navigation; client calls only for writes/uploads.
 - Images are compressed before upload; originals never leave the browser.
-- Answer-sheet PDFs are rendered in the browser; the name area is masked before scoring or storage. A redacted PDF archive is stored privately with the student's page images; the original PDF is never stored.
+- Browser PDF rendering produces unmasked previews; the original PDF is stored unchanged in private Supabase storage. Local batch imports preserve every page and verify source/image checksums. No real student files are bundled publicly.
 - Signed URLs expire in 1 hour; bucket is private.
 ## Security
 RLS on every table via `is_admin()`; `admins` table has no API policies; views use `security_invoker`; only the public anon key is in the browser; security headers in `next.config.js`.
@@ -22,4 +22,9 @@ RLS on every table via `is_admin()`; `admins` table has no API policies; views u
 - Pages using the Supabase browser client ship ~60 kB extra JS; unavoidable for uploads and auth.
 
 ## Code layout (v0.7.0)
-`app/` routes (thin server pages) · `components/ui` base parts · `components/layout` sidebar · `components/features` page logic · `components/report` report pages · `lib/tamanna` programme rules and content · `lib/omr` sheet reading · `lib/supabase` clients and data · `lib/demo` sample data.
+`app/` routes (thin server pages) · `components/ui` base parts · `components/layout` sidebar · `components/features` page logic · `components/report` report pages · `lib/tamanna` programme rules and content · `lib/omr` sheet reading · `lib/supabase` clients and data · `scripts/` local private imports.
+
+## Private school imports (v0.10.0)
+Missing public connection settings redirect to setup, not an unauthenticated demo. The publishable key is preferred over the older anon key. All clients share `lib/supabase`.
+
+Local scripts render PDF previews on white, keep originals unchanged, and upload to the private bucket. Admin-only RPCs write each student's records atomically. Storage writes use deterministic retryable paths, followed by checksum reconciliation. Private manifests and owner credentials remain outside Git. Key edits invalidate old scores; uncertain answers must be checked before scoring. Synthetic data exists only in isolated check scripts.

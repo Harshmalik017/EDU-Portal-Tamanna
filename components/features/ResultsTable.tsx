@@ -29,7 +29,7 @@ export function ResultsTable({ rows, email, omrSheets, answerKey }: { rows: Stud
   const router = useRouter();
   const toast = useToast();
   const [q, setQ] = useState(""); const [cls, setCls] = useState("");
-  const [sort, setSort] = useState<{ by: string; dir: 1 | -1 }>({ by: "name", dir: 1 });
+  const [sort, setSort] = useState<{ by: string; dir: 1 | -1 }>({ by: "roll_number", dir: 1 });
   const [page, setPage] = useState(0);
   const [manualCheck, setManualCheck] = useState<{ studentId?: string } | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -41,21 +41,21 @@ export function ResultsTable({ rows, email, omrSheets, answerKey }: { rows: Stud
   const excludedCount = classRows.filter((row) => row.excluded).length;
   const get = (r: Student, by: string): string | number => TESTS.some((t) => t.code === by) ? raw(r, by) ?? -1 : by === "status" ? status(r) : ((r as unknown as Record<string, string>)[by] ?? "");
   const shown = useMemo(() => rows
-    .filter((r) => (!cls || normalizeClass(r.class) === cls) && `${r.name} ${r.school}`.toLowerCase().includes(q.toLowerCase()))
+    .filter((r) => (!cls || normalizeClass(r.class) === cls) && `${r.roll_number} ${r.name} ${r.school}`.toLowerCase().includes(q.toLowerCase()))
     .sort((a, b) => { const x = get(a, sort.by), y = get(b, sort.by); return (x > y ? 1 : x < y ? -1 : 0) * sort.dir; }), [rows, q, cls, sort]);  
   const pages = Math.max(1, Math.ceil(shown.length / PAGE));
   const view = shown.slice(page * PAGE, page * PAGE + PAGE);
-  const heads: [string, string][] = [["name", "Roll no."], ["class", "Class"], ["gender", "Gender"], ["school", "School"], ...TESTS.map((t) => [t.code, t.code] as [string, string]), ["status", "Check"]];
+  const heads: [string, string][] = [["roll_number", "Roll no."], ["name", "Name"], ["class", "Class"], ["gender", "Gender"], ["school", "School"], ...TESTS.map((t) => [t.code, t.code] as [string, string]), ["status", "Check"]];
 
   async function deleteStudent(student: Student) {
-    if (!confirm(`Delete roll ${student.name} and all scores? This cannot be undone.`)) return;
+    if (!confirm(`Delete ${student.name || `roll ${student.roll_number}`} and all scores? This cannot be undone.`)) return;
     setDeletingId(student.id);
-    const { data: submissions, error: submissionError } = await supabase.from("submissions").select("image_paths").eq("student_id", student.id);
+    const { data: submissions, error: submissionError } = await supabase.from("submissions").select("image_paths,pdf_path").eq("student_id", student.id);
     if (submissionError) {
       setDeletingId(null);
       return toast("Could not load student files before deletion.");
     }
-    const paths = (submissions ?? []).flatMap((submission: { image_paths?: string[] | null }) => submission.image_paths ?? []);
+    const paths = [...new Set<string>((submissions ?? []).flatMap((submission: { image_paths?: string[] | null; pdf_path?: string | null }) => [...(submission.image_paths ?? []), ...(submission.pdf_path ? [submission.pdf_path] : [])]))];
     if (paths.length) {
       const { error: storageError } = await supabase.storage.from("sheets").remove(paths);
       if (storageError) {
@@ -71,8 +71,9 @@ export function ResultsTable({ rows, email, omrSheets, answerKey }: { rows: Stud
   }
 
   function exportCsv() {
-    const head = ["Roll number", "Class", "Gender", "School", ...TESTS.flatMap((t) => [`${t.code} score`, `${t.code} sten`, `${t.code} level`]), "Verification", "Excluded"];
-    const lines = shown.map((r) => [`"${r.name}"`, r.class, r.gender, `"${r.school}"`, ...TESTS.flatMap((t) => { const s = sten(r, t.code); return [raw(r, t.code) ?? "", s ?? "", s ? bandOf(s) : ""]; }), r.verification_status ?? "pending", r.excluded ? "yes" : "no"].join(","));
+    const head = ["Roll number", "Name", "Class", "Gender", "School", "Block", "District", ...TESTS.flatMap((t) => [`${t.code} score`, `${t.code} sten`, `${t.code} level`]), "Verification", "Excluded"];
+    const csv = (value: string | number) => `"${String(value).replace(/"/g, '""')}"`;
+    const lines = shown.map((r) => [r.roll_number, r.name, r.class, r.gender, r.school ?? "", r.block ?? "", r.district ?? "", ...TESTS.flatMap((t) => { const s = sten(r, t.code); return [raw(r, t.code) ?? "", s ?? "", s ? bandOf(s) : ""]; }), r.verification_status ?? "pending", r.excluded ? "yes" : "no"].map(csv).join(","));
     const a = document.createElement("a");
     a.href = URL.createObjectURL(new Blob([[head.join(","), ...lines].join("\n")], { type: "text/csv" }));
     a.download = "tamanna-results.csv"; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
@@ -103,7 +104,7 @@ export function ResultsTable({ rows, email, omrSheets, answerKey }: { rows: Stud
       <div className="mb-4 grid items-end gap-3 sm:grid-cols-[1fr_180px]">
         <div className="relative">
           <Search size={18} className="pointer-events-none absolute bottom-3.5 left-4 text-ink/60" />
-          <Input label="Search roll no. or school" placeholder="Roll no. or school" className="!pl-11" value={q} onChange={(e) => { setQ(e.target.value); setPage(0); }} />
+          <Input label="Search name, roll no. or school" placeholder="Name, roll no. or school" className="!pl-11" value={q} onChange={(e) => { setQ(e.target.value); setPage(0); }} />
         </div>
         <Select label="Class" options={["IX", "X"]} placeholder="All classes" value={cls} onChange={(e) => { setCls(e.target.value); setPage(0); }} />
       </div>
@@ -116,30 +117,30 @@ export function ResultsTable({ rows, email, omrSheets, answerKey }: { rows: Stud
               </thead>
               <tbody>{view.map((r) => (
                 <tr key={r.id} className="transition-colors hover:bg-brand-50/70">
-                  <td className="border-b border-r border-(--line) px-3 py-2.5 font-semibold"><Link className="underline" href={`/admin/students/${r.id}`}>{r.name}</Link></td><td className="border-b border-r border-(--line) px-3 py-2.5">{r.class}</td><td className="border-b border-r border-(--line) px-3 py-2.5">{r.gender}</td><td className="border-b border-r border-(--line) px-3 py-2.5">{r.school}</td>
+                  <td className="border-b border-r border-(--line) px-3 py-2.5 font-semibold"><Link className="underline" href={`/admin/students/${r.id}`}>{r.roll_number}</Link></td><td className="border-b border-r border-(--line) px-3 py-2.5">{r.name || "Name pending"}</td><td className="border-b border-r border-(--line) px-3 py-2.5">{r.class}</td><td className="border-b border-r border-(--line) px-3 py-2.5">{r.gender}</td><td className="border-b border-r border-(--line) px-3 py-2.5">{r.school}</td>
                   {TESTS.map((t) => <td key={t.code} className="border-b border-r border-(--line) px-3 py-2.5"><Cell r={r} c={t.code} /></td>)}
                   <td className="border-b border-r border-(--line) px-3 py-2.5"><Badge tone={TONE[status(r)]}>{status(r)}</Badge></td>
                   <td className="border-b border-(--line) px-3 py-2.5"><div className="flex items-center gap-2">
                     {!r.excluded && <Button variant="soft" className="!min-h-9 !px-3 !py-1.5 text-xs" onClick={() => setManualCheck({ studentId: r.id })}><ClipboardCheck size={15} />{r.verification_status && r.verification_status !== "pending" ? "Recheck" : "Hand Check"}</Button>}
-                    <Link href={`/admin/students/${r.id}/report`} aria-label={`Report for roll ${r.name}`} title="Report" className="inline-flex min-h-9 items-center gap-1.5 rounded-xl bg-sky-100 px-3 py-1.5 text-xs font-bold text-sky-800 transition hover:bg-sky-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600"><FileText size={15} /> Report</Link>
+                    <Link href={`/admin/students/${r.id}/report`} aria-label={`Report for ${r.name}, roll ${r.roll_number}`} title="Report" className="inline-flex min-h-9 items-center gap-1.5 rounded-xl bg-sky-100 px-3 py-1.5 text-xs font-bold text-sky-800 transition hover:bg-sky-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600"><FileText size={15} /> Report</Link>
                     <Link href={`/admin/students/${r.id}`} className="inline-flex min-h-9 items-center gap-1.5 rounded-xl bg-brand-50 px-3 py-1.5 text-xs font-bold text-brand-700 transition hover:bg-brand-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"><UserRound size={15} /> Profile</Link>
-                    <OMRSheetPreview variant="button" originalPages={omrSheets[r.id]?.originals ?? []} originalPdfUrl={omrSheets[r.id]?.pdfUrl} responses={omrSheets[r.id]?.responses ?? {}} answerKey={answerKey} roll={r.name} />
-                    <button type="button" aria-label={`Delete roll ${r.name}`} title="Delete student" disabled={deletingId === r.id} onClick={() => deleteStudent(r)} className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-red-200 bg-red-50 text-red-700 transition hover:bg-red-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600 disabled:opacity-50"><Trash2 size={17} /></button>
+                    <OMRSheetPreview variant="button" originalPages={omrSheets[r.id]?.originals ?? []} originalPdfUrl={omrSheets[r.id]?.pdfUrl} responses={omrSheets[r.id]?.responses ?? {}} answerKey={answerKey} roll={r.roll_number} name={r.name} />
+                    <button type="button" aria-label={`Delete ${r.name}, roll ${r.roll_number}`} title="Delete student" disabled={deletingId === r.id} onClick={() => deleteStudent(r)} className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-red-200 bg-red-50 text-red-700 transition hover:bg-red-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600 disabled:opacity-50"><Trash2 size={17} /></button>
                   </div></td>
                 </tr>))}</tbody>
             </table>
           </div>
           <ul className="space-y-3 md:hidden">{view.map((r) => (
             <li key={r.id} className="clay-inset p-4">
-              <div className="flex justify-between gap-2"><Link href={`/admin/students/${r.id}`} className="font-extrabold underline">Roll {r.name}</Link><Badge tone={TONE[status(r)]}>{status(r)}</Badge></div>
+              <div className="flex justify-between gap-2"><Link href={`/admin/students/${r.id}`} className="font-extrabold underline">{r.name || "Name pending"} · {r.roll_number}</Link><Badge tone={TONE[status(r)]}>{status(r)}</Badge></div>
               <p className="text-xs">Class {r.class} · {r.gender} · {r.school}</p>
               <p className="mt-2 grid grid-cols-3 gap-1 text-xs">{TESTS.map((t) => <span key={t.code}><b>{t.code}</b> <Cell r={r} c={t.code} /></span>)}</p>
               <div className="mt-3 flex flex-wrap gap-2">
                 {!r.excluded && <Button variant="soft" className="!min-h-9 !px-3 !py-1.5 text-xs" onClick={() => setManualCheck({ studentId: r.id })}><ClipboardCheck size={15} />{r.verification_status && r.verification_status !== "pending" ? "Recheck" : "Hand Check"}</Button>}
                 <Link href={`/admin/students/${r.id}/report`} className="inline-flex min-h-9 items-center gap-1.5 rounded-xl bg-sky-100 px-3 py-1.5 text-xs font-bold text-sky-800 transition hover:bg-sky-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600"><FileText size={15} /> Report</Link>
                 <Link href={`/admin/students/${r.id}`} className="inline-flex min-h-9 items-center gap-1.5 rounded-xl bg-brand-50 px-3 py-1.5 text-xs font-bold text-brand-700 transition hover:bg-brand-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"><UserRound size={15} /> Profile</Link>
-                <OMRSheetPreview variant="button" originalPages={omrSheets[r.id]?.originals ?? []} originalPdfUrl={omrSheets[r.id]?.pdfUrl} responses={omrSheets[r.id]?.responses ?? {}} answerKey={answerKey} roll={r.name} />
-                <button type="button" aria-label={`Delete roll ${r.name}`} title="Delete student" disabled={deletingId === r.id} onClick={() => deleteStudent(r)} className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-red-200 bg-red-50 text-red-700 transition hover:bg-red-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600 disabled:opacity-50"><Trash2 size={17} /></button>
+                <OMRSheetPreview variant="button" originalPages={omrSheets[r.id]?.originals ?? []} originalPdfUrl={omrSheets[r.id]?.pdfUrl} responses={omrSheets[r.id]?.responses ?? {}} answerKey={answerKey} roll={r.roll_number} name={r.name} />
+                <button type="button" aria-label={`Delete ${r.name}, roll ${r.roll_number}`} title="Delete student" disabled={deletingId === r.id} onClick={() => deleteStudent(r)} className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-red-200 bg-red-50 text-red-700 transition hover:bg-red-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600 disabled:opacity-50"><Trash2 size={17} /></button>
               </div>
             </li>))}</ul>
           <div className="mt-4 flex items-center justify-between">

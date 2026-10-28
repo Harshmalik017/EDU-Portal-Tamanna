@@ -1,6 +1,16 @@
 # Changelog
 Format: [Keep a Changelog](https://keepachangelog.com), versions follow [SemVer](https://semver.org). See `versioning.md`.
 
+## [0.13.0] - 2026-10-28
+### Added
+- Private, resumable school-PDF import commands with stable five-digit rolls, separate names, editable demographics, checksum reconciliation, and explicit review reports.
+- Fixed `admin` login backed by Supabase Auth; local database/admin setup commands and publishable-key support.
+- Answer correction and transactional scoring against the current official key. Uncertain readings stay pending; key and demographic changes reset verification.
+### Changed
+- Remove runtime demo data, sample scans, and fake-login fallback. Missing connection settings show setup guidance.
+- Preserve original PDFs byte-for-byte, with no black header mask. Keep private signed links, sequential camera capture, calibrated reading, OMR comparison, manual checking, and the newer three-page report layout.
+- Show student names and rolls separately in results, search, CSV, profiles, and report headers; include block and district.
+
 ## [0.12.7] - 2026-10-27
 ### Fixed
 - **Theme OMR page two**: give the PA section two columns and wrap bilingual headings to prevent overlap; clarify green correct, light-red incorrect, and unkeyed response colors

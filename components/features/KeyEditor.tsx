@@ -17,9 +17,10 @@ export function KeyEditor({ initial }: { initial: Key }) {
   const set = (c: string, q: number, v?: string) => setKey((k) => { const a = [...(k![c] ?? [])]; a[q] = v; return { ...k, [c]: a }; });
 
   async function save() {
+    if (count(tab) !== t.questions) return toast(`Select all ${t.questions} answers for ${tab}.`);
     const rows = (key![tab] ?? []).map((o, i) => (o ? { test_code: tab, question_no: i + 1, correct_option: o } : null)).filter(Boolean);
     const { error } = await supabase.from("answer_keys").upsert(rows as object[], { onConflict: "test_code,question_no" });
-    toast(error ? "Could not save." : `Saved ${rows.length} answers for ${tab}`);
+    toast(error ? "Could not save." : `Saved ${rows.length} answers for ${tab}. Re-score sheets if answers changed.`);
   }
 
   return (

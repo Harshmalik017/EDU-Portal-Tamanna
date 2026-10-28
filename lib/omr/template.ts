@@ -10,7 +10,13 @@ export type Column = {
 };
 export const REF_WIDTH = 924;
 export const REF_HEIGHT = 1300;
-export const HEADER_MASK_RATIO = 0.14;
+export const COPY_GRID = {
+  minDiameter: 8, maxDiameter: 23, minStep: 20, maxStep: 43,
+  rowTolerance: 4, stepTolerance: 4, columnTolerance: 16,
+  minY: 180, maxY: 1150, rows: 30, columns: 4,
+  tests: { 1: ["LA", "AR", "VR", "MR"], 2: ["NA", "SA", "PA", "PA"] },
+} as const;
+export const PART_BREAKS: Record<string, number[]> = { LA: [10, 20], AR: [], VR: [15], MR: [], NA: [], SA: [20], PA: [] };
 export const DEFAULT_TEMPLATE: Column[] = [
   { test: "LA", page: 1, firstQ: 1, count: 30, xA: 135, xStep: 32, xSlope: -0.014, y0: 423, pitch: 24.9, breakEvery: 10, breakGap: 24 },
   { test: "AR", page: 1, firstQ: 1, count: 30, xA: 310, xStep: 32, xSlope: -0.014, y0: 423, pitch: 24.8, breakEvery: 30, breakGap: 0 },

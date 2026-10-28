@@ -1,6 +1,6 @@
 {
   "name": "tamanna-portal",
-  "version": "0.12.7",
+  "version": "0.13.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -9,10 +9,16 @@
     "check:norms": "tsx scripts/check-norms.ts",
     "check:omr": "tsx scripts/check-omr.ts",
     "check:report": "tsx --tsconfig tsconfig.json scripts/smoke-report.tsx",
+    "check:import": "tsx scripts/check-import.ts",
+    "check:school": "tsx scripts/check-school.ts",
+    "setup:database": "tsx scripts/setup-database.ts --apply",
+    "setup:admin": "tsx scripts/setup-admin.ts",
+    "copies": "tsx scripts/copy-batch.ts",
+    "copies:key": "tsx scripts/prepare-key.ts",
     "predev": "node scripts/setup.js",
     "setup": "node scripts/setup.js",
     "typecheck": "tsc --noEmit",
-    "ci": "npm run typecheck && npm run check:norms && npm run check:omr && npm run check:report && npm run build"
+    "ci": "npm run typecheck && npm run check:norms && npm run check:omr && npm run check:report && npm run check:import && npm run build"
   },
   "dependencies": {
     "@supabase/ssr": "^0.5.2",
@@ -20,12 +26,12 @@
     "clsx": "^2.1.1",
     "lucide-react": "^0.451.0",
     "next": "16.4.2",
-    "pdf-lib": "^1.17.1",
     "pdfjs-dist": "^4.10.38",
     "react": "^19.1.10",
     "react-dom": "^19.1.10"
   },
   "devDependencies": {
+    "@napi-rs/canvas": "^0.1.80",
     "@tailwindcss/postcss": "^4.3.3",
     "@types/node": "^20.14.0",
     "@types/react": "^19",
@@ -35,6 +41,6 @@
     "typescript": "^5.5.4"
   },
   "engines": {
-    "node": ">=20.9"
+    "node": ">=20.16"
   }
 }

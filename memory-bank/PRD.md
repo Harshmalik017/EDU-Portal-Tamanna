@@ -18,5 +18,10 @@ Analysis must use **only** the Tamanna test booklet / Guide for Teachers and Par
 ## Out of scope (next)
 - Batch upload of 200+ files, PDF scorecards, roll-number bubbles, automatic corner/perspective detection, dark mode, Hindi labels, offline mode.
 
+## School import (v0.10.0)
+- Local scripts import scanned PDFs into private Supabase storage and records. There is no public sample-data mode.
+- Store both names and permanent five-digit rolls, school/block/district, and review reasons. Class and gender stay editable.
+- Preserve original PDFs without masks or redaction. Uncertain readings and demographic defaults need admin review; scoring never implies hand verification.
+
 ## Success
 200 students scanned and exported with ≥99% bubble accuracy after teacher review of flagged answers.

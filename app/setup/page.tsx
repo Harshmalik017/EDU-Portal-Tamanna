@@ -13,14 +13,13 @@ export default async function Setup({ searchParams }: { searchParams: Promise<{ 
     <main className="mx-auto max-w-2xl space-y-5 px-4 py-10">
       <Card>
         <h1 className="text-2xl font-extrabold">Set up Tamanna Portal</h1>
-        <p className={`mt-2 text-sm ${ready ? "" : "animate-pulse"}`}>{ready ? "Supabase keys found." : "No keys found, so the app is in demo mode. Add keys to use real data."}</p>
-        {!ready && <Link href="/admin" className="clay-btn mt-4 animate-pulse">Open the demo</Link>}
+        <p className="mt-2 text-sm">{ready ? "Supabase keys found." : "No Supabase connection. Add the website settings below."}</p>
         {ready && !sp.step && <Link href="/login" className="clay-btn mt-4">Continue to login</Link>}
       </Card>
       <Card className="space-y-3 text-sm">
         <h2 className="text-lg font-extrabold">1. Add your keys</h2>
-        <p>In Supabase open Project Settings, then API. Copy the Project URL and the anon public key into the file <b>.env.local</b> in the project folder (npm run dev creates it for you).</p>
-        <Code>{"NEXT_PUBLIC_SUPABASE_URL=https://abcd1234.supabase.co\nNEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ..."}</Code>
+        <p>Add the Project URL and publishable key to <b>.env.local</b> locally, or to Vercel Environment Variables when hosting.</p>
+        <Code>{"NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co\nNEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your-public-publishable-key"}</Code>
         <p>Then stop the server (Ctrl+C) and run <b>npm run dev</b> again. Next.js reads this file only at start.</p>
       </Card>
       <Card className={`space-y-3 text-sm ${sp.step === "database" ? "ring-4 ring-amber-400" : ""}`}>
@@ -30,8 +29,7 @@ export default async function Setup({ searchParams }: { searchParams: Promise<{ 
       </Card>
       <Card className="space-y-3 text-sm">
         <h2 className="text-lg font-extrabold">3. Create your admin login</h2>
-        <p>Open Authentication, then Users, and add a user with your email and a password. Turn off public sign-ups. Then run this in the SQL Editor with your email:</p>
-        <Code>{"insert into admins (user_id)\nselect id from auth.users where email = 'you@school.org';"}</Code>
+        <p>Run <b>npm run setup:admin</b> locally. Sign in as <b>admin</b> with the password saved privately in <b>.env.local</b>. Do not add owner keys or this password to Vercel.</p>
       </Card>
     </main>
   );

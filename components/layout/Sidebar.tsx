@@ -17,7 +17,7 @@ const GROUPS = [
   ] },
 ];
 
-export function Sidebar({ demo }: { demo: boolean }) {
+export function Sidebar() {
   const path = usePathname();
   const [open, setOpen] = useState(false);
   const [navigating, setNavigating] = useState(false);
@@ -67,11 +67,6 @@ export function Sidebar({ demo }: { demo: boolean }) {
           </div>
         ))}
       </nav>
-      {demo && (
-        <div className="shrink-0 border-t border-(--line) p-3">
-          <p className="flex animate-pulse items-center gap-2 rounded-xl bg-red-100 px-3 py-2 text-xs font-semibold text-red-800"><CircleAlert size={16} aria-hidden="true" /> Demo Data</p>
-        </div>
-      )}
     </div>
   );
 

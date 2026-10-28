@@ -5,13 +5,13 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft, Eye, EyeOff } from "lucide-react";
 import { supabase } from "@/lib/supabase/client";
-import { isDemo } from "@/lib/supabase/env";
+import { loginEmail } from "@/lib/supabase/admin-identity";
 import { Button, Card, Input } from "@/components/ui";
 
 export function LoginForm({ denied }: { denied?: boolean }) {
   const router = useRouter();
-  const [email, setEmail] = useState(isDemo() ? "demo@tamanna.local" : "");
-  const [password, setPassword] = useState(isDemo() ? "demo" : "");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [show, setShow] = useState(false);
   const [error, setError] = useState(denied ? "This account is not an admin." : "");
   const [busy, setBusy] = useState(false);
@@ -19,7 +19,7 @@ export function LoginForm({ denied }: { denied?: boolean }) {
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true); setError("");
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await supabase.auth.signInWithPassword({ email: loginEmail(email), password });
     setBusy(false);
     if (error) setError("Wrong email or password.");
     else { router.push("/admin"); router.refresh(); }
@@ -38,11 +38,10 @@ export function LoginForm({ denied }: { denied?: boolean }) {
       <main className="grid flex-1 place-items-center py-8">
         <Card className="w-full max-w-md">
           <h1 className="mb-6 text-center text-2xl font-extrabold">Admin login</h1>
-          {isDemo() && <p role="status" className="mb-4 flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-sm font-semibold text-red-800"><span aria-hidden>!</span> Demo mode: any email and password works.</p>}
           <form onSubmit={submit} className="space-y-4">
-            <Input label="Email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+            <Input label="Username or email" autoComplete="username" required value={email} onChange={(e) => setEmail(e.target.value)} />
             <div className="relative">
-              <Input label="Password" type={show ? "text" : "password"} required value={password} onChange={(e) => setPassword(e.target.value)} />
+              <Input label="Password" autoComplete="current-password" type={show ? "text" : "password"} required value={password} onChange={(e) => setPassword(e.target.value)} />
               <button type="button" aria-label={show ? "Hide password" : "Show password"} onClick={() => setShow(!show)} className="absolute right-3 top-[38px] p-1">{show ? <EyeOff size={20} /> : <Eye size={20} />}</button>
             </div>
             {error && <p role="alert" className="text-sm font-semibold text-red-700">{error}</p>}
