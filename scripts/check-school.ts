@@ -30,8 +30,7 @@ async function main() {
   assert.equal(new Set(students.map((s) => s.roll_number)).size, 129);
   assert.equal(students[0].roll_number, "10001"); assert.equal(students[128].roll_number, "10129");
   assert.ok(students.every((s) => s.name && s.import_hash && s.class === "X" && s.block === "Sidhauli" && s.district === "Sitapur"));
-  assert.equal(students.filter((s) => s.scores.length === 7).length, 9);
-  assert.equal(students.filter((s) => s.scores.length === 0).length, 120);
+  assert.ok(students.every((s) => s.scores.length === 0 || s.scores.length === 7), "Scoring must save all sections atomically.");
   assert.ok(students.every((s) => s.verification_status === "pending"));
   const { data: submissions, error: subError } = await admin.from("submissions").select("student_id,responses,pdf_path,source_sha256");
   assert.ifError(subError);
@@ -86,7 +85,7 @@ async function main() {
     const report = await fetch(`${base}/admin/students/${students[0].id}/report`, { headers });
     assert.equal(report.status, 200);
     const reportHtml = await report.text();
-    assert.ok(reportHtml.includes(students[0].name)); assert.ok(reportHtml.includes("10001"));
+    assert.ok(!reportHtml.includes(students[0].name)); assert.ok(reportHtml.includes("10001"));
     const scan = await fetch(`${base}/admin/scan`, { headers });
     assert.equal(scan.status, 200);
     const scanHtml = await scan.text();

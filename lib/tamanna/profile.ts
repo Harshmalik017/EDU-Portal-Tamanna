@@ -25,15 +25,16 @@ function normReference(cls: "IX" | "X" | null, group: Group): string {
   return `Class ${cls} ${gLabel} (Guide for Teachers and Parents, ${appendix}, Table ${tableNo})`;
 }
 
-export function buildProfile(s: Pick<Student, "name" | "roll_number" | "class" | "gender" | "scores">) {
+export function buildProfile(s: Pick<Student, "roll_number" | "class" | "gender" | "scores"> & Pick<Partial<Student>, "excluded">) {
   const cls = normalizeClass(s.class);
   const group = groupOf(s.gender);
   const rows: ProfileRow[] = TESTS.map((t) => {
     const raw = s.scores.find((x) => x.test_code === t.code)?.correct ?? null;
-    const sten = raw !== null ? stenOf(s.class, s.gender, t.code, raw) : null;
+    const uncertain = s.scores.find((x) => x.test_code === t.code)?.uncertain ?? 0;
+    const sten = raw !== null && !uncertain && !s.excluded ? stenOf(s.class, s.gender, t.code, raw) : null;
     const band = sten ? bandOf(sten) : null;
     const highMin = highMinOf(s.class, s.gender, t.code);
-    const nearHigh = isNearHigh(s.class, s.gender, t.code, raw, sten);
+    const nearHigh = sten !== null && isNearHigh(s.class, s.gender, t.code, raw, sten);
     return {
       code: t.code,
       name: t.name,
@@ -71,7 +72,9 @@ export function buildProfile(s: Pick<Student, "name" | "roll_number" | "class" |
   const normLabel = normReference(cls, group);
 
   const remarks: string[] = [];
-  if (rows.some((r) => r.raw === null)) {
+  if (s.excluded) {
+    remarks.push("Excluded sheet: no interpretation is available.");
+  } else if (rows.some((r) => r.raw === null || (cls !== null && r.sten === null))) {
     remarks.push(`Roll ${s.roll_number}: scores are pending. Complete sheet checking and scoring before interpreting this report.`);
   } else if (!cls) {
     remarks.push("Class must be IX or X to convert scores into Sten scores. Update the student's class.");

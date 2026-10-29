@@ -1,6 +1,25 @@
 # Changelog
 Format: [Keep a Changelog](https://keepachangelog.com), versions follow [SemVer](https://semver.org). See `versioning.md`.
 
+## [0.17.0] - 2026-10-29
+### Added
+- Hindi-default individual report dialogs with a top-corner Hindi/English selector. All three pages, chart labels, booklet descriptions, suggestions, source citations, and print output switch together. Direct report URLs remain supported.
+- A private, resumable two-page rescan workflow for the existing 129 students, with original-PDF checksums, recovery snapshots, and final database reconciliation. Rescans intentionally overwrite manual answers; unreadable answers and nonstandard originals explicitly require review.
+- An additive admin-restricted transactional rescan RPC that checks the key, latest submission, saved responses, source hash, and demographics before replacing answers and invalidating stale final scores.
+- Synthetic checks for both report languages, name-free CSV, all 240 response positions, PA coverage, and transactional rescan failure/retry behavior.
+### Fixed
+- Read the full lower OMR answer area. Exclude practice rows and footer glyphs by matching answer-row spacing, cluster against the median column position, and avoid duplicate reconstructed rows. Unalignable columns remain uncertain rather than shifting question numbering.
+- Change STEM SCORE to STEN SCORE in desktop and mobile results.
+- Remove student names and name placeholders from individual/bulk reports, report props, dialog titles, and printed output. Remove the Name column and its values from Excel-compatible CSV exports; retain admin names and original documents unchanged.
+- Keep uncertain and excluded scores out of final report interpretations. Add explicit dialog focus cycling and print expansion so all three A4 pages print without modal clipping.
+### Validation
+- Typecheck, production build, booklet norms, calibrated OMR, importer, report, rescan, and export checks passed.
+- Browser checks passed for report links/direct URLs, Hindi default/reset, language switching, keyboard containment, Escape closing, mobile layout, CSV/report privacy, and three-page A4 output without clipping in both languages, including dense recommendation fixtures.
+- Applied and reconciled all 129 live replacements against their original PDFs and key snapshot: 30,960 represented answer positions; 2 fully scored copies and 127 copies with Review Pending. One stored original contains three blank pages instead of two answer pages and needs a replacement scan. All 259 source pages were retained; no student identity or original file reference changed.
+- Spot-checked both-page first/last answer crops at nine checkpoints spanning batches of 15 records, including both PA columns. This is not a human verification of every answer.
+- Rescan transaction checks passed with rolled-back synthetic records, covering overwrite, atomic scoring, stale-score invalidation, stale keys, concurrent edits, incomplete scans, retries, and anonymous/non-admin denial.
+- Changed-source lint passed with zero warnings. Full-repository lint remains blocked by the pre-existing `console` no-undef error in `scripts/setup.js`.
+
 ## [0.16.1] - 2026-10-29
 ### Fixed
 - Remove the inherited soft-clay background gradient from the OMR Sheet action. White labels now sit on solid dark blue, including the Review Pending line.

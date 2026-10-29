@@ -226,7 +226,7 @@ function readCopyAtThreshold(gray: Uint8ClampedArray, page: 1 | 2, threshold: nu
   }
   const groups: Bubble[][][] = [];
   for (const row of quartets) {
-    let group = groups.find((g) => Math.abs(g[0][0].x - row[0].x) < COPY_GRID.columnTolerance);
+    let group = groups.find((g) => Math.abs(g[Math.floor(g.length / 2)][0].x - row[0].x) < COPY_GRID.columnTolerance);
     if (!group) { group = []; groups.push(group); }
     if (!group.some((r) => Math.abs(r[0].y - row[0].y) < COPY_GRID.rowTolerance)) group.push(row);
   }
@@ -239,8 +239,9 @@ function readCopyAtThreshold(gray: Uint8ClampedArray, page: 1 | 2, threshold: nu
       const nearest = reference.reduce((a, b) => Math.abs(a[0].y - p.y) < Math.abs(b[0].y - p.y) ? a : b);
       for (let k = 0; k < 4; k++) {
         const xA = p.x - k * step;
-        if (Math.abs(xA - nearest[0].x) > COPY_GRID.columnTolerance / 2) continue;
+        if (Math.abs(xA - nearest[0].x) > COPY_GRID.recoveryXTolerance) continue;
         const slope = (nearest[3].y - nearest[0].y) / 3, yA = p.y - k * slope;
+        if (group.some((row) => Math.abs(row[0].y - yA) <= COPY_GRID.rowTolerance)) continue;
         const matched = Array.from({ length: 4 }, (_, j) => components.find((b) => Math.abs(b.x - (xA + j * step)) <= COPY_GRID.stepTolerance && Math.abs(b.y - (yA + j * slope)) <= COPY_GRID.rowTolerance));
         if (matched.filter(Boolean).length < 3) continue;
         group.push(matched.map((b, j) => b ?? { x: xA + j * step, y: yA + j * slope, diameter: nearest[j].diameter }));
@@ -249,14 +250,29 @@ function readCopyAtThreshold(gray: Uint8ClampedArray, page: 1 | 2, threshold: nu
     }
   }
   const columns = groups.filter((g) => g.length >= COPY_GRID.rows).sort((a, b) => a[0][0].x - b[0][0].x);
-  const issues: string[] = [], answers: PageResult = {};
+  const issues: string[] = [], answers: PageResult = {}, selectedRows: Bubble[][][] = [];
   if (columns.length !== COPY_GRID.columns) return { answers, issues: [`Side ${page}: could not locate all four complete answer columns (${groups.map((g) => g.length).join(", ")} rows).`], rows: groups };
   for (const [index, column] of columns.entries()) {
-    const rows = column.sort((a, b) => a[0].y - b[0].y).slice(-COPY_GRID.rows);
+    const sorted = column.sort((a, b) => a[0].y - b[0].y);
+    const test = COPY_GRID.tests[page][index];
+    // Practice rows and footer glyphs can also form quartets. Match the answer-row rhythm.
+    const windows = Array.from({ length: sorted.length - COPY_GRID.rows + 1 }, (_, start) => {
+      const rows = sorted.slice(start, start + COPY_GRID.rows);
+      const gaps = rows.slice(1).map((row, i) => row[0].y - rows[i][0].y);
+      const pitch = [...gaps].sort((a, b) => a - b)[Math.floor(gaps.length / 2)];
+      const error = gaps.reduce((n, gap, i) => n + Math.abs(gap / pitch - (PART_BREAKS[test].includes(i + 1) ? COPY_GRID.partGapPitches : 1)), 0);
+      return { rows, error };
+    });
+    const rows = windows.sort((a, b) => a.error - b.error)[0].rows;
+    selectedRows.push(rows);
     const gaps = rows.slice(1).map((row, i) => row[0].y - rows[i][0].y);
-    const pitch = [...gaps].sort((a, b) => a - b)[Math.floor(gaps.length / 2)], test = COPY_GRID.tests[page][index];
-    if (gaps.some((gap, i) => gap < pitch * 0.65 || gap > pitch * (PART_BREAKS[test].includes(i + 1) ? 2.7 : 1.5))) issues.push(`Side ${page}: column ${index + 1} has irregular row spacing.`);
+    const pitch = [...gaps].sort((a, b) => a - b)[Math.floor(gaps.length / 2)];
     answers[test] ??= [];
+    if (gaps.some((gap, i) => gap < pitch * 0.65 || gap > pitch * (PART_BREAKS[test].includes(i + 1) ? 2.7 : 1.5))) {
+      issues.push(`Side ${page}: column ${index + 1} has irregular row spacing.`);
+      answers[test].push(...Array<string>(COPY_GRID.rows).fill("UNCERTAIN"));
+      continue;
+    }
     for (const row of rows) {
       const density = row.map((b) => {
         const radius = b.diameter * 0.38;
@@ -273,13 +289,13 @@ function readCopyAtThreshold(gray: Uint8ClampedArray, page: 1 | 2, threshold: nu
       answers[test].push(uncertain ? "UNCERTAIN" : filled.length > 1 ? "MULTI" : filled.length ? OPTIONS[filled[0]] : null);
     }
   }
-  return { answers, issues, rows: columns };
+  return { answers, issues, rows: selectedRows };
 }
 
 export function readCopy(gray: Uint8ClampedArray, page: 1 | 2): CopyReading {
   const candidates = [150, 170, 190, 210, 230].map((threshold) => readCopyAtThreshold(gray, page, threshold));
   const complete = candidates.filter((c) => Object.values(c.answers).reduce((n, a) => n + a.length, 0) === 120 && !c.issues.some((issue) => issue.includes("irregular row spacing")));
-  if (!complete.length) return candidates.sort((a, b) => b.rows.reduce((n, r) => n + r.length, 0) - a.rows.reduce((n, r) => n + r.length, 0))[0];
+  if (!complete.length) return candidates.sort((a, b) => Object.values(b.answers).flat().length - Object.values(a.answers).flat().length || a.issues.length - b.issues.length)[0];
   const best = complete.sort((a, b) => a.issues.length - b.issues.length)[0];
   for (const [test, answers] of Object.entries(best.answers)) answers.forEach((value, i) => {
     if (complete.some((candidate) => candidate.answers[test]?.[i] !== value)) {
@@ -287,6 +303,24 @@ export function readCopy(gray: Uint8ClampedArray, page: 1 | 2): CopyReading {
     }
   });
   return best;
+}
+
+export function rescanPages(pages: Uint8ClampedArray[]): { answers: PageResult; issues: string[] } {
+  if (pages.length !== 2 || pages.some((pixels) => pixels.length !== REF_WIDTH * REF_HEIGHT)) throw new Error("Could not rescan: two complete reference-sized pages are required.");
+  const answers: PageResult = {}, issues: string[] = [];
+  for (const page of [1, 2] as const) {
+    const reading = readCopy(pages[page - 1], page);
+    const invalid = Object.values(reading.answers).flat().length !== 120;
+    issues.push(...reading.issues);
+    for (const test of new Set(COPY_GRID.tests[page])) {
+      const count = TESTS.find((t) => t.code === test)?.questions;
+      if (!count) throw new Error(`Could not rescan unknown section ${test}.`);
+      answers[test] = Array.from({ length: count }, (_, i) => invalid ? "UNCERTAIN" : reading.answers[test]?.[i] ?? (i in (reading.answers[test] ?? []) ? null : "UNCERTAIN"));
+    }
+  }
+  issues.push(...detectPatterns(answers));
+  if (Object.values(answers).flat().includes("UNCERTAIN")) issues.push("Review Pending: check unreadable answers against both original pages.");
+  return { answers, issues };
 }
 
 /** Booklet rule: exclude sheets with an obvious pattern (all one option, or two options alternating). Needs 10+ answers per test. */

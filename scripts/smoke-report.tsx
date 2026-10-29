@@ -1,6 +1,11 @@
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import assert from "node:assert/strict";
+import { writeFile } from "node:fs/promises";
+import { OCCUPATIONS, SUBJECTS } from "@/lib/tamanna/booklet";
+import { buildProfile } from "@/lib/tamanna/profile";
+import { areasFor, bandLabel, descriptionFor, reportLabels, termLabel, type ReportLanguage } from "@/lib/tamanna/report-language";
+import { TESTS } from "@/lib/tamanna/tests";
 (globalThis as unknown as { React: typeof React }).React = React; // classic JSX runtime for this script only
 async function main() {
   const { ReportPages } = await import("../components/report/ReportPages");
@@ -16,10 +21,12 @@ async function main() {
   if (text1.includes("Verified by")) throw new Error("Report should not include a verification stamp");
   if (!text1.includes("Appendices VI–VIII") || !text1.includes("Suggestions / Remarks")) throw new Error("Report source labels are missing");
   assert.match(text1, /Roll 10001 shows high aptitude in/);
-  assert.equal((text1.match(/Example Student · Roll 10001 · Page/g) ?? []).length, 3);
+  assert.ok(!html1.includes(s1.name));
+  assert.ok(!text1.includes("Name pending"));
+  assert.equal((text1.match(/Roll 10001 · Page/g) ?? []).length, 3);
   assert.match(text1, /Example Block/); assert.match(text1, /Example District/);
   console.log("pages:", pageCount, "| titles:", titleCount, "| verification stamp removed: true");
-  for (const label of ["Sten 10 · High", "Sten 9 · High", "Sten 8 · High", "Sten 3 · Low", "Sten 5 · Average", "Sten 6 · Average"]) assert.ok(html1.includes(label), label);
+  for (const label of ["Sten Score 10 · High", "Sten Score 9 · High", "Sten Score 8 · High", "Sten Score 3 · Low", "Sten Score 5 · Average", "Sten Score 6 · Average"]) assert.ok(html1.includes(label), label);
 
   // 2. No-High example (Roll 102, Class X, Male — Sten 2, 3, 3, 5, 4, 4, 2)
   const raw2 = { LA: 6, AR: 8, VR: 10, MR: 11, NA: 10, SA: 9, PA: 15 };
@@ -32,6 +39,36 @@ async function main() {
   assert.match(pending, /scores are pending/);
   assert.ok(!pending.includes("has not scored high"));
   assert.ok(!pending.includes("Recommended occupations"));
-  console.log("Report checks passed: three pages, separate names and rolls, booklet bands, no-High remarks, and no interpretation of unscored copies.");
+  for (const language of ["hi", "en"] as ReportLanguage[]) {
+    for (const student of [s1, s2, { ...s2, scores: [] }]) {
+      const html = renderToStaticMarkup(React.createElement(ReportPages, { s: student, language }));
+      assert.equal((html.match(/class="report-page"/g) ?? []).length, 3);
+      assert.ok(!html.includes(student.name));
+      assert.ok(!html.includes("Name pending"));
+      assert.ok(html.includes(reportLabels(language).title));
+      assert.ok(html.includes(reportLabels(language).remarksSource));
+      assert.ok(html.includes(bandLabel("Average", language)));
+    }
+    for (const test of TESTS) {
+      assert.ok(areasFor(test.code, language));
+      for (const band of ["Low", "Average", "High"] as const) assert.ok(descriptionFor(test.code, band, language));
+      for (const subject of SUBJECTS[test.code]) assert.ok(termLabel(subject, language));
+    }
+    for (const occupation of OCCUPATIONS) assert.ok(termLabel(occupation.name, language));
+  }
+  const uncertain = { ...s1, scores: s1.scores.map((score) => ({ ...score, uncertain: 1 })) };
+  assert.ok(buildProfile(uncertain).rows.every((r) => r.sten === null && !r.giveReccs));
+  assert.ok(buildProfile({ ...s1, excluded: true }).rows.every((r) => r.sten === null && !r.giveReccs));
+  for (const language of ["hi", "en"] as const) {
+    const html = renderToStaticMarkup(React.createElement(ReportPages, { s: uncertain, language }));
+    assert.ok(html.includes(reportLabels(language).noSten));
+    assert.ok(!html.includes(reportLabels(language).occupations));
+  }
+  if (process.argv[2]) {
+    const maximum = { ...s1, scores: TESTS.map((t) => ({ test_code: t.code, correct: t.questions })) };
+    const fixtures = Object.fromEntries((["hi", "en"] as const).map((language) => [language, renderToStaticMarkup(React.createElement(ReportPages, { s: maximum, language }))]));
+    await writeFile(process.argv[2], JSON.stringify(fixtures));
+  }
+  console.log("Report checks passed: three pages in both languages, no names, complete translations, booklet bands, and no interpretation of unscored, uncertain or excluded copies.");
 }
 main();

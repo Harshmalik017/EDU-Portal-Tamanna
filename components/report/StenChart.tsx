@@ -1,13 +1,15 @@
 import type { ProfileRow } from "@/lib/tamanna/profile";
+import { bandLabel, reportLabels, type ReportLanguage } from "@/lib/tamanna/report-language";
 const COLOR = { Low: "#d97706", Average: "#2f7fc1", High: "#15803d" } as const;
 
 /** Sten profile (0-10) as inline SVG, so it prints and needs no JS. */
-export function StenChart({ rows }: { rows: ProfileRow[] }) {
+export function StenChart({ rows, language = "en" }: { rows: ProfileRow[]; language?: ReportLanguage }) {
+  const text = reportLabels(language);
   const W = 700, H = 230, x0 = 48, y0 = 34, ph = 150, pw = 630, u = ph / 10, step = pw / rows.length;
   const y = (v: number) => y0 + ph - v * u;
   return (
     <>
-      <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Sten scores by sub-test, grouped into Low, Average and High performance bands" className="report-chart w-full">
+      <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={text.chart} className="report-chart w-full">
         <rect x={x0} y={y(3.5)} width={pw} height={3.5 * u} fill="#fffbeb" />
         <rect x={x0} y={y(7.5)} width={pw} height={4 * u} fill="#eff6ff" />
         <rect x={x0} y={y(10)} width={pw} height={2.5 * u} fill="#f0fdf4" />
@@ -26,12 +28,12 @@ export function StenChart({ rows }: { rows: ProfileRow[] }) {
               <text x={cx} y={y0 + ph + 21} textAnchor="middle" fontSize="14" fontWeight="800" fill="#25331a">{r.code}</text>
             </g>);
         })}
-        <text x={14} y={y0 + ph / 2} fontSize="13" fontWeight="700" fill="#334155" transform={`rotate(-90 14 ${y0 + ph / 2})`} textAnchor="middle">STEN SCORE</text>
+        <text x={14} y={y0 + ph / 2} fontSize="13" fontWeight="700" fill="#334155" transform={`rotate(-90 14 ${y0 + ph / 2})`} textAnchor="middle">{language === "en" ? "STEN SCORE" : text.sten}</text>
       </svg>
-      <div className="mt-1 flex flex-wrap justify-center gap-2 text-[10px] font-bold sm:text-xs" aria-label="Sten performance bands">
-        <span className="rounded-full border border-green-300 bg-green-50 px-2.5 py-1 text-green-800">High · 8–10</span>
-        <span className="rounded-full border border-blue-300 bg-blue-50 px-2.5 py-1 text-blue-800">Average · 4–7</span>
-        <span className="rounded-full border border-amber-300 bg-amber-50 px-2.5 py-1 text-amber-800">Low · 1–3</span>
+      <div className="mt-1 flex flex-wrap justify-center gap-2 text-[10px] font-bold sm:text-xs" aria-label={text.legend}>
+        <span className="rounded-full border border-green-300 bg-green-50 px-2.5 py-1 text-green-800">{bandLabel("High", language)} · 8–10</span>
+        <span className="rounded-full border border-blue-300 bg-blue-50 px-2.5 py-1 text-blue-800">{bandLabel("Average", language)} · 4–7</span>
+        <span className="rounded-full border border-amber-300 bg-amber-50 px-2.5 py-1 text-amber-800">{bandLabel("Low", language)} · 1–3</span>
       </div>
     </>
   );

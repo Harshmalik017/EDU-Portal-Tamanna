@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { ArrowUpDown, ClipboardCheck, FileSpreadsheet, FileText, Printer, Search, Table2, Trash2, UserRound } from "lucide-react";
 import { TESTS } from "@/lib/tamanna/tests";
 import { bandOf, normalizeClass, stenOf } from "@/lib/tamanna/norms";
+import { resultsCsv } from "@/lib/tamanna/export";
 import { supabase } from "@/lib/supabase/client";
 import type { Student } from "@/lib/types";
 import { Button, Card, Input, PageHeader, Select } from "@/components/ui";
@@ -15,7 +16,7 @@ const PAGE = 20;
 const StudentProfileDialog = dynamic(() => import("@/components/features/StudentProfileDialog").then((m) => m.StudentProfileDialog));
 const StudentSheetDialog = dynamic(() => import("@/components/features/StudentSheetDialog").then((m) => m.StudentSheetDialog));
 const raw = (r: Student, c: string) => r.scores.find((s) => s.test_code === c)?.correct ?? null;
-const sten = (r: Student, c: string) => { const v = raw(r, c); return v === null || r.scores.find((s) => s.test_code === c)?.uncertain ? null : stenOf(r.class, r.gender, c, v); };
+const sten = (r: Student, c: string) => { const v = raw(r, c); return r.excluded || v === null || r.scores.find((s) => s.test_code === c)?.uncertain ? null : stenOf(r.class, r.gender, c, v); };
 const tone = { Low: "bg-amber-100 text-amber-900", Average: "bg-blue-100 text-blue-900", High: "bg-green-100 text-green-900" } as const;
 const blurry = (r: Student) => r.scores.some((score) => (score.uncertain ?? 0) > 0);
 const status = (r: Student) => r.excluded ? "Excluded" : !r.scores.length ? "No scan" : blurry(r) ? "Review Pending" : "Scanned";
@@ -23,7 +24,7 @@ const status = (r: Student) => r.excluded ? "Excluded" : !r.scores.length ? "No 
 function Cell({ r, c }: { r: Student; c: string }) {
   const v = raw(r, c), s = sten(r, c);
   const uncertain = r.scores.find((score) => score.test_code === c)?.uncertain ?? 0;
-  return <span className="inline-flex flex-col items-start gap-1"><span className="whitespace-nowrap text-xs" title={uncertain > 0 ? "Provisional marks from clear answers" : undefined}>Section Score: <b>{v ?? "–"}</b></span><span className={`whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-bold ${s !== null ? tone[bandOf(s)] : "bg-slate-100 text-slate-700"}`} title={s !== null ? `Sten ${s}, ${bandOf(s)}` : uncertain > 0 ? "Review pending for a final Sten score" : "No Sten score available"}>STEM SCORE: {s ?? "–"}</span></span>;
+  return <span className="inline-flex flex-col items-start gap-1"><span className="whitespace-nowrap text-xs" title={uncertain > 0 ? "Provisional marks from clear answers" : undefined}>Section Score: <b>{v ?? "–"}</b></span><span className={`whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-bold ${s !== null ? tone[bandOf(s)] : "bg-slate-100 text-slate-700"}`} title={s !== null ? `Sten ${s}, ${bandOf(s)}` : uncertain > 0 ? "Review pending for a final Sten score" : "No Sten score available"}>STEN SCORE: {s ?? "–"}</span></span>;
 }
 
 function StudentPills({ student }: { student: Student }) {
@@ -76,11 +77,8 @@ export function ResultsTable({ rows }: { rows: Student[] }) {
   }
 
   function exportCsv() {
-    const head = ["Roll number", "Name", "Class", "Gender", "School", "Block", "District", ...TESTS.flatMap((t) => [`${t.code} score`, `${t.code} blurry answers (score provisional if above zero)`, `${t.code} sten`, `${t.code} level`]), "Scan status", "Excluded"];
-    const csv = (value: string | number) => `"${String(value).replace(/"/g, '""')}"`;
-    const lines = shown.map((r) => [r.roll_number, r.name, r.class, r.gender, r.school ?? "", r.block ?? "", r.district ?? "", ...TESTS.flatMap((t) => { const s = sten(r, t.code); return [raw(r, t.code) ?? "", r.scores.find((score) => score.test_code === t.code)?.uncertain ?? "", s ?? "", s ? bandOf(s) : ""]; }), status(r), r.excluded ? "yes" : "no"].map(csv).join(","));
     const a = document.createElement("a");
-    a.href = URL.createObjectURL(new Blob([[head.join(","), ...lines].join("\n")], { type: "text/csv" }));
+    a.href = URL.createObjectURL(new Blob(["\uFEFF", resultsCsv(shown)], { type: "text/csv;charset=utf-8" }));
     a.download = "tamanna-results.csv"; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
   }
 
@@ -122,7 +120,7 @@ export function ResultsTable({ rows }: { rows: Student[] }) {
                   {TESTS.map((t) => <td key={t.code} className="border-b border-r border-(--line) px-3 py-2.5"><Cell r={r} c={t.code} /></td>)}
                   <td className="border-b border-r border-(--line) px-3 py-2.5"><SheetAction student={r} onClick={() => setSheet({ student: r, mode: "check" })} /></td>
                   <td className="border-b border-(--line) px-3 py-2.5"><div className="flex items-center gap-2">
-                    <Link prefetch={false} href={`/admin/students/${r.id}/report`} aria-label={`Report for ${r.name}, roll ${r.roll_number}`} title="Report" className="inline-flex min-h-9 items-center gap-1.5 rounded-xl bg-sky-100 px-3 py-1.5 text-xs font-bold text-sky-800 transition hover:bg-sky-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600"><FileText size={15} /> Report</Link>
+                    <Link prefetch={false} href={`/admin/students/${r.id}/report`} aria-label={`Report for roll ${r.roll_number}`} title="Report" className="inline-flex min-h-9 items-center gap-1.5 rounded-xl bg-sky-100 px-3 py-1.5 text-xs font-bold text-sky-800 transition hover:bg-sky-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600"><FileText size={15} /> Report</Link>
                     <Button variant="soft" className="!min-h-9 !px-3 !py-1.5 text-xs" onClick={() => setProfile(r)}><UserRound size={15} /> Profile</Button>
                     <button type="button" aria-label={`Delete ${r.name}, roll ${r.roll_number}`} title="Delete student" disabled={deletingId === r.id} onClick={() => deleteStudent(r)} className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-red-200 bg-red-50 text-red-700 transition hover:bg-red-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600 disabled:opacity-50"><Trash2 size={17} /></button>
                   </div></td>

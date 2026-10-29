@@ -1,6 +1,6 @@
 {
   "name": "tamanna-portal",
-  "version": "0.16.1",
+  "version": "0.17.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -10,6 +10,9 @@
     "check:omr": "tsx scripts/check-omr.ts",
     "check:report": "tsx --tsconfig tsconfig.json scripts/smoke-report.tsx",
     "check:import": "tsx scripts/check-import.ts",
+    "check:rescan": "tsx scripts/check-rescan.ts",
+    "check:rescan:database": "tsx scripts/check-rescan-database.ts",
+    "check:export": "tsx scripts/check-export.ts",
     "check:school": "tsx scripts/check-school.ts",
     "setup:database": "tsx scripts/setup-database.ts --apply",
     "setup:admin": "tsx scripts/setup-admin.ts",
@@ -19,7 +22,7 @@
     "setup": "node scripts/setup.js",
     "typecheck": "tsc --noEmit",
     "lint": "eslint",
-    "ci": "npm run typecheck && npm run check:norms && npm run check:omr && npm run check:report && npm run check:import && npm run build"
+    "ci": "npm run typecheck && npm run check:norms && npm run check:omr && npm run check:report && npm run check:import && npm run check:rescan && npm run check:export && npm run build"
   },
   "dependencies": {
     "@supabase/ssr": "^0.5.2",

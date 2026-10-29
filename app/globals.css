@@ -60,11 +60,22 @@ body::before { content: ""; position: fixed; inset: 0; z-index: -1; background: 
 .report-page { box-sizing: border-box; width: 190mm; max-width: 100%; min-height: 277mm; margin: 0 auto 20px; padding: 8mm; background: #fff; border-radius: 24px; box-shadow: 0 10px 30px rgba(86,120,30,.18); }
 .meaning-card, .remarks-grid article, .occupation-grid li { break-inside: avoid; page-break-inside: avoid; }
 .report-chart { max-height: 68mm; }
+.report-page:lang(hi) { font-family: "Nirmala UI", "Mangal", system-ui, sans-serif; line-height: 1.5; }
+@media (max-width: 639px) {
+  .report-page { padding: 4mm; }
+  .report-header { align-items: flex-start; gap: 8px; }
+  .report-header h2 { font-size: 1rem; }
+  .report-page .meaning-grid, .report-page .occupation-grid { grid-template-columns: 1fr; }
+}
 @media print {
   @page { size: A4 portrait; margin: 10mm; }
   html, body { width: 190mm; margin: 0 !important; padding: 0 !important; background: #fff !important; }
   body::before, .no-print { display: none !important; }
   main { max-width: none !important; padding: 0 !important; }
+  body:has(.report-dialog[open]) { overflow: visible !important; height: auto !important; }
+  .report-dialog[open] { position: static !important; display: block !important; width: 190mm !important; max-width: none !important; height: auto !important; max-height: none !important; overflow: visible !important; border: 0 !important; border-radius: 0 !important; margin: 0 !important; padding: 0 !important; box-shadow: none !important; }
+  .report-dialog::backdrop { display: none; }
+  .report-dialog > div { padding: 0 !important; }
   .report-page { width: 190mm; max-width: none; height: 265mm; min-height: 265mm; box-shadow: none; border: 0; border-radius: 0; padding: 6mm; margin: 0; overflow: hidden; break-after: page; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
   .report-page:last-child { break-after: auto; }
   .report-page h2 { font-size: 15pt; }
@@ -75,6 +86,7 @@ body::before { content: ""; position: fixed; inset: 0; z-index: -1; background: 
   .report-page .meaning-card { padding: 2mm; font-size: 8pt; line-height: 1.2; }
   .report-page .meaning-card p { margin-top: 1mm; }
   .report-page .meaning-card .recommendations-copy { font-size: 7pt; }
+  .report-page .meaning-grid, .report-page .occupation-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .report-page .remarks-grid article { padding: 2.5mm; font-size: 8.5pt; line-height: 1.25; }
   .report-page .occupation-grid { font-size: 8pt; }
   .report-page .occupation-grid li { padding: 1mm 1.5mm; }

@@ -1,22 +1,11 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
 import { createServer } from "@/lib/supabase/server";
-import { ReportPages } from "@/components/report/ReportPages";
-import { PrintButton } from "@/components/report/PrintButton";
-import type { Student } from "@/lib/types";
+import { ReportDialog } from "@/components/report/ReportDialog";
 
 export default async function Page({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const { data } = await (await createServer()).from("students").select("*,scores(*)").eq("id", id).maybeSingle();
+  const { data, error } = await (await createServer()).from("students").select("id,roll_number,class,gender,school,block,district,excluded,scores(test_code,correct,wrong,blank,flagged)").eq("id", id).maybeSingle();
+  if (error) throw new Error("Could not load student report.", { cause: error });
   if (!data) notFound();
-  return (
-    <div>
-      <div className="no-print mb-4 flex flex-wrap items-center justify-between gap-3">
-        <Link href="/admin/results" className="clay-btn-soft"><ArrowLeft size={18} /> Back to Student Reports</Link>
-        <PrintButton />
-      </div>
-      <ReportPages s={data as unknown as Student} />
-    </div>
-  );
+  return <ReportDialog key={id} student={data} />;
 }

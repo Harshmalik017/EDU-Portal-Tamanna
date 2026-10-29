@@ -12,8 +12,8 @@ export const REF_WIDTH = 924;
 export const REF_HEIGHT = 1300;
 export const COPY_GRID = {
   minDiameter: 8, maxDiameter: 23, minStep: 20, maxStep: 43,
-  rowTolerance: 4, stepTolerance: 4, columnTolerance: 16,
-  minY: 180, maxY: 1150, rows: 30, columns: 4,
+  rowTolerance: 4, stepTolerance: 4, columnTolerance: 64, recoveryXTolerance: 14, partGapPitches: 2,
+  minY: 180, maxY: 1250, rows: 30, columns: 4,
   tests: { 1: ["LA", "AR", "VR", "MR"], 2: ["NA", "SA", "PA", "PA"] },
 } as const;
 export const PART_BREAKS: Record<string, number[]> = { LA: [10, 20], AR: [], VR: [15], MR: [], NA: [], SA: [20], PA: [] };
