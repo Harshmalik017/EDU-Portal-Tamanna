@@ -1,6 +1,13 @@
 # Changelog
 Format: [Keep a Changelog](https://keepachangelog.com), versions follow [SemVer](https://semver.org). See `versioning.md`.
 
+## [0.16.1] - 2026-10-29
+### Fixed
+- Remove the inherited soft-clay background gradient from the OMR Sheet action. White labels now sit on solid dark blue, including the Review Pending line.
+- Keep an 80px desktop icon rail when the sidebar is collapsed, with accessible link labels, tooltips, active indicators, and matching content/loading offsets. Mobile drawer behavior is unchanged.
+### Validation
+- Changed-source lint passed with zero warnings. No tests, builds, typechecks, browser checks, or live-data checks were run, as requested.
+
 ## [0.16.0] - 2026-10-29
 ### Added
 - Top-bar desktop sidebar collapse/expand and mobile menu controls through a client shell, preserving server-rendered page data. Mobile navigation supports focus trapping, Escape, focus restoration, and responsive scroll-lock cleanup.

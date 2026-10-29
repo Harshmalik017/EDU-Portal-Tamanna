@@ -74,7 +74,7 @@ Open **Profile Settings** to edit your display name or change your password. Con
 
 **Theme UI → Export PDF** opens both themed pages in the browser's print dialog. Select **Save as PDF**. Original scanned PDFs remain unchanged.
 
-The top-bar menu button collapses or expands the desktop sidebar and opens the mobile menu. Sheet dialogs adapt their columns to the available space instead of horizontally scrolling.
+The top-bar menu button switches the desktop sidebar between full labels and a compact icon rail, and opens the mobile menu. Sheet dialogs adapt their columns to the available space instead of horizontally scrolling.
 
 Node is pinned to 24.x. Vercel uses `npm ci` with the committed lockfile; its install and build commands remove the obsolete `NPM_CONFIG_CACHE_DIR` / `npm_config_cache_dir` setting before starting npm. Use `NPM_CONFIG_CACHE` / `npm_config_cache` if configuring an npm cache explicitly.
 

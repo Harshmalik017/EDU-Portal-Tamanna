@@ -9,7 +9,7 @@ export function AdminShell({ children, userName }: { children: React.ReactNode; 
   const closeMenu = useCallback(() => setMenuOpen(false), []);
   return <>
     <Sidebar open={menuOpen} collapsed={collapsed} onClose={closeMenu} />
-    <div className={`${collapsed ? "" : "lg:pl-64"} print:pl-0`}>
+    <div className={`${collapsed ? "lg:pl-20" : "lg:pl-64"} print:pl-0`}>
       <TopBar userName={userName} menuOpen={menuOpen} sidebarCollapsed={collapsed} onToggleMenu={() => setMenuOpen((value) => !value)} onToggleSidebar={() => setCollapsed((value) => !value)} />
       {children}
     </div>

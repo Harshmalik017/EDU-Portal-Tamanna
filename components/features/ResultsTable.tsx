@@ -32,7 +32,7 @@ function StudentPills({ student }: { student: Student }) {
 
 function SheetAction({ student, onClick }: { student: Student; onClick: () => void }) {
   const pending = blurry(student);
-  return <Button variant="soft" className="!min-h-9 !bg-blue-600 !px-3 !py-2 text-xs !text-white hover:!bg-blue-700 focus-visible:!outline-blue-700" aria-label={`OMR sheet for ${student.name}, roll ${student.roll_number}${pending ? ", Review Pending" : ""}`} onClick={onClick}><ClipboardCheck size={15} /><span className="flex flex-col items-start"><span>OMR Sheet</span>{pending && <span className="text-[10px] font-semibold">Review Pending</span>}{(student.excluded || !student.scores.length) && <span className="text-[10px] font-semibold">{student.excluded ? "Excluded" : "No scan"}</span>}</span></Button>;
+  return <Button variant="soft" className="!min-h-9 !border-blue-800 !bg-blue-700 !bg-none !px-3 !py-2 text-xs !text-white hover:!bg-blue-800 focus-visible:!outline-blue-700" aria-label={`OMR sheet for ${student.name}, roll ${student.roll_number}${pending ? ", Review Pending" : ""}`} onClick={onClick}><ClipboardCheck size={15} /><span className="flex flex-col items-start"><span>OMR Sheet</span>{pending && <span className="text-[10px] font-semibold">Review Pending</span>}{(student.excluded || !student.scores.length) && <span className="text-[10px] font-semibold">{student.excluded ? "Excluded" : "No scan"}</span>}</span></Button>;
 }
 
 export function ResultsTable({ rows }: { rows: Student[] }) {
