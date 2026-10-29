@@ -23,11 +23,12 @@ export function AnswerReview({ responses, answerKey, onChange }: { responses: Pa
           const wrong = studentAnswers.filter((answer, question) =>
             answer !== "UNCERTAIN" && answer !== "MULTI" && answer !== null && answer !== undefined && correctAnswers[question] && answer !== correctAnswers[question],
           ).length;
+          const marks = studentAnswers.filter((answer, question) => answer && ["A", "B", "C", "D"].includes(answer) && answer === correctAnswers[question]).length;
 
           return (
-            <details key={test.code} className="clay-inset overflow-hidden" open={test.code === "LA"}>
+            <details key={test.code} className="clay-inset overflow-hidden" open={pending > 0 || (!onChange && test.code === "LA")}>
               <summary className="cursor-pointer px-4 py-3 font-bold">
-                {test.code} · {test.name} · {answered} responses · {wrong} incorrect{pending ? ` · ${pending} need checking` : ""}
+                {test.code} · {test.name} · {marks} marks{pending ? ` (provisional) · ${pending} blurry answers to confirm` : ""} · {answered} responses · {wrong} incorrect
               </summary>
               <div className="overflow-x-auto border-t border-(--line)">
                 <table className="w-full min-w-[30rem] text-left text-sm">

@@ -2,21 +2,19 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, ClipboardCheck, Download, FileText, Trash2, UserRound } from "lucide-react";
+import { ArrowLeft, Download, FileText, Trash2, UserRound } from "lucide-react";
 import { supabase } from "@/lib/supabase/client";
 import { buildProfile } from "@/lib/tamanna/profile";
 import type { Key, Student as S } from "@/lib/types";
 import type { PageResult } from "@/lib/omr/reader";
-import { TESTS } from "@/lib/tamanna/tests";
-import { Badge, Button, Card, PageHeader } from "@/components/ui";
+import { Button, Card, PageHeader } from "@/components/ui";
 import { useToast } from "@/components/Toast";
-import { ManualCheckDialog } from "@/components/features/ManualCheckDialog";
 import { AnswerReview } from "@/components/features/AnswerReview";
 import { StudentProfileForm } from "@/components/features/StudentProfileForm";
 
 const tone = { Low: "bg-amber-100 text-amber-900", Average: "bg-blue-100 text-blue-900", High: "bg-green-100 text-green-900" } as const;
 
-export function StudentView({ initial, imgs, pdfUrl, filePaths, responses, answerKey, email, keyHash }: { initial: S; imgs: string[]; pdfUrl: string | null; filePaths: string[]; responses: PageResult; answerKey: Key; email: string; keyHash: string }) {
+export function StudentView({ initial, imgs, pdfUrl, filePaths, responses, answerKey, keyHash }: { initial: S; imgs: string[]; pdfUrl: string | null; filePaths: string[]; responses: PageResult; answerKey: Key; keyHash: string }) {
   const id = initial.id;
   const router = useRouter();
   const toast = useToast();
@@ -24,7 +22,6 @@ export function StudentView({ initial, imgs, pdfUrl, filePaths, responses, answe
   const [marked, setMarked] = useState(responses);
   const [scoring, setScoring] = useState(false);
   useEffect(() => { setS(initial); setMarked(responses); }, [initial, responses]);
-  const [manualCheckOpen, setManualCheckOpen] = useState(false);
   const p = buildProfile(s);
 
   async function saveAnswers() {
@@ -33,12 +30,11 @@ export function StudentView({ initial, imgs, pdfUrl, filePaths, responses, answe
     try {
       const { error } = await supabase.rpc("review_copy", { p_student_id: id, p_responses: marked, p_expected_key_hash: keyHash });
       if (error) return toast(`Could not score. ${error.message}`);
-      toast("Answers saved. Scores need a hand check."); router.refresh();
+      toast("Scan answers confirmed. Final marks saved."); router.refresh();
+    } catch (error) {
+      console.error("Could not save checked scan answers.", error);
+      toast("Could not save checked scan answers.");
     } finally { setScoring(false); }
-  }
-  async function recheck() {
-    const { error } = await supabase.from("students").update({ verification_status: "pending", verification_note: null }).eq("id", id);
-    if (!error) { setS({ ...s, verification_status: "pending", verification_note: null }); toast("Sent back for verification"); router.refresh(); }
   }
   async function del() {
     if (!confirm(`Delete ${s.name || `roll ${s.roll_number}`} and all scores? This cannot be undone.`)) return;
@@ -59,7 +55,6 @@ export function StudentView({ initial, imgs, pdfUrl, filePaths, responses, answe
         actions={
           <div className="flex flex-wrap gap-2">
             <Link href="/admin/results" className="clay-btn-soft"><ArrowLeft size={18} /> Back to results</Link>
-            {!s.excluded && <Button variant="soft" disabled={s.scores.length !== TESTS.length} onClick={() => setManualCheckOpen(true)}><ClipboardCheck size={18} /> Hand Check</Button>}
             <Link href={`/admin/students/${id}/report`} className="clay-btn"><FileText size={18} /> Open report</Link>
           </div>
         }
@@ -69,11 +64,6 @@ export function StudentView({ initial, imgs, pdfUrl, filePaths, responses, answe
           <h2 className="text-lg font-bold">Student details</h2>
           {s.excluded && <p className="clay-inset p-3 text-sm font-semibold">Excluded: {s.exclude_reason || "answer pattern"}.</p>}
           <StudentProfileForm initial={s}><Button type="button" variant="soft" onClick={del}><Trash2 size={18} /> Delete</Button></StudentProfileForm>
-          <div className="clay-inset p-3 text-sm">
-            <p className="flex items-center gap-2 font-semibold">Verification <Badge tone={s.verification_status === "verified" ? "green" : s.verification_status === "mismatch" ? "red" : "amber"}>{s.verification_status === "verified" ? "Verified" : s.verification_status === "mismatch" ? "Mismatch" : "Pending"}</Badge></p>
-            {s.verification_note && <p className="mt-1">{s.verification_note}</p>}
-            {s.verification_status === "mismatch" && <Button variant="soft" className="mt-2 !py-2" onClick={recheck}>Send back for re-check</Button>}
-          </div>
           {imgs.length > 0 && <div><h3 className="mb-2 font-extrabold">Original scanned pages</h3>{imgs.map((u) => <img key={u} src={u} alt="Original scanned answer sheet" className="mb-3 w-full rounded-xl" />)}</div>}
           {pdfUrl && <a href={pdfUrl} target="_blank" rel="noreferrer" className="clay-btn-soft w-fit"><Download size={18} /> Open original PDF</a>}
         </Card>
@@ -95,7 +85,6 @@ export function StudentView({ initial, imgs, pdfUrl, filePaths, responses, answe
       </div>
       <AnswerReview responses={marked} answerKey={answerKey} onChange={setMarked} />
       <Button onClick={saveAnswers} disabled={scoring || !keyHash}>{scoring ? "Saving…" : "Save checked answers and score"}</Button>
-      {manualCheckOpen && <ManualCheckDialog students={s.excluded ? [] : [s]} initialStudentId={s.id} email={email} onClose={() => setManualCheckOpen(false)} />}
     </div>
   );
 }

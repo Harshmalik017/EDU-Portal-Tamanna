@@ -2,8 +2,8 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { CircleAlert, FileText, KeyRound, LayoutDashboard, Menu, ScanLine, Table2, X } from "lucide-react";
+import { usePathname } from "next/navigation";
+import { FileText, KeyRound, LayoutDashboard, Menu, ScanLine, Table2, UserRound, X } from "lucide-react";
 
 const GROUPS = [
   { label: "School Portal", items: [
@@ -13,7 +13,8 @@ const GROUPS = [
   ] },
   { label: "Guide & Setup", items: [
     { href: "/admin/key", label: "Answer Key", sublabel: "Correct options", icon: KeyRound },
-    { href: "/admin/logs", label: "Logs & Key Notes", sublabel: "Rules & activity", icon: FileText },
+    { href: "/admin/logs", label: "Activity Logs", sublabel: "Portal activity", icon: FileText },
+    { href: "/admin/settings", label: "Profile Settings", sublabel: "Account & password", icon: UserRound },
   ] },
 ];
 

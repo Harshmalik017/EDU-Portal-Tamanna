@@ -7,3 +7,5 @@ Supabase Auth email/password, refreshed by `proxy.ts`. The admin server layout c
 - Run `npm run setup:admin` locally with the private service-role key. It creates admin membership, disables public signup, and saves a generated password as `ADMIN_PASSWORD` only in ignored `.env.local`. Existing passwords change only with `--rotate`.
 - Vercel needs only the public project URL and publishable key. Never deploy owner tokens, service-role keys, or the admin password.
 - Keep the login branding, Home link, programme footer, developer link, and version. Password recovery is not offered in the UI.
+- `/admin/settings` reads the current user on the server. Browser actions update the display name or change the password using Supabase Auth after confirming the current password. New passwords require 12 characters and confirmation. A changed password replaces the original locally provisioned password; `.env.local` is not a live authentication source.
+- The header and sidebar link to profile settings. Never log passwords. Account activity is client-reported operational history, not a tamper-proof Auth security audit.

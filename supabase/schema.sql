@@ -174,7 +174,7 @@ begin
   end loop;
   update submissions set key_hash = fingerprint where student_id = p_student_id;
   update students set verification_status = 'pending', manual_scores = null, verified_by = null, verified_at = null,
-    verification_note = 'Scored with the current official key. Pending hand check.' where id = p_student_id;
+    verification_note = 'Scored with the current official key.' where id = p_student_id;
   return fingerprint;
 end $$;
 revoke all on function score_copy(uuid,text) from public, anon;
@@ -194,7 +194,7 @@ begin
   update students set review_issues = array(
     select issue from unnest(review_issues) as issue
     where issue like 'Name proposed%' or issue like 'Class X%' or issue like 'Male is%'
-  ) || array['Answers reviewed. Pending hand check.'] where id = p_student_id;
+  ) || array['Scan answers confirmed.'] where id = p_student_id;
   return p_expected_key_hash;
 end $$;
 revoke all on function review_copy(uuid,jsonb,text) from public, anon;

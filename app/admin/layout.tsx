@@ -11,7 +11,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const [{ data: isAdmin, error }, { data }] = await Promise.all([sb.rpc("is_admin"), getServerUser()]);
   if (error) redirect("/setup?step=database");
   if (!isAdmin) redirect("/login?denied=1");
-  const userName = data.user?.email;
+  const userName = typeof data.user?.user_metadata.display_name === "string" && data.user.user_metadata.display_name.trim() ? data.user.user_metadata.display_name : data.user?.email;
   return (
     <>
       <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-xl focus:bg-white focus:px-4 focus:py-2 print:hidden">Skip to content</a>

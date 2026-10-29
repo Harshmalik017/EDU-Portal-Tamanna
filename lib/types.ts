@@ -1,6 +1,6 @@
 import type { PageResult } from "@/lib/omr/reader";
 
-export type ScoreRow = { test_code: string; correct: number; wrong?: number; blank?: number; flagged?: number };
+export type ScoreRow = { test_code: string; correct: number; wrong?: number; blank?: number; flagged?: number; uncertain?: number };
 export type Verification = "pending" | "verified" | "mismatch";
 export type Student = {
   id: string; name: string; roll_number: string; class: string; gender: string; school: string; scores: ScoreRow[];

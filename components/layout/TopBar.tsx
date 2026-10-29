@@ -1,7 +1,7 @@
 "use client";
 import Image from "next/image";
 import Link from "next/link";
-import { LogOut } from "lucide-react";
+import { LogOut, UserRound } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 
@@ -16,7 +16,10 @@ export function TopBar({ userName, demo }: { userName?: string; demo?: boolean }
         </span>
       </Link>
       <div className="ml-auto flex shrink-0 items-center gap-3">
-        {userName && <span className={`hidden max-w-48 truncate text-xs font-semibold text-ink/75 sm:block ${demo ? "animate-pulse" : ""}`}>{userName}</span>}
+        <Link prefetch={false} href="/admin/settings" aria-label="Profile settings" className="inline-flex min-h-9 items-center gap-2 rounded-xl px-2 text-sm font-semibold hover:bg-brand-100">
+          <UserRound size={18} />
+          {userName && <span className={`hidden max-w-48 truncate text-xs sm:block ${demo ? "animate-pulse" : ""}`}>{userName}</span>}
+        </Link>
         <button
           type="button"
           aria-label="Sign out"

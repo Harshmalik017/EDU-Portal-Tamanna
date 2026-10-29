@@ -8,9 +8,8 @@ import { getKey, keyHashOf } from "@/lib/supabase/data";
 export default async function Page({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const sb = await createServer();
-  const [{ data: student, error }, { data: { user } }, answerKey] = await Promise.all([
+  const [{ data: student, error }, answerKey] = await Promise.all([
     sb.from("students").select("*,scores(*)").eq("id", id).maybeSingle(),
-    sb.auth.getUser(),
     getKey(),
   ]);
   if (error) throw new Error("Could not load student details.", { cause: error });
@@ -22,5 +21,5 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
   if (signedError || signed?.some((file) => file.error)) throw new Error("Could not open student files.", { cause: signedError });
   const imgs = (signed ?? []).filter((file) => file.path && /\.(jpe?g|png)$/i.test(file.path)).map((file) => file.signedUrl).filter((url): url is string => !!url);
   const pdfUrl = (signed ?? []).find((file) => file.path && /\.pdf$/i.test(file.path))?.signedUrl ?? null;
-  return <StudentView initial={student as unknown as Student} imgs={imgs} pdfUrl={pdfUrl} filePaths={paths} responses={(sub?.responses ?? {}) as PageResult} answerKey={answerKey} keyHash={keyHashOf(answerKey)} email={user?.email ?? "admin"} />;
+  return <StudentView initial={student as unknown as Student} imgs={imgs} pdfUrl={pdfUrl} filePaths={paths} responses={(sub?.responses ?? {}) as PageResult} answerKey={answerKey} keyHash={keyHashOf(answerKey)} />;
 }

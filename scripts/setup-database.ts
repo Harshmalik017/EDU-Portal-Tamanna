@@ -10,7 +10,7 @@ async function main() {
   const response = await fetch("https://api.supabase.com/v1/projects/zhrlfkvmmrgwainsfyha/database/query", {
     method: "POST",
     headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ query: await readFile("supabase/schema.sql", "utf8") }),
+    body: JSON.stringify({ query: `${await readFile("supabase/schema.sql", "utf8")}\n${await readFile("supabase/portal-update.sql", "utf8")}` }),
   });
   if (!response.ok) throw new Error(`Could not set up the database (${response.status}): ${await response.text()}`);
   console.log("School tables, private storage, and admin-only rules are ready.");

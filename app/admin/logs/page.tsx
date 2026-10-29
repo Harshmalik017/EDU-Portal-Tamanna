@@ -1,75 +1,55 @@
+import Link from "next/link";
+import { redirect } from "next/navigation";
 import { FileText } from "lucide-react";
 import { createServer } from "@/lib/supabase/server";
 import { Card, PageHeader } from "@/components/ui";
 
-const KEY_NOTES = [
-  {
-    title: "1. Student privacy",
-    text: "Names, roll numbers, and original sheets are stored privately. Only school admins can open them. Original PDFs are not masked or redacted.",
-  },
-  {
-    title: "2. NCERT Tamanna Guide is the only source",
-    text: "All sub-test scores, Sten tables (Class IX: Appendix IV; Class X: Appendix V), performance levels (Low 1–3, Average 4–7, High 8–10), and descriptions come strictly from the NCERT Guide for Teachers and Parents (2019). No total marks, ranks, or outside predictions are used.",
-  },
-  {
-    title: "3. When subject & career recommendations are given",
-    text: "Recommendations are given for High scores (Sten 8–10), and for Average scores only when the score is close to the High score's lower bracket (Sten 7, or within 2 marks of High). No recommendations are given for other Average scores (Sten 4–6) or Low scores (Sten 1–3).",
-  },
-  {
-    title: "4. Guidance when a student has no High scores",
-    text: "Not scoring High on any sub-test does not mean a lack of ability. Following Section 5 (p. 11) of the guide, the report recommends self-exploration, school activities of interest, career-planning sessions, and referral to the school counsellor.",
-  },
-  {
-    title: "5. Hand check every 10–20 sheets",
-    text: "After checking a batch of 10–20 answer sheets, teachers must re-score them by hand with the official scoring key using Manual Check in Student Reports before sharing reports.",
-  },
-  {
-    title: "6. Unscored & excluded sheets",
-    text: "Questions with more than one marked option are not scored. Sheets with an obvious answer pattern (such as the same option marked throughout a sub-test) are flagged for exclusion.",
-  },
-  {
-    title: "7. Scores are suggestive only",
-    text: "There is no pass or fail in Tamanna. Aptitude scores are suggestive only, and schools or parents must not use them to choose subjects for a student.",
-  },
-];
+const CATEGORIES = { scans: "Scans", scoring: "Scoring", students: "Student profiles", answer_key: "Answer key", settings: "Portal settings", account: "Account" };
+const PAGE_SIZE = 25;
 
-export default async function Page() {
+export default async function Page({ searchParams }: { searchParams: Promise<{ category?: string; page?: string }> }) {
+  const params = await searchParams;
+  const category = params.category && Object.hasOwn(CATEGORIES, params.category) ? params.category as keyof typeof CATEGORIES : "";
+  const number = Number(params.page ?? "1");
+  const page = Number.isSafeInteger(number) && number > 0 ? number : 1;
+  const href = (value: number, filter = category) => `/admin/logs?${new URLSearchParams({ ...(filter ? { category: filter } : {}), page: String(value) })}`;
   const sb = await createServer();
-  const [{ data: subs }, { data: students }] = await Promise.all([
-    sb.from("submissions").select("id, created_at, student_id").order("created_at", { ascending: false }).limit(50),
-    sb.from("students").select("id, name, roll_number, class"),
-  ]);
-  const byId = new Map((students ?? []).map((s: { id: string; name: string; roll_number: string; class: string | null }) => [s.id, s]));
-  const rows = (subs ?? []) as { id: string; created_at: string; student_id: string }[];
-  return (
-    <div className="space-y-6">
-      <PageHeader title="Logs & key notes" icon={FileText} />
-      <Card title="Key notes about this portal">
-        <ul className="grid gap-3 sm:grid-cols-2">
-          {KEY_NOTES.map((n) => (
-            <li key={n.title} className="clay-inset space-y-1 p-3.5 text-sm">
-              <p className="font-bold text-brand-700">{n.title}</p>
-              <p className="leading-relaxed text-ink/85">{n.text}</p>
-            </li>
-          ))}
-        </ul>
-      </Card>
-      <Card title="Recent sheet activity">
-        {rows.length === 0 ? <p className="text-sm">No activity yet.</p> : (
-          <ul className="divide-y divide-(--line)">
-            {rows.map((r) => {
-              const s = byId.get(r.student_id);
-              return (
-                <li key={r.id} className="flex flex-wrap items-center justify-between gap-3 py-2.5 text-sm">
-                  <span className="font-semibold">{s ? `${s.name || "Name pending"} · ${s.roll_number}` : "Unknown student"}</span>
-                  <span className="text-ink/70">{s?.class ? `Class ${s.class}` : "—"}</span>
-                  <span className="text-ink/60">{new Date(r.created_at).toLocaleString()}</span>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </Card>
-    </div>
-  );
+  let countQuery = sb.from("activity_logs").select("id", { count: "exact", head: true });
+  if (category) countQuery = countQuery.eq("category", category);
+  const { count, error: countError } = await countQuery;
+  if (countError) throw new Error("Could not count activity logs.", { cause: countError });
+  const total = count ?? 0;
+  const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  if (page > pages) redirect(href(pages));
+  let query = sb.from("activity_logs").select("id,created_at,category,action,actor_email,detail");
+  if (category) query = query.eq("category", category);
+  const { data, error } = await query.order("created_at", { ascending: false }).order("id", { ascending: false }).range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1);
+  if (error) throw new Error("Could not load activity logs.", { cause: error });
+  return <div className="space-y-6">
+    <PageHeader title="Activity logs" icon={FileText} />
+    <Card>
+      <nav aria-label="Log categories" className="mb-5 flex flex-wrap gap-2">
+        <Link prefetch={false} aria-current={!category ? "page" : undefined} href="/admin/logs" className={!category ? "clay-btn" : "clay-btn-soft"}>All activity</Link>
+        {Object.entries(CATEGORIES).map(([key, label]) => <Link prefetch={false} key={key} href={href(1, key as keyof typeof CATEGORIES)} aria-current={category === key ? "page" : undefined} className={category === key ? "clay-btn" : "clay-btn-soft"}>{label}</Link>)}
+      </nav>
+      <p className="mb-3 text-sm font-semibold">{total ? `${(page - 1) * PAGE_SIZE + 1}–${Math.min(page * PAGE_SIZE, total)} of ${total} events` : "No activity in this category."}</p>
+      {!!data?.length && <div className="overflow-x-auto">
+        <table className="w-full min-w-[640px] text-left text-sm">
+          <thead className="bg-brand-100"><tr>{["Time", "Category", "Activity", "Account", "Details"].map((label) => <th scope="col" key={label} className="px-3 py-3">{label}</th>)}</tr></thead>
+          <tbody>{data.map((row) => <tr key={row.id} className="border-b border-(--line)">
+            <td className="whitespace-nowrap px-3 py-3"><time dateTime={row.created_at}>{new Date(row.created_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })} IST</time></td>
+            <td className="px-3 py-3">{CATEGORIES[row.category as keyof typeof CATEGORIES]}</td>
+            <td className="px-3 py-3 font-semibold">{row.action}</td>
+            <td className="px-3 py-3">{row.actor_email ?? "Import / system"}</td>
+            <td className="px-3 py-3">{row.detail ?? "—"}</td>
+          </tr>)}</tbody>
+        </table>
+      </div>}
+      <nav aria-label="Log pages" className="mt-5 flex flex-wrap items-center justify-between gap-3">
+        {page > 1 ? <Link prefetch={false} className="clay-btn-soft" href={href(page - 1)}>Previous</Link> : <span className="clay-btn-soft opacity-50" aria-disabled="true">Previous</span>}
+        <span className="text-sm font-semibold">Page {page} of {pages}</span>
+        {page < pages ? <Link prefetch={false} className="clay-btn-soft" href={href(page + 1)}>Next</Link> : <span className="clay-btn-soft opacity-50" aria-disabled="true">Next</span>}
+      </nav>
+    </Card>
+  </div>;
 }

@@ -49,7 +49,7 @@ export function StudentSheetDialog({ student, mode, onClose }: { student: Studen
     try {
       const { error: saveError } = await supabase.rpc("review_copy", { p_student_id: student.id, p_responses: marked, p_expected_key_hash: sheet.keyHash });
       if (saveError) return toast(`Could not score. ${saveError.message}`);
-      toast("Answers and scores saved. Pending hand check."); onClose(); router.refresh();
+      toast("Scan answers confirmed. Final marks saved."); onClose(); router.refresh();
     } catch (failure) {
       console.error("Could not score the checked sheet.", failure); toast("Could not score the checked sheet.");
     } finally { setBusy(false); }

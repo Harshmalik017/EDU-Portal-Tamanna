@@ -8,35 +8,33 @@ import { TESTS } from "@/lib/tamanna/tests";
 import { bandOf, normalizeClass, stenOf } from "@/lib/tamanna/norms";
 import { supabase } from "@/lib/supabase/client";
 import type { Student } from "@/lib/types";
-import { Badge, Button, Card, Input, PageHeader, Select } from "@/components/ui";
+import { Button, Card, Input, PageHeader, Select } from "@/components/ui";
 import { useToast } from "@/components/Toast";
 
 const PAGE = 20;
-const ManualCheckDialog = dynamic(() => import("@/components/features/ManualCheckDialog").then((m) => m.ManualCheckDialog));
 const StudentProfileDialog = dynamic(() => import("@/components/features/StudentProfileDialog").then((m) => m.StudentProfileDialog));
 const StudentSheetDialog = dynamic(() => import("@/components/features/StudentSheetDialog").then((m) => m.StudentSheetDialog));
 const raw = (r: Student, c: string) => r.scores.find((s) => s.test_code === c)?.correct ?? null;
-const sten = (r: Student, c: string) => { const v = raw(r, c); return v === null ? null : stenOf(r.class, r.gender, c, v); };
+const sten = (r: Student, c: string) => { const v = raw(r, c); return v === null || r.scores.find((s) => s.test_code === c)?.uncertain ? null : stenOf(r.class, r.gender, c, v); };
 const tone = { Low: "bg-amber-100 text-amber-900", Average: "bg-blue-100 text-blue-900", High: "bg-green-100 text-green-900" } as const;
-const TONE = { Verified: "green", Mismatch: "red", Pending: "amber", Excluded: "neutral" } as const;
-const status = (r: Student): keyof typeof TONE => (r.excluded ? "Excluded" : r.verification_status === "verified" ? "Verified" : r.verification_status === "mismatch" ? "Mismatch" : "Pending");
+const blurry = (r: Student) => r.scores.some((score) => (score.uncertain ?? 0) > 0);
+const status = (r: Student) => r.excluded ? "Excluded" : !r.scores.length ? "No scan" : blurry(r) ? "Confirm blurry answers" : "Review scan";
 
 function Cell({ r, c }: { r: Student; c: string }) {
   const v = raw(r, c), s = sten(r, c);
-  return <span className="whitespace-nowrap">{v ?? "–"}{s && <span className={`ml-1 rounded-full px-1.5 text-[11px] font-bold ${tone[bandOf(s)]}`} title={`Sten ${s}, ${bandOf(s)}`}>{s}</span>}</span>;
+  const uncertain = r.scores.find((score) => score.test_code === c)?.uncertain ?? 0;
+  return <span className="inline-flex flex-col gap-1"><span className="whitespace-nowrap">{v ?? "–"}{uncertain > 0 ? <span className="ml-1 text-[11px] font-semibold text-amber-900">provisional</span> : s && <span className={`ml-1 rounded-full px-1.5 text-[11px] font-bold ${tone[bandOf(s)]}`} title={`Sten ${s}, ${bandOf(s)}`}>{s}</span>}</span>{uncertain > 0 && <span className="text-[11px] font-semibold text-amber-900">{uncertain} blurry</span>}</span>;
 }
 
-export function ResultsTable({ rows, email }: { rows: Student[]; email: string }) {
+export function ResultsTable({ rows }: { rows: Student[] }) {
   const router = useRouter();
   const toast = useToast();
   const [q, setQ] = useState(""); const [cls, setCls] = useState("");
   const [sort, setSort] = useState<{ by: string; dir: 1 | -1 }>({ by: "roll_number", dir: 1 });
   const [page, setPage] = useState(0);
-  const [manualCheck, setManualCheck] = useState<{ studentId?: string } | null>(null);
   const [profile, setProfile] = useState<Student | null>(null);
   const [sheet, setSheet] = useState<{ student: Student; mode: "view" | "check" } | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const eligibleStudents = rows.filter((row) => !row.excluded);
   const get = (r: Student, by: string): string | number => TESTS.some((t) => t.code === by) ? raw(r, by) ?? -1 : by === "status" ? status(r) : ((r as unknown as Record<string, string>)[by] ?? "");
   const shown = useMemo(() => rows
     .filter((r) => (!cls || normalizeClass(r.class) === cls) && `${r.roll_number} ${r.name} ${r.school}`.toLowerCase().includes(q.toLowerCase()))
@@ -69,9 +67,9 @@ export function ResultsTable({ rows, email }: { rows: Student[]; email: string }
   }
 
   function exportCsv() {
-    const head = ["Roll number", "Name", "Class", "Gender", "School", "Block", "District", ...TESTS.flatMap((t) => [`${t.code} score`, `${t.code} sten`, `${t.code} level`]), "Verification", "Excluded"];
+    const head = ["Roll number", "Name", "Class", "Gender", "School", "Block", "District", ...TESTS.flatMap((t) => [`${t.code} score`, `${t.code} blurry answers (score provisional if above zero)`, `${t.code} sten`, `${t.code} level`]), "Scan status", "Excluded"];
     const csv = (value: string | number) => `"${String(value).replace(/"/g, '""')}"`;
-    const lines = shown.map((r) => [r.roll_number, r.name, r.class, r.gender, r.school ?? "", r.block ?? "", r.district ?? "", ...TESTS.flatMap((t) => { const s = sten(r, t.code); return [raw(r, t.code) ?? "", s ?? "", s ? bandOf(s) : ""]; }), r.verification_status ?? "pending", r.excluded ? "yes" : "no"].map(csv).join(","));
+    const lines = shown.map((r) => [r.roll_number, r.name, r.class, r.gender, r.school ?? "", r.block ?? "", r.district ?? "", ...TESTS.flatMap((t) => { const s = sten(r, t.code); return [raw(r, t.code) ?? "", r.scores.find((score) => score.test_code === t.code)?.uncertain ?? "", s ?? "", s ? bandOf(s) : ""]; }), status(r), r.excluded ? "yes" : "no"].map(csv).join(","));
     const a = document.createElement("a");
     a.href = URL.createObjectURL(new Blob([[head.join(","), ...lines].join("\n")], { type: "text/csv" }));
     a.download = "tamanna-results.csv"; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
@@ -79,7 +77,7 @@ export function ResultsTable({ rows, email }: { rows: Student[]; email: string }
 
   return (
     <div className="space-y-6">
-    <PageHeader title="Student reports" icon={Table2} actions={<Button variant="soft" disabled={!eligibleStudents.length} onClick={() => setManualCheck({})}><ClipboardCheck size={18} /> Manual Check</Button>} />
+    <PageHeader title="Student reports" icon={Table2} />
     <Card>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm font-semibold text-ink/80">{shown.length} students</p>
@@ -90,6 +88,7 @@ export function ResultsTable({ rows, email }: { rows: Student[]; email: string }
       </div>
       <div className="mb-4 flex flex-wrap items-center gap-2 text-xs">
         <span className="font-semibold text-ink/80">Marks and Sten score</span>
+        <span className="text-amber-900">Provisional: marks from clear answers; confirm blurry answers for final marks.</span>
         <span className="rounded-full border border-amber-300 bg-amber-50 px-2.5 py-1 font-bold text-amber-900">Low · 1–3</span>
         <span className="rounded-full border border-blue-300 bg-blue-50 px-2.5 py-1 font-bold text-blue-900">Average · 4–7</span>
         <span className="rounded-full border border-green-300 bg-green-50 px-2.5 py-1 font-bold text-green-900">High · 8–10</span>
@@ -112,9 +111,8 @@ export function ResultsTable({ rows, email }: { rows: Student[]; email: string }
                 <tr key={r.id} className="transition-colors hover:bg-brand-50/70">
                   <td className="border-b border-r border-(--line) px-3 py-2.5 font-semibold"><button type="button" className="min-h-11 underline focus-visible:outline-2 focus-visible:outline-brand-700" aria-label={`Profile for ${r.name}, roll ${r.roll_number}`} onClick={() => setProfile(r)}>{r.roll_number}</button></td><td className="border-b border-r border-(--line) px-3 py-2.5">{r.name || "Name pending"}</td><td className="border-b border-r border-(--line) px-3 py-2.5">{r.class}</td><td className="border-b border-r border-(--line) px-3 py-2.5">{r.gender}</td><td className="border-b border-r border-(--line) px-3 py-2.5">{r.school}</td>
                   {TESTS.map((t) => <td key={t.code} className="border-b border-r border-(--line) px-3 py-2.5"><Cell r={r} c={t.code} /></td>)}
-                  <td className="border-b border-r border-(--line) px-3 py-2.5"><div className="flex flex-col items-start gap-2"><Badge tone={TONE[status(r)]}>{status(r)}</Badge><Button variant="soft" className="whitespace-nowrap !px-3 !py-2 text-xs" onClick={() => setSheet({ student: r, mode: "check" })}><ClipboardCheck size={15} /> Check answers</Button></div></td>
+                  <td className="border-b border-r border-(--line) px-3 py-2.5"><Button variant="soft" disabled={!r.scores.length} className="whitespace-nowrap !px-3 !py-2 text-xs" onClick={() => setSheet({ student: r, mode: "check" })}><ClipboardCheck size={15} />{status(r)}</Button></td>
                   <td className="border-b border-(--line) px-3 py-2.5"><div className="flex items-center gap-2">
-                    {!r.excluded && <Button variant="soft" className="!min-h-9 !px-3 !py-1.5 text-xs" onClick={() => setManualCheck({ studentId: r.id })}><ClipboardCheck size={15} />{r.verification_status && r.verification_status !== "pending" ? "Recheck" : "Hand Check"}</Button>}
                     <Link prefetch={false} href={`/admin/students/${r.id}/report`} aria-label={`Report for ${r.name}, roll ${r.roll_number}`} title="Report" className="inline-flex min-h-9 items-center gap-1.5 rounded-xl bg-sky-100 px-3 py-1.5 text-xs font-bold text-sky-800 transition hover:bg-sky-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600"><FileText size={15} /> Report</Link>
                     <Button variant="soft" className="!min-h-9 !px-3 !py-1.5 text-xs" onClick={() => setProfile(r)}><UserRound size={15} /> Profile</Button>
                     <Button variant="soft" className="!min-h-9 !bg-violet-100 !px-3 !py-1.5 text-xs !text-violet-900" onClick={() => setSheet({ student: r, mode: "view" })}>OMR Sheet</Button>
@@ -125,12 +123,11 @@ export function ResultsTable({ rows, email }: { rows: Student[]; email: string }
           </div>
           <ul className="space-y-3 md:hidden">{view.map((r) => (
             <li key={r.id} className="clay-inset p-4">
-              <div className="flex justify-between gap-2"><button type="button" className="text-left font-extrabold underline focus-visible:outline-2 focus-visible:outline-brand-700" onClick={() => setProfile(r)}>{r.name || "Name pending"} · {r.roll_number}</button><Badge tone={TONE[status(r)]}>{status(r)}</Badge></div>
+              <div className="flex justify-between gap-2"><button type="button" className="text-left font-extrabold underline focus-visible:outline-2 focus-visible:outline-brand-700" onClick={() => setProfile(r)}>{r.name || "Name pending"} · {r.roll_number}</button></div>
               <p className="text-xs">Class {r.class} · {r.gender} · {r.school}</p>
               <p className="mt-2 grid grid-cols-3 gap-1 text-xs">{TESTS.map((t) => <span key={t.code}><b>{t.code}</b> <Cell r={r} c={t.code} /></span>)}</p>
               <div className="mt-3 flex flex-wrap gap-2">
-                <Button variant="soft" className="!px-3 !py-2 text-xs" onClick={() => setSheet({ student: r, mode: "check" })}><ClipboardCheck size={15} /> Check answers</Button>
-                {!r.excluded && <Button variant="soft" className="!min-h-9 !px-3 !py-1.5 text-xs" onClick={() => setManualCheck({ studentId: r.id })}><ClipboardCheck size={15} />{r.verification_status && r.verification_status !== "pending" ? "Recheck" : "Hand Check"}</Button>}
+                <Button variant="soft" disabled={!r.scores.length} className="!px-3 !py-2 text-xs" onClick={() => setSheet({ student: r, mode: "check" })}><ClipboardCheck size={15} />{status(r)}</Button>
                 <Link prefetch={false} href={`/admin/students/${r.id}/report`} className="inline-flex min-h-9 items-center gap-1.5 rounded-xl bg-sky-100 px-3 py-1.5 text-xs font-bold text-sky-800 transition hover:bg-sky-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600"><FileText size={15} /> Report</Link>
                 <Button variant="soft" className="!min-h-9 !px-3 !py-1.5 text-xs" onClick={() => setProfile(r)}><UserRound size={15} /> Profile</Button>
                 <Button variant="soft" className="!min-h-9 !bg-violet-100 !px-3 !py-1.5 text-xs !text-violet-900" onClick={() => setSheet({ student: r, mode: "view" })}>OMR Sheet</Button>
@@ -144,7 +141,6 @@ export function ResultsTable({ rows, email }: { rows: Student[]; email: string }
           </div>
         </>)}
     </Card>
-    {manualCheck && <ManualCheckDialog students={eligibleStudents} initialStudentId={manualCheck.studentId} email={email} onClose={() => setManualCheck(null)} />}
     {profile && <StudentProfileDialog key={profile.id} student={profile} onClose={() => setProfile(null)} />}
     {sheet && <StudentSheetDialog key={`${sheet.student.id}:${sheet.mode}`} student={sheet.student} mode={sheet.mode} onClose={() => setSheet(null)} />}
     </div>

@@ -9,9 +9,10 @@
 | `/admin/scan` | Server fetch of key + template → client scanner | camera lazy-loaded, OMR runs in browser |
 Auth: `proxy.ts` (session refresh + redirect) → `admin/layout.tsx` (`is_admin()` check) → RLS (final authority).
 ## Network rules
-- Read compact result rows on the server once per navigation, excluding lengthy per-question review notes. Fetch one student's sheet through the authenticated same-origin API only when its dialog opens; never preload all responses, answer keys, or signed URLs into results props.
+- Read compact result rows through `scan_results()` on the server once per navigation. SQL aggregates known-answer marks and uncertain counts against the current validated key; provisional sections receive no Sten interpretation. Fetch one student's sheet through the authenticated same-origin API only when its dialog opens; never preload all responses, answer keys, or signed URLs into results props.
 - Browser Supabase calls are user actions (writes/uploads). Sheet-dialog reads use an AbortController; close/unmount cancels them, and private responses use `Cache-Control: private, no-store`. Report links do not prefetch.
 - `createServer` and `getServerUser` use React request-scoped caching so layouts and pages share their session client/auth read, never cross-user global data.
+- Account settings are server-fetched props with browser-only Auth writes. Logs use server-side category filters and 25-row pagination. The additive portal migration supplies admin-readable event history, database triggers, and a restricted RPC for client-reported account actions.
 - Images are compressed before upload; original PDFs are stored unchanged in private storage.
 - Browser PDF rendering produces unmasked previews; the original PDF is stored unchanged in private Supabase storage. Local batch imports preserve every page and verify source/image checksums. No real student files are bundled publicly.
 - Signed URLs expire in 1 hour; bucket is private.

@@ -1,6 +1,22 @@
 # Changelog
 Format: [Keep a Changelog](https://keepachangelog.com), versions follow [SemVer](https://semver.org). See `versioning.md`.
 
+## [0.15.0] - 2026-10-29
+### Added
+- Profile settings with display-name editing and password changes after current-password confirmation. Passwords stay in Supabase Auth, never in logs.
+- Dedicated activity logs with category filters, 25-row server pagination, stable time/ID ordering, IST timestamps, and read-only admin RLS. Database triggers record scans, scoring, student edits, answer-key edits, and settings; account-settings actions are explicitly client-reported.
+- Additive `supabase/portal-update.sql`, included in the database setup command. Historical uploads are backfilled once; historical edits are not invented.
+- Two-page Theme UI PDF export through the browser's Print / Save as PDF dialog.
+### Changed
+- Results show current-key marks from saved scans. Blurry sections show the known-answer marks as provisional with unreadable-answer counts, not invented answers or final Sten levels.
+- Replace verification badges with Review scan / Confirm blurry answers buttons; remove hand-check actions from results and student details. Answer correction still saves final scores atomically after all uncertain answers are resolved.
+- Scan-result aggregates run inside admin-only `scan_results()` and return compact rows; no per-student responses, keys, or signed URLs are preloaded.
+### Fixed
+- Use a stable four-column themed sheet for both pages, keeping PA across two columns. Fixed-size bubbles and dedicated number cells no longer spill when the comparison panel is narrow; narrow panels scroll horizontally.
+- Remove the page-number suffix from the answer-sheet subheading.
+### Validation
+- Changed-source lint passed with zero warnings. Applied the schema and additive portal update to the school Supabase project. No tests, builds, typechecks, browser checks, or live-data checks were run, as requested.
+
 ## [0.14.1] - 2026-10-29
 ### Fixed
 - Validate and normalize nullable Supabase signed-file paths and URLs before creating sheet responses, fixing the Vercel TS2322 build error without type assertions or nullable image links. Incomplete signing results fail explicitly.
