@@ -23,7 +23,15 @@ const status = (r: Student) => r.excluded ? "Excluded" : !r.scores.length ? "No 
 function Cell({ r, c }: { r: Student; c: string }) {
   const v = raw(r, c), s = sten(r, c);
   const uncertain = r.scores.find((score) => score.test_code === c)?.uncertain ?? 0;
-  return <span className="inline-flex flex-col gap-1"><span className="whitespace-nowrap">{v ?? "–"}{uncertain > 0 ? <span className="ml-1 text-[11px] font-semibold text-amber-900">provisional</span> : s && <span className={`ml-1 rounded-full px-1.5 text-[11px] font-bold ${tone[bandOf(s)]}`} title={`Sten ${s}, ${bandOf(s)}`}>{s}</span>}</span>{uncertain > 0 && <span className="text-[11px] font-semibold text-amber-900">{uncertain} blurry</span>}</span>;
+  return <span className="inline-flex flex-col items-start gap-1"><span className="whitespace-nowrap text-xs">Section Score: <b>{v ?? "–"}</b></span><span className={`whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-bold ${s !== null ? tone[bandOf(s)] : "bg-slate-100 text-slate-700"}`} title={s !== null ? `Sten ${s}, ${bandOf(s)}` : uncertain > 0 ? "Confirm blurry answers for a final Sten score" : "No Sten score available"}>STEM SCORE: {s ?? "–"}</span>{uncertain > 0 && <span className="text-[11px] font-semibold text-amber-900">Provisional · {uncertain} blurry</span>}</span>;
+}
+
+function StudentPills({ student }: { student: Student }) {
+  return <span className="mt-1 flex flex-wrap gap-1 text-[11px] font-bold"><span className="rounded-full bg-blue-100 px-2 py-0.5 text-blue-900">Class {student.class}</span><span className="rounded-full bg-violet-100 px-2 py-0.5 text-violet-900">{student.gender}</span></span>;
+}
+
+function SheetAction({ student, onClick }: { student: Student; onClick: () => void }) {
+  return <div className="flex flex-col items-start gap-1"><Button variant="soft" className="!min-h-9 !bg-violet-100 !px-3 !py-1.5 text-xs !text-violet-900" aria-label={`OMR sheet for ${student.name}, roll ${student.roll_number}`} onClick={onClick}><ClipboardCheck size={15} /> OMR Sheet</Button><span className={`text-xs ${blurry(student) ? "font-semibold text-amber-900" : "text-ink/80"}`}>{status(student)}</span></div>;
 }
 
 export function ResultsTable({ rows }: { rows: Student[] }) {
@@ -41,7 +49,7 @@ export function ResultsTable({ rows }: { rows: Student[] }) {
     .sort((a, b) => { const x = get(a, sort.by), y = get(b, sort.by); return (x > y ? 1 : x < y ? -1 : 0) * sort.dir; }), [rows, q, cls, sort]);  
   const pages = Math.max(1, Math.ceil(shown.length / PAGE));
   const view = shown.slice(page * PAGE, page * PAGE + PAGE);
-  const heads: [string, string][] = [["roll_number", "Roll no."], ["name", "Name"], ["class", "Class"], ["gender", "Gender"], ["school", "School"], ...TESTS.map((t) => [t.code, t.code] as [string, string]), ["status", "Check"]];
+  const heads: [string, string][] = [["roll_number", "Roll no."], ["name", "Name"], ["school", "School"], ...TESTS.map((t) => [t.code, t.code] as [string, string]), ["status", "OMR sheet"]];
 
   async function deleteStudent(student: Student) {
     if (!confirm(`Delete ${student.name || `roll ${student.roll_number}`} and all scores? This cannot be undone.`)) return;
@@ -109,13 +117,12 @@ export function ResultsTable({ rows }: { rows: Student[] }) {
               </thead>
               <tbody>{view.map((r) => (
                 <tr key={r.id} className="transition-colors hover:bg-brand-50/70">
-                  <td className="border-b border-r border-(--line) px-3 py-2.5 font-semibold"><button type="button" className="min-h-11 underline focus-visible:outline-2 focus-visible:outline-brand-700" aria-label={`Profile for ${r.name}, roll ${r.roll_number}`} onClick={() => setProfile(r)}>{r.roll_number}</button></td><td className="border-b border-r border-(--line) px-3 py-2.5">{r.name || "Name pending"}</td><td className="border-b border-r border-(--line) px-3 py-2.5">{r.class}</td><td className="border-b border-r border-(--line) px-3 py-2.5">{r.gender}</td><td className="border-b border-r border-(--line) px-3 py-2.5">{r.school}</td>
+                  <td className="border-b border-r border-(--line) px-3 py-2.5 font-semibold"><button type="button" className="min-h-11 underline focus-visible:outline-2 focus-visible:outline-brand-700" aria-label={`Profile for ${r.name}, roll ${r.roll_number}`} onClick={() => setProfile(r)}>{r.roll_number}</button></td><td className="border-b border-r border-(--line) px-3 py-2.5">{r.name || "Name pending"}<StudentPills student={r} /></td><td className="border-b border-r border-(--line) px-3 py-2.5">{r.school}</td>
                   {TESTS.map((t) => <td key={t.code} className="border-b border-r border-(--line) px-3 py-2.5"><Cell r={r} c={t.code} /></td>)}
-                  <td className="border-b border-r border-(--line) px-3 py-2.5"><Button variant="soft" disabled={!r.scores.length} className="whitespace-nowrap !px-3 !py-2 text-xs" onClick={() => setSheet({ student: r, mode: "check" })}><ClipboardCheck size={15} />{status(r)}</Button></td>
+                  <td className="border-b border-r border-(--line) px-3 py-2.5"><SheetAction student={r} onClick={() => setSheet({ student: r, mode: "check" })} /></td>
                   <td className="border-b border-(--line) px-3 py-2.5"><div className="flex items-center gap-2">
                     <Link prefetch={false} href={`/admin/students/${r.id}/report`} aria-label={`Report for ${r.name}, roll ${r.roll_number}`} title="Report" className="inline-flex min-h-9 items-center gap-1.5 rounded-xl bg-sky-100 px-3 py-1.5 text-xs font-bold text-sky-800 transition hover:bg-sky-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600"><FileText size={15} /> Report</Link>
                     <Button variant="soft" className="!min-h-9 !px-3 !py-1.5 text-xs" onClick={() => setProfile(r)}><UserRound size={15} /> Profile</Button>
-                    <Button variant="soft" className="!min-h-9 !bg-violet-100 !px-3 !py-1.5 text-xs !text-violet-900" onClick={() => setSheet({ student: r, mode: "view" })}>OMR Sheet</Button>
                     <button type="button" aria-label={`Delete ${r.name}, roll ${r.roll_number}`} title="Delete student" disabled={deletingId === r.id} onClick={() => deleteStudent(r)} className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-red-200 bg-red-50 text-red-700 transition hover:bg-red-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600 disabled:opacity-50"><Trash2 size={17} /></button>
                   </div></td>
                 </tr>))}</tbody>
@@ -124,13 +131,13 @@ export function ResultsTable({ rows }: { rows: Student[] }) {
           <ul className="space-y-3 md:hidden">{view.map((r) => (
             <li key={r.id} className="clay-inset p-4">
               <div className="flex justify-between gap-2"><button type="button" className="text-left font-extrabold underline focus-visible:outline-2 focus-visible:outline-brand-700" onClick={() => setProfile(r)}>{r.name || "Name pending"} · {r.roll_number}</button></div>
-              <p className="text-xs">Class {r.class} · {r.gender} · {r.school}</p>
-              <p className="mt-2 grid grid-cols-3 gap-1 text-xs">{TESTS.map((t) => <span key={t.code}><b>{t.code}</b> <Cell r={r} c={t.code} /></span>)}</p>
+              <StudentPills student={r} />
+              <p className="mt-1 text-xs">{r.school}</p>
+              <p className="mt-2 grid grid-cols-2 gap-3 text-xs sm:grid-cols-3">{TESTS.map((t) => <span key={t.code} className="flex flex-col items-start gap-1"><b>{t.code}</b><Cell r={r} c={t.code} /></span>)}</p>
               <div className="mt-3 flex flex-wrap gap-2">
-                <Button variant="soft" disabled={!r.scores.length} className="!px-3 !py-2 text-xs" onClick={() => setSheet({ student: r, mode: "check" })}><ClipboardCheck size={15} />{status(r)}</Button>
+                <SheetAction student={r} onClick={() => setSheet({ student: r, mode: "check" })} />
                 <Link prefetch={false} href={`/admin/students/${r.id}/report`} className="inline-flex min-h-9 items-center gap-1.5 rounded-xl bg-sky-100 px-3 py-1.5 text-xs font-bold text-sky-800 transition hover:bg-sky-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600"><FileText size={15} /> Report</Link>
                 <Button variant="soft" className="!min-h-9 !px-3 !py-1.5 text-xs" onClick={() => setProfile(r)}><UserRound size={15} /> Profile</Button>
-                <Button variant="soft" className="!min-h-9 !bg-violet-100 !px-3 !py-1.5 text-xs !text-violet-900" onClick={() => setSheet({ student: r, mode: "view" })}>OMR Sheet</Button>
                 <button type="button" aria-label={`Delete ${r.name}, roll ${r.roll_number}`} title="Delete student" disabled={deletingId === r.id} onClick={() => deleteStudent(r)} className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-red-200 bg-red-50 text-red-700 transition hover:bg-red-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600 disabled:opacity-50"><Trash2 size={17} /></button>
               </div>
             </li>))}</ul>

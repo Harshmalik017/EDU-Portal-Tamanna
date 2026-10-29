@@ -1,6 +1,14 @@
 # Changelog
 Format: [Keep a Changelog](https://keepachangelog.com), versions follow [SemVer](https://semver.org). See `versioning.md`.
 
+## [0.15.1] - 2026-10-29
+### Changed
+- Merge Check into one OMR Sheet action that opens the scan and answer confirmation together; remove the duplicate sheet action.
+- Move class and gender from separate results columns into differently colored pills below student names, including mobile cards.
+- Show Section Score above a colored STEM SCORE pill in every section. The pill uses the existing booklet Sten value; blurry sections retain provisional marks and withhold final Sten.
+### Validation
+- Changed-source lint passed with zero warnings. No tests, builds, typechecks, browser checks, or live-data checks were run, as requested.
+
 ## [0.15.0] - 2026-10-29
 ### Added
 - Profile settings with display-name editing and password changes after current-password confirmation. Passwords stay in Supabase Auth, never in logs.
