@@ -56,16 +56,16 @@ function ThemeSheet({ responses, answerKey, roll, page, onChange }: ThemeSheetPr
                       const questionLabel = <>{question}.{answer === "MULTI" ? <span className="text-red-800">M</span> : uncertain ? <span className="text-amber-900">?</span> : answer === null ? <span className="text-slate-600">–</span> : ""}</>;
                       const setAnswer = (value: Marked) => onChange?.({ ...responses, [test.code]: Array.from({ length: test.questions }, (_, i) => i === question - 1 ? value : responses[test.code]?.[i] === undefined ? "UNCERTAIN" : responses[test.code][i]) });
                       return (
-                        <li key={question} title={answer === "MULTI" ? "Multiple marks" : uncertain ? "Needs checking" : answer === null ? "Blank" : undefined} className={`theme-row grid grid-cols-[1.5rem_1fr] items-center gap-1 px-1 py-1 text-[11px] ${uncertain ? "bg-amber-200 ring-1 ring-inset ring-amber-600" : answer === "MULTI" ? "bg-red-100 ring-1 ring-inset ring-red-300" : ""}`}>
+                        <li key={question} title={answer === "MULTI" ? "Multiple marks" : uncertain ? "Needs checking" : answer === null ? "No response" : undefined} className={`theme-row grid grid-cols-[1.5rem_1fr] items-center gap-1 px-1 py-1 text-[11px] ${uncertain ? "bg-amber-200 ring-1 ring-inset ring-amber-600" : answer === "MULTI" ? "bg-red-100 ring-1 ring-inset ring-red-300" : ""}`}>
                           {onChange ? <details className="relative" onKeyDown={(event) => {
                             if (event.key === "Escape" && event.currentTarget.open) {
                               event.preventDefault(); event.stopPropagation(); event.currentTarget.open = false;
                               event.currentTarget.querySelector("summary")?.focus();
                             }
                           }}>
-                            <summary aria-label={`${test.code} question ${question}, ${uncertain ? "needs checking" : answer === null ? "blank" : answer === "MULTI" ? "multiple marks" : answer}, other responses`} className="flex min-h-6 cursor-pointer list-none items-center rounded font-bold underline decoration-dotted focus-visible:outline-2 focus-visible:outline-blue-700">{questionLabel}</summary>
+                            <summary aria-label={`${test.code} question ${question}, ${uncertain ? "needs checking" : answer === null ? "no response" : answer === "MULTI" ? "multiple marks" : answer}, other responses`} className="flex min-h-6 cursor-pointer list-none items-center rounded font-bold underline decoration-dotted focus-visible:outline-2 focus-visible:outline-blue-700">{questionLabel}</summary>
                             <div className="absolute top-full left-0 z-20 min-w-40 rounded-lg border border-(--line) bg-white p-1 shadow-xl">
-                              {([{ label: "Blank", value: null }, { label: "Multiple marks", value: "MULTI" }, { label: "Needs checking", value: "UNCERTAIN" }] as const).map(({ label, value }) => <button key={label} type="button" aria-label={`${test.code} question ${question}: ${label}`} aria-pressed={value === answer} onClick={(event) => {
+                              {([{ label: "No response", value: null }, { label: "Multiple marks", value: "MULTI" }, { label: "Needs checking", value: "UNCERTAIN" }] as const).map(({ label, value }) => <button key={label} type="button" aria-label={`${test.code} question ${question}: ${label}`} aria-pressed={value === answer} onClick={(event) => {
                                 setAnswer(value);
                                 const menu = event.currentTarget.closest("details");
                                 if (menu) { menu.open = false; menu.querySelector("summary")?.focus(); }
@@ -95,6 +95,7 @@ function ThemeSheet({ responses, answerKey, roll, page, onChange }: ThemeSheetPr
                             })}
                             {onChange && <button type="button" aria-label={`${test.code} question ${question}: Multi select`} aria-pressed={answer === "MULTI"} title="Multi select" onClick={() => setAnswer("MULTI")} className={`grid h-6 w-6 shrink-0 place-items-center rounded border text-[10px] font-extrabold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700 ${answer === "MULTI" ? "border-red-800 bg-red-700 text-white" : "border-red-400 bg-white text-red-900 hover:bg-red-100"}`}>M</button>}
                           </div>
+                          {onChange && <button type="button" aria-label={`${test.code} question ${question}: No response`} aria-pressed={answer === null} onClick={() => setAnswer(null)} className={`col-span-2 min-h-6 rounded border px-2 text-[10px] font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700 ${answer === null ? "border-slate-700 bg-slate-200 text-slate-900" : "border-slate-300 bg-white text-slate-700 hover:bg-slate-100"}`}>No response</button>}
                         </li>
                       );
                     })}

@@ -15,6 +15,22 @@ async function main() {
   }));
   assert.ok(sheet.includes("M = Multi select"));
   assert.ok(sheet.includes('aria-label="LA question 1: Multi select" aria-pressed="true"'));
+  assert.ok(sheet.includes('aria-label="LA question 4: No response" aria-pressed="true"'));
+  assert.ok(sheet.includes('aria-label="LA question 2: No response" aria-pressed="false"'));
+  assert.match(sheet, /title="No response"/);
+  assert.equal((sheet.match(/>No response<\/button>/g) ?? []).length, 240);
+  assert.equal((sheet.match(/<\/div><button[^>]*class="col-span-2[^"]*"[^>]*>No response<\/button><\/li>/g) ?? []).length, 120);
+  const secondPage = renderToStaticMarkup(React.createElement(SheetDisplay, {
+    pages: [], responses: Object.fromEntries(TESTS.filter((test) => ["LA", "AR", "VR", "MR"].includes(test.code)).map((test) => [test.code, Array.from({ length: test.questions }, () => null)])),
+    answerKey: {}, onChange: () => {},
+  }));
+  assert.equal((secondPage.match(/>No response<\/button>/g) ?? []).length, 240);
+  assert.ok(secondPage.includes('aria-label="PA question 60: No response" aria-pressed="false"'));
+  const readonlySheet = renderToStaticMarkup(React.createElement(SheetDisplay, {
+    pages: [], roll: "10001", responses: { LA: [null] }, answerKey: {},
+  }));
+  assert.ok(!readonlySheet.includes(">No response</button>"));
+  assert.match(readonlySheet, /title="No response"/);
   assert.match(sheet, /title="Multiple marks" class="[^"]*bg-red-100/);
   assert.match(sheet, /title="Needs checking" class="[^"]*bg-amber-200[^"]*ring-amber-600/);
   assert.ok(!sheet.includes("Select circles"));
@@ -92,6 +108,6 @@ async function main() {
     await writeFile(process.argv[2], JSON.stringify(fixtures));
   }
   console.log("Report checks passed: three pages in both languages, no names, complete translations, booklet bands, and no interpretation of unscored, uncertain or excluded copies.");
-  console.log("Themed sheet checks passed: direct M controls, red MULTI rows, visible amber review rows, both PA columns, and no name fields.");
+  console.log("Themed sheet checks passed: direct M and No response controls, blank selection, read-only export, red MULTI rows, visible amber review rows, both PA columns, and no name fields.");
 }
 main();

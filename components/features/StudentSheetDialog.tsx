@@ -43,7 +43,7 @@ export function StudentSheetDialog({ student, mode, onClose }: { student: Studen
   }, [student.id, attempt]);
   const ready = TESTS.every((test) => marked[test.code]?.length === test.questions && marked[test.code].every((value) => value === null || value === "MULTI" || OPTIONS.some((option) => option === value)));
   async function save() {
-    if (!sheet || !ready) return toast("Select an answer, blank, or multiple marks for every question.");
+    if (!sheet || !ready) return toast("Select an answer, No response, or M for every question.");
     setBusy(true);
     try {
       const { error: saveError } = await supabase.rpc("review_copy", { p_student_id: student.id, p_responses: marked, p_expected_key_hash: sheet.keyHash });
@@ -58,7 +58,7 @@ export function StudentSheetDialog({ student, mode, onClose }: { student: Studen
       <fieldset disabled={busy} className="min-w-0"><SheetDisplay pages={sheet.originals} pdfUrl={sheet.pdfUrl} responses={marked} answerKey={sheet.answerKey} roll={student.roll_number} onChange={mode === "check" ? setMarked : undefined} /></fieldset>
       {mode === "check" && <>
         <div className="sticky bottom-0 flex flex-wrap items-center justify-between gap-3 border-t border-(--line) bg-[#fbfdf4] py-3">
-          {!ready && <p className="text-sm font-semibold text-amber-900">Select answers for all ? rows on both themed pages. Use the question number for blank or multiple marks.</p>}
+          {!ready && <p className="text-sm font-semibold text-amber-900">Select an answer, No response, or M for each ? row on both pages.</p>}
           <Button onClick={save} disabled={!ready || busy}>{busy ? "Saving…" : "Confirm and score"}</Button>
         </div>
       </>}

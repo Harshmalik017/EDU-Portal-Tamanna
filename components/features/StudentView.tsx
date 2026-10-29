@@ -29,7 +29,7 @@ export function StudentView({ initial, imgs, pdfUrl, filePaths, responses, answe
 
   async function saveAnswers() {
     if (!keyHash) return toast("Could not score. Save the complete official answer key first.");
-    if (!ready) return toast("Select an answer, blank, or multiple marks for every question.");
+    if (!ready) return toast("Select an answer, No response, or M for every question.");
     setScoring(true);
     try {
       const { error } = await supabase.rpc("review_copy", { p_student_id: id, p_responses: marked, p_expected_key_hash: keyHash });

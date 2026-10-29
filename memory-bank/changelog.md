@@ -1,6 +1,13 @@
 # Changelog
 Format: [Keep a Changelog](https://keepachangelog.com), versions follow [SemVer](https://semver.org). See `versioning.md`.
 
+## [0.18.2] - 2026-10-29
+### Fixed
+- Expose a No response button on every editable OMR question on both pages, including both PA columns. Selecting it records an explicit blank rather than an unreadable answer; A–D or M can replace it.
+- Use No response in question menus, the response-table dropdown, and review prompts. Show the selected state accessibly without adding editing controls to read-only sheets or exported PDFs.
+### Validation
+- Both-page themed controls/selected-state/read-only checks, import blank-score accounting, results checks, typecheck, changed-source lint, production build, and whitespace checks passed.
+
 ## [0.18.1] - 2026-10-29
 ### Fixed
 - Show Section not filled instead of both Section Score and STEN SCORE in desktop/mobile results when every answer in that sub-test is explicitly blank. Keep zero marks, unreadable/missing answers, and partly answered sections distinct. PA is one 60-question section, not two separate tests.
