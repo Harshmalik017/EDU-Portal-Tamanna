@@ -14,6 +14,7 @@ async function main() {
     pages: [], roll: "10001", responses: { LA: ["MULTI", "UNCERTAIN", "A", null] }, answerKey: { LA: ["B", "B", "A", "B"] }, onChange: () => {},
   }));
   assert.ok(sheet.includes("M = Multi select"));
+  assert.match(sheet, /<section class="[^"]*@min-\[1200px\]:sticky[^"]*@min-\[1200px\]:top-20[^"]*"><h3 class="font-bold">Original upload/);
   assert.ok(sheet.includes('aria-label="LA question 1: Multi select" aria-pressed="true"'));
   assert.ok(sheet.includes('aria-label="LA question 4: No response" aria-pressed="true"'));
   assert.ok(sheet.includes('aria-label="LA question 2: No response" aria-pressed="false"'));

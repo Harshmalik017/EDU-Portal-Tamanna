@@ -210,7 +210,7 @@ export function SheetDisplay({ pages, pdfUrl, responses, answerKey, roll, onChan
     <div className="@container space-y-3">
       <PagePicker page={page} onChange={setPage} pdfUrl={pdfUrl} responses={onChange ? responses : undefined} />
       <div className="grid items-start gap-4 @min-[1200px]:grid-cols-[minmax(0,1fr)_760px]">
-        <section className="min-w-0 space-y-2">
+        <section className="min-w-0 space-y-2 @min-[1200px]:sticky @min-[1200px]:top-20 @min-[1200px]:[&_img]:max-h-[calc(100dvh-14rem)]">
           <h3 className="font-bold">Original upload</h3>
           <OriginalSheet pages={pages.filter((item) => item.label === `Page ${page}`)} />
         </section>

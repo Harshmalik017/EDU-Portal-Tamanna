@@ -1,6 +1,13 @@
 # Changelog
 Format: [Keep a Changelog](https://keepachangelog.com), versions follow [SemVer](https://semver.org). See `versioning.md`.
 
+## [0.18.3] - 2026-10-29
+### Fixed
+- Keep Original upload visible below the OMR dialog header while scrolling the themed answers in side-by-side layout. Fit the original image within the available height; preserve normal scrolling on narrow stacked layouts.
+### Validation
+- Report/themed-sheet assertions, typecheck, changed-source lint, production build, and whitespace checks passed.
+- Synthetic browser checks confirmed the original stays fixed below the dialog header at 1600px width and 900px/650px heights. Tablet/mobile layouts retain normal scrolling without horizontal overflow. No student data was accessed or changed.
+
 ## [0.18.2] - 2026-10-29
 ### Fixed
 - Expose a No response button on every editable OMR question on both pages, including both PA columns. Selecting it records an explicit blank rather than an unreadable answer; A–D or M can replace it.
