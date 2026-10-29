@@ -55,7 +55,7 @@ export function StudentSheetDialog({ student, mode, onClose }: { student: Studen
   }
   return <Dialog wide busy={busy} title={`OMR sheet · ${student.name || "Name pending"} · ${student.roll_number}`} onClose={onClose}>
     {loading ? <p role="status">Loading student sheet…</p> : error ? <div role="alert" className="space-y-3"><p>{error}</p><Button variant="soft" onClick={() => setAttempt((value) => value + 1)}>Try again</Button></div> : sheet && <>
-      <fieldset disabled={busy} className="min-w-0"><SheetDisplay pages={sheet.originals} pdfUrl={sheet.pdfUrl} responses={marked} answerKey={sheet.answerKey} name={student.name} roll={student.roll_number} onChange={mode === "check" ? setMarked : undefined} /></fieldset>
+      <fieldset disabled={busy} className="min-w-0"><SheetDisplay pages={sheet.originals} pdfUrl={sheet.pdfUrl} responses={marked} answerKey={sheet.answerKey} roll={student.roll_number} onChange={mode === "check" ? setMarked : undefined} /></fieldset>
       {mode === "check" && <>
         <div className="sticky bottom-0 flex flex-wrap items-center justify-between gap-3 border-t border-(--line) bg-[#fbfdf4] py-3">
           {!ready && <p className="text-sm font-semibold text-amber-900">Select answers for all ? rows on both themed pages. Use the question number for blank or multiple marks.</p>}

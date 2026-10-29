@@ -57,9 +57,18 @@ body::before { content: ""; position: fixed; inset: 0; z-index: -1; background: 
   box-shadow: 0 1px 2px rgba(60,90,20,.08), inset 0 1px 0 #fff;
 }
 
-.report-page { box-sizing: border-box; width: 190mm; max-width: 100%; min-height: 277mm; margin: 0 auto 20px; padding: 8mm; background: #fff; border-radius: 24px; box-shadow: 0 10px 30px rgba(86,120,30,.18); }
+.report-page { box-sizing: border-box; display: flex; flex-direction: column; width: 190mm; max-width: 100%; min-height: 277mm; margin: 0 auto 20px; padding: 8mm; background: #fff; border-radius: 24px; box-shadow: 0 10px 30px rgba(86,120,30,.18); }
+.report-page > * { flex-shrink: 0; }
+.report-page .meaning-grid { flex: 1; gap: 12px; }
+.report-page .meaning-card:last-child { grid-column: 1 / -1; }
+.report-page .meaning-card { padding: 12px; font-size: 14px; line-height: 1.45; }
+.report-page .meaning-card > div:first-child { flex-wrap: wrap; }
+.report-page .recommendations-copy, .report-page .remarks-grid article, .report-page .occupation-grid, .report-page .report-caution { font-size: 14px; line-height: 1.45; }
+.report-page .report-band, .report-page .report-source { font-size: 12px; }
+.report-page .report-signature { margin-top: auto; }
+.report-summary > .report-chart { flex: 1; min-height: 68mm; }
 .meaning-card, .remarks-grid article, .occupation-grid li { break-inside: avoid; page-break-inside: avoid; }
-.report-chart { max-height: 68mm; }
+.report-chart { max-height: 85mm; }
 .report-page:lang(hi) { font-family: "Nirmala UI", "Mangal", system-ui, sans-serif; line-height: 1.5; }
 @media (max-width: 639px) {
   .report-page { padding: 4mm; }
@@ -73,23 +82,33 @@ body::before { content: ""; position: fixed; inset: 0; z-index: -1; background: 
   body::before, .no-print { display: none !important; }
   main { max-width: none !important; padding: 0 !important; }
   body:has(.report-dialog[open]) { overflow: visible !important; height: auto !important; }
+  main:has(> .report-dialog[open]) > .admin-page { display: none !important; }
   .report-dialog[open] { position: static !important; display: block !important; width: 190mm !important; max-width: none !important; height: auto !important; max-height: none !important; overflow: visible !important; border: 0 !important; border-radius: 0 !important; margin: 0 !important; padding: 0 !important; box-shadow: none !important; }
   .report-dialog::backdrop { display: none; }
   .report-dialog > div { padding: 0 !important; }
-  .report-page { width: 190mm; max-width: none; height: 265mm; min-height: 265mm; box-shadow: none; border: 0; border-radius: 0; padding: 6mm; margin: 0; overflow: hidden; break-after: page; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  .report-page { width: 190mm; max-width: none; min-height: 276mm; box-shadow: none; border: 0; border-radius: 0; padding: 6mm; margin: 0; break-after: page; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
   .report-page:last-child { break-after: auto; }
   .report-page h2 { font-size: 15pt; }
   .report-page h3 { font-size: 12pt; }
   .report-header { margin-bottom: 4mm; }
-  .report-page table { font-size: 9pt; }
-  .report-page table th, .report-page table td { padding: 1.5mm 2mm; }
-  .report-page .meaning-card { padding: 2mm; font-size: 8pt; line-height: 1.2; }
+  .report-meanings { padding: 4mm; }
+  .report-meanings .report-header { margin-bottom: 2mm; }
+  .report-meanings > .report-source { margin-bottom: 1.5mm; }
+  .report-page table { font-size: 11pt; }
+  .report-page table th, .report-page table td { padding: 2mm; }
+  .report-page .meaning-grid { gap: 1.5mm; }
+  .report-page .meaning-card { padding: 1.5mm; font-size: 10.5pt; line-height: 1.25; }
   .report-page .meaning-card p { margin-top: 1mm; }
-  .report-page .meaning-card .recommendations-copy { font-size: 7pt; }
+  .report-page .meaning-card .recommendations-copy { margin-top: 1mm; padding-top: 1mm; font-size: 10pt; line-height: 1.25; }
   .report-page .meaning-grid, .report-page .occupation-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .report-page .remarks-grid article { padding: 2.5mm; font-size: 8.5pt; line-height: 1.25; }
-  .report-page .occupation-grid { font-size: 8pt; }
+  .report-remarks { padding: 4mm; }
+  .report-remarks .report-header { margin-bottom: 2mm; }
+  .report-remarks > .report-source { margin-top: 1.5mm; margin-bottom: 1.5mm; }
+  .report-page .remarks-grid > :not(:last-child) { margin-bottom: 1mm; }
+  .report-page .remarks-grid article, .report-page .report-caution { padding: 2mm; font-size: 10.5pt; line-height: 1.2; }
+  .report-page .occupation-grid { gap: 1mm 3mm; font-size: 10pt; line-height: 1.2; }
   .report-page .occupation-grid li { padding: 1mm 1.5mm; }
-  .report-chart { max-height: 52mm; }
+  .report-page .report-band, .report-page .report-source { font-size: 9pt; }
+  .report-chart { max-height: 85mm; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }

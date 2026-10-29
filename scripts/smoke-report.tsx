@@ -9,12 +9,24 @@ import { TESTS } from "@/lib/tamanna/tests";
 (globalThis as unknown as { React: typeof React }).React = React; // classic JSX runtime for this script only
 async function main() {
   const { ReportPages } = await import("../components/report/ReportPages");
+  const { SheetDisplay } = await import("../components/features/OMRSheetPreview");
+  const sheet = renderToStaticMarkup(React.createElement(SheetDisplay, {
+    pages: [], roll: "10001", responses: { LA: ["MULTI", "UNCERTAIN", "A", null] }, answerKey: { LA: ["B", "B", "A", "B"] }, onChange: () => {},
+  }));
+  assert.ok(sheet.includes("M = Multi select"));
+  assert.ok(sheet.includes('aria-label="LA question 1: Multi select" aria-pressed="true"'));
+  assert.match(sheet, /title="Multiple marks" class="[^"]*bg-red-100/);
+  assert.match(sheet, /title="Needs checking" class="[^"]*bg-amber-200[^"]*ring-amber-600/);
+  assert.ok(!sheet.includes("Select circles"));
+  assert.ok(!sheet.includes("Name:"));
+  assert.ok(!sheet.includes("Name pending"));
+  assert.ok(sheet.includes("PA question 60"));
   // 1. Worked example with High scores (Roll 101, Class IX, Female)
   const raw1 = { LA: 15, AR: 27, VR: 25, MR: 6, NA: 19, SA: 11, PA: 43 };
   const s1 = { id: "1", name: "Example Student", roll_number: "10001", class: "IX", gender: "Female", school: "Example School", block: "Example Block", district: "Example District", scores: Object.entries(raw1).map(([test_code, correct]) => ({ test_code, correct })) };
   const html1 = renderToStaticMarkup(React.createElement(ReportPages, { s: s1 }));
   const text1 = html1.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
-  const pageCount = (html1.match(/class="report-page"/g) || []).length;
+  const pageCount = (html1.match(/class="report-page /g) || []).length;
   const titleCount = (text1.match(/Aptitude Test Report/g) || []).length;
   if (pageCount !== 3) throw new Error(`Expected three report pages, got ${pageCount}`);
   if (titleCount !== 1) throw new Error(`Expected one report title, got ${titleCount}`);
@@ -42,7 +54,7 @@ async function main() {
   for (const language of ["hi", "en"] as ReportLanguage[]) {
     for (const student of [s1, s2, { ...s2, scores: [] }]) {
       const html = renderToStaticMarkup(React.createElement(ReportPages, { s: student, language }));
-      assert.equal((html.match(/class="report-page"/g) ?? []).length, 3);
+      assert.equal((html.match(/class="report-page /g) ?? []).length, 3);
       assert.ok(!html.includes(student.name));
       assert.ok(!html.includes("Name pending"));
       assert.ok(html.includes(reportLabels(language).title));
@@ -66,9 +78,20 @@ async function main() {
   }
   if (process.argv[2]) {
     const maximum = { ...s1, scores: TESTS.map((t) => ({ test_code: t.code, correct: t.questions })) };
-    const fixtures = Object.fromEntries((["hi", "en"] as const).map((language) => [language, renderToStaticMarkup(React.createElement(ReportPages, { s: maximum, language }))]));
+    const nearHigh = { ...s1, scores: buildProfile(maximum).rows.map((row) => {
+      assert.ok(row.highMin !== null);
+      return { test_code: row.code, correct: row.highMin - 1 };
+    }) };
+    const fixtures = Object.fromEntries((["hi", "en"] as const).flatMap((language) => [
+      [language, renderToStaticMarkup(React.createElement(ReportPages, { s: maximum, language }))],
+      [`${language}-pending`, renderToStaticMarkup(React.createElement(ReportPages, { s: { ...s2, scores: [] }, language }))],
+      [`${language}-mixed`, renderToStaticMarkup(React.createElement(ReportPages, { s: s1, language }))],
+      [`${language}-average`, renderToStaticMarkup(React.createElement(ReportPages, { s: s2, language }))],
+      [`${language}-near-high`, renderToStaticMarkup(React.createElement(ReportPages, { s: nearHigh, language }))],
+    ]));
     await writeFile(process.argv[2], JSON.stringify(fixtures));
   }
   console.log("Report checks passed: three pages in both languages, no names, complete translations, booklet bands, and no interpretation of unscored, uncertain or excluded copies.");
+  console.log("Themed sheet checks passed: direct M controls, red MULTI rows, visible amber review rows, both PA columns, and no name fields.");
 }
 main();

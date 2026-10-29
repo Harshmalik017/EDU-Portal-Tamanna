@@ -56,7 +56,7 @@ export function ReportPages({ s, language = "en" }: { s: ReportStudent; language
   const text = reportLabels(language), notes = reportNotes(language);
   return (
     <>
-      <section className="report-page">
+      <section className="report-page report-summary">
         <Head n={1} roll={s.roll_number} language={language} />
         <dl className="mb-4 grid grid-cols-2 gap-x-6 gap-y-1.5 rounded-xl border border-(--line) bg-brand-50/50 p-3 text-sm">
           <div><dt className="inline font-bold">{text.rollNo}: </dt><dd className="inline">{s.roll_number}</dd></div>
@@ -114,10 +114,10 @@ export function ReportPages({ s, language = "en" }: { s: ReportStudent; language
         <StenChart rows={p.rows} language={language} />
       </section>
 
-      <section className="report-page">
+      <section className="report-page report-meanings">
         <Head n={2} roll={s.roll_number} language={language} />
         <h3 className="mb-1 text-lg font-extrabold">{text.meaning}</h3>
-        <p className="mb-3 text-[10px] italic text-ink/70">{text.meaningSource}</p>
+        <p className="report-source mb-3 italic text-ink/70">{text.meaningSource}</p>
         <ul className="meaning-grid grid grid-cols-2 gap-2">{p.rows.map((r) => {
           const Icon = testIcon[r.code];
           return (
@@ -128,8 +128,8 @@ export function ReportPages({ s, language = "en" }: { s: ReportStudent; language
                   {testLabel(r.code, r.name, language)} ({r.code})
                 </span>
                 {r.band && (
-                  <span className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-bold ${pill[r.band]}`}>
-                    <Check size={11} /> {text.sten} {r.sten} · {bandLabel(r.band, language)}{r.nearHigh ? ` · ${text.nearHigh}` : ""}
+                  <span aria-label={`${text.sten} ${r.sten} · ${bandLabel(r.band, language)}${r.nearHigh ? ` · ${text.nearHigh}` : ""}`} className={`report-band inline-flex flex-wrap items-center gap-1 rounded-full px-2 py-0.5 font-bold ${pill[r.band]}`}>
+                    <Check size={11} /> {r.sten} · {bandLabel(r.band, language)}
                   </span>
                 )}
               </div>
@@ -145,10 +145,10 @@ export function ReportPages({ s, language = "en" }: { s: ReportStudent; language
         })}</ul>
       </section>
 
-      <section className="report-page">
+      <section className="report-page report-remarks">
         <Head n={3} roll={s.roll_number} language={language} />
         <h3 className="mb-1 text-lg font-extrabold">{text.remarks}</h3>
-        <p className="mb-3 text-[10px] italic text-ink/70">
+        <p className="report-source mb-3 italic text-ink/70">
           {text.remarksSource}
         </p>
         <div className="remarks-grid space-y-2">
@@ -164,7 +164,7 @@ export function ReportPages({ s, language = "en" }: { s: ReportStudent; language
           })}
         </div>
         {p.highs.length === 0 && (
-          <p className="mt-2 text-[10px] italic text-ink/70">{notes.noHighSource}</p>
+          <p className="report-source mt-2 italic text-ink/70">{notes.noHighSource}</p>
         )}
         {p.reccRows.length > 0 && (
           <>
@@ -187,12 +187,12 @@ export function ReportPages({ s, language = "en" }: { s: ReportStudent; language
             </p>
           </>
         )}
-        <div className="mt-3 space-y-1.5 rounded-xl border border-brand-200 bg-brand-50 p-3 text-[10px] leading-relaxed">
+        <div className="report-caution mt-3 space-y-1.5 rounded-xl border border-brand-200 bg-brand-50 p-3 leading-relaxed">
           <p className="font-bold">{notes.suggestive}</p>
           <p>{notes.cluster}</p>
         </div>
-        <p className="mt-5 text-right text-xs font-bold">{text.signature}: ______________________</p>
-        <p className="mt-3 text-[9px] italic leading-relaxed text-ink/70">{notes.source}</p>
+        <p className="report-signature pt-5 text-right text-sm font-bold">{text.signature}: ______________________</p>
+        <p className="report-source mt-3 italic leading-relaxed text-ink/70">{notes.source}</p>
       </section>
     </>
   );

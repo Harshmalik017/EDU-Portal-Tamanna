@@ -1,6 +1,21 @@
 # Changelog
 Format: [Keep a Changelog](https://keepachangelog.com), versions follow [SemVer](https://semver.org). See `versioning.md`.
 
+## [0.18.0] - 2026-10-29
+### Added
+- Direct M controls on each themed question row. M retains the existing MULTI response and is not scored; choosing A–D replaces it. Show M = Multi select at the top right and highlight the entire multiple-mark row light red.
+### Fixed
+- Increase amber review-row contrast and add a visible amber border. Remove the circle-editing helper line.
+- Remove the Name field from both themed pages and their two-page PDF export. Keep admin lists, dialog identification, and original scans unchanged.
+- Turn OMR Sheet buttons green when all seven sections have no unresolved answers; pending, missing, and excluded copies remain blue. This readiness color is not a human-verification stamp.
+- Keep the results page mounted beneath individual reports using an intercepted parallel route. Close/back restores filters, pagination, scroll, and focus instead of navigating to a fresh results page. Direct report URLs retain a results fallback.
+- Narrow individual report dialogs to 820px. Increase body/recommendation text on screen and in print, distribute meaning cards over the page, enlarge the score table/chart, and keep the signature at the foot of the remarks page. Print only the report, never the underlying results list.
+### Validation
+- Production build/typecheck, report/themed-sheet assertions, name-free CSV, booklet norms, and changed-source lint passed.
+- Authenticated browser checks passed for direct M editing and reset, full-row highlights, name-free two-page Theme UI PDF export, green ready buttons, and mobile/tablet/desktop sizing. No student answers were saved during testing.
+- Report open/close preserved the original results DOM, search, pagination, scroll, and focus with no results reload. Back/forward navigation, direct URLs, Hindi default, language switching, and keyboard containment passed.
+- Ten Hindi/English dense, mixed, average, pending, and all-near-High fixtures each printed exactly three unclipped A4 pages at 10.5pt body and 10pt recommendations. Intercepted printing hid the underlying table; mobile printing and zero browser runtime errors were confirmed.
+
 ## [0.17.0] - 2026-10-29
 ### Added
 - Hindi-default individual report dialogs with a top-corner Hindi/English selector. All three pages, chart labels, booklet descriptions, suggestions, source citations, and print output switch together. Direct report URLs remain supported.

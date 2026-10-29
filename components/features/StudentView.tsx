@@ -58,7 +58,7 @@ export function StudentView({ initial, imgs, pdfUrl, filePaths, responses, answe
         actions={
           <div className="flex flex-wrap gap-2">
             <Link href="/admin/results" className="clay-btn-soft"><ArrowLeft size={18} /> Back to results</Link>
-            <Link href={`/admin/students/${id}/report`} className="clay-btn"><FileText size={18} /> Open report</Link>
+            <Link prefetch={false} scroll={false} href={`/admin/students/${id}/report`} className="clay-btn"><FileText size={18} /> Open report</Link>
           </div>
         }
       />
@@ -84,7 +84,7 @@ export function StudentView({ initial, imgs, pdfUrl, filePaths, responses, answe
             </li>))}</ul>
         </Card>
       </div>
-      <Card><fieldset disabled={scoring} className="min-w-0"><SheetDisplay pages={imgs.map((url, index) => ({ label: `Page ${index + 1}`, url }))} pdfUrl={pdfUrl} responses={marked} answerKey={answerKey} roll={s.roll_number} name={s.name} onChange={setMarked} /></fieldset></Card>
+      <Card><fieldset disabled={scoring} className="min-w-0"><SheetDisplay pages={imgs.map((url, index) => ({ label: `Page ${index + 1}`, url }))} pdfUrl={pdfUrl} responses={marked} answerKey={answerKey} roll={s.roll_number} onChange={setMarked} /></fieldset></Card>
       <Button onClick={saveAnswers} disabled={scoring || !keyHash || !ready}>{scoring ? "Saving…" : "Confirm and score"}</Button>
     </div>
   );

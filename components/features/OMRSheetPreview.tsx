@@ -9,7 +9,7 @@ import { useToast } from "@/components/Toast";
 
 type OriginalPage = { label: string; url: string };
 type SheetPage = 1 | 2;
-type ThemeSheetProps = { responses: PageResult; answerKey: Key; roll?: string; name?: string; page: SheetPage; onChange?: (responses: PageResult) => void };
+type ThemeSheetProps = { responses: PageResult; answerKey: Key; roll?: string; page: SheetPage; onChange?: (responses: PageResult) => void };
 const testsForPage = (page: SheetPage) => TESTS.filter((test) => page === 1 ? ["LA", "AR", "VR", "MR"].includes(test.code) : ["NA", "SA", "PA"].includes(test.code));
 const pendingOnPage = (responses: PageResult, page: SheetPage) => testsForPage(page).reduce((count, test) => count + Array.from({ length: test.questions }, (_, i) => responses[test.code]?.[i]).filter((answer) => answer === undefined || answer === "UNCERTAIN").length, 0);
 
@@ -23,7 +23,7 @@ const sectionNames: Record<string, string> = {
   PA: "प्रत्यक्षण अभिक्षमता",
 };
 
-function ThemeSheet({ responses, answerKey, roll, name, page, onChange }: ThemeSheetProps) {
+function ThemeSheet({ responses, answerKey, roll, page, onChange }: ThemeSheetProps) {
   const tests = testsForPage(page);
   return (
     <div className="theme-sheet mx-auto w-full max-w-[760px] border-4 border-brand-700 bg-white p-3 text-ink shadow-lg">
@@ -31,10 +31,12 @@ function ThemeSheet({ responses, answerKey, roll, name, page, onChange }: ThemeS
         <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-brand-700">Tamanna · Uttar Pradesh</p>
         <h3 className="mt-1 text-lg font-extrabold sm:text-2xl">अभिक्षमता परीक्षण / Aptitude Test</h3>
         <p className="text-xs font-semibold">उत्तर पत्रक / Answer Sheet</p>
-        <p className="mt-2 text-left text-xs font-semibold">अनुक्रमांक / Roll No.: {roll || "________________"}</p>
-        <p className="text-left text-xs font-semibold">Name: {name || "________________"}</p>
+        <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-xs font-semibold">
+          <p>अनुक्रमांक / Roll No.: {roll || "________________"}</p>
+          <p className="ml-auto rounded border border-red-300 bg-red-100 px-2 py-1 text-red-900">M = Multi select</p>
+        </div>
       </header>
-      <div className="theme-columns mt-3 grid grid-cols-1 gap-2 @min-[360px]:grid-cols-2 @min-[720px]:grid-cols-4">
+      <div className="theme-columns mt-3 grid grid-cols-1 gap-2 @min-[360px]:grid-cols-2 @min-[760px]:grid-cols-4">
         {tests.map((test) => {
           const segments = test.code === "PA" ? [[1, 30], [31, 60]] as const : [[1, test.questions]] as const;
           return (
@@ -54,7 +56,7 @@ function ThemeSheet({ responses, answerKey, roll, name, page, onChange }: ThemeS
                       const questionLabel = <>{question}.{answer === "MULTI" ? <span className="text-red-800">M</span> : uncertain ? <span className="text-amber-900">?</span> : answer === null ? <span className="text-slate-600">–</span> : ""}</>;
                       const setAnswer = (value: Marked) => onChange?.({ ...responses, [test.code]: Array.from({ length: test.questions }, (_, i) => i === question - 1 ? value : responses[test.code]?.[i] === undefined ? "UNCERTAIN" : responses[test.code][i]) });
                       return (
-                        <li key={question} title={answer === "MULTI" ? "Multiple marks" : uncertain ? "Needs checking" : answer === null ? "Blank" : undefined} className={`theme-row grid grid-cols-[1.75rem_1fr] items-center gap-1 px-1 py-1 text-[11px] ${uncertain ? "bg-amber-50" : ""}`}>
+                        <li key={question} title={answer === "MULTI" ? "Multiple marks" : uncertain ? "Needs checking" : answer === null ? "Blank" : undefined} className={`theme-row grid grid-cols-[1.5rem_1fr] items-center gap-1 px-1 py-1 text-[11px] ${uncertain ? "bg-amber-200 ring-1 ring-inset ring-amber-600" : answer === "MULTI" ? "bg-red-100 ring-1 ring-inset ring-red-300" : ""}`}>
                           {onChange ? <details className="relative" onKeyDown={(event) => {
                             if (event.key === "Escape" && event.currentTarget.open) {
                               event.preventDefault(); event.stopPropagation(); event.currentTarget.open = false;
@@ -70,7 +72,7 @@ function ThemeSheet({ responses, answerKey, roll, name, page, onChange }: ThemeS
                               }} className="block min-h-9 w-full rounded px-2 text-left text-xs font-semibold hover:bg-blue-50 focus-visible:outline-2 focus-visible:outline-blue-700 disabled:opacity-50">{label}</button>)}
                             </div>
                           </details> : <span className="font-bold">{questionLabel}</span>}
-                          <div role={onChange ? "group" : undefined} aria-label={onChange ? `${test.code} question ${question}` : undefined} className="flex justify-between gap-1">
+                          <div role={onChange ? "group" : undefined} aria-label={onChange ? `${test.code} question ${question}` : undefined} className="flex justify-between gap-0.5">
                             {["A", "B", "C", "D"].map((option) => {
                               const selected = answer === option;
                               const correct = correctAnswer === option;
@@ -91,6 +93,7 @@ function ThemeSheet({ responses, answerKey, roll, name, page, onChange }: ThemeS
                                   }`;
                               return onChange ? <button key={option} type="button" aria-label={label} aria-pressed={selected} title={`Select ${option}`} onClick={() => setAnswer(option)} className={`${bubbleClass} h-6 w-6 cursor-pointer hover:ring-2 hover:ring-blue-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700 disabled:cursor-not-allowed disabled:opacity-60`}>{option}</button> : <span key={option} aria-label={label} className={`${bubbleClass} h-5 w-5`}>{option}</span>;
                             })}
+                            {onChange && <button type="button" aria-label={`${test.code} question ${question}: Multi select`} aria-pressed={answer === "MULTI"} title="Multi select" onClick={() => setAnswer("MULTI")} className={`grid h-6 w-6 shrink-0 place-items-center rounded border text-[10px] font-extrabold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700 ${answer === "MULTI" ? "border-red-800 bg-red-700 text-white" : "border-red-400 bg-white text-red-900 hover:bg-red-100"}`}>M</button>}
                           </div>
                         </li>
                       );
@@ -103,7 +106,7 @@ function ThemeSheet({ responses, answerKey, roll, name, page, onChange }: ThemeS
         })}
       </div>
       <footer className="mt-3 space-y-2 border-t border-brand-200 pt-2 text-center text-[10px] font-semibold">
-        <p>हरा: सही उत्तर · हल्का लाल: गलत उत्तर · हरा घेरा: उत्तर कुंजी · नीला: कुंजी उपलब्ध न होने पर विद्यार्थी का उत्तर / Green: correct · Light red: incorrect · Green outline: answer key · Blue: response when no key is available</p>
+        <p>हरा: सही उत्तर · हल्का लाल: गलत या एक से अधिक उत्तर · पीला: जाँच आवश्यक · हरा घेरा: उत्तर कुंजी / Green: correct · Light red: incorrect or multiple marks · Amber: needs checking · Green outline: answer key · Blue: response when no key is available</p>
         <p>एक से अधिक उत्तर पुस्तिका के नियमों के अनुसार नहीं गिने जाते / Multiple marks are not scored under the guide.</p>
         <p>भरा हुआ गोला चुना गया उत्तर दर्शाता है / A filled bubble shows the selected response</p>
       </footer>
@@ -111,7 +114,7 @@ function ThemeSheet({ responses, answerKey, roll, name, page, onChange }: ThemeS
   );
 }
 
-function ThemePreview({ responses, answerKey, roll, name, page, onChange }: ThemeSheetProps) {
+function ThemePreview({ responses, answerKey, roll, page, onChange }: ThemeSheetProps) {
   const exportRef = useRef<HTMLDivElement>(null);
   const [exporting, setExporting] = useState(false);
   const toast = useToast();
@@ -157,13 +160,12 @@ function ThemePreview({ responses, answerKey, roll, name, page, onChange }: Them
   }
   return <div className="@container space-y-3">
     <button type="button" disabled={exporting} onClick={() => void exportPdf()} className="clay-btn-soft"><Download size={17} />{exporting ? "Preparing…" : "Export PDF"}</button>
-    {onChange && <p className="text-xs font-semibold">Select circles · Question number for blank, multiple marks, or needs checking</p>}
     <div role="region" aria-label={`Theme UI page ${page}`} className="rounded-lg">
-      <ThemeSheet responses={responses} answerKey={answerKey} roll={roll} name={name} page={page} onChange={onChange} />
+      <ThemeSheet responses={responses} answerKey={answerKey} roll={roll} page={page} onChange={onChange} />
     </div>
     <div ref={exportRef} className="hidden" aria-hidden="true">
-      <ThemeSheet responses={responses} answerKey={answerKey} roll={roll} name={name} page={1} />
-      <ThemeSheet responses={responses} answerKey={answerKey} roll={roll} name={name} page={2} />
+      <ThemeSheet responses={responses} answerKey={answerKey} roll={roll} page={1} />
+      <ThemeSheet responses={responses} answerKey={answerKey} roll={roll} page={2} />
     </div>
   </div>;
 }
@@ -201,7 +203,7 @@ function OriginalSheet({ pages }: { pages: OriginalPage[] }) {
   );
 }
 
-export function SheetDisplay({ pages, pdfUrl, responses, answerKey, roll, name, onChange }: { pages: OriginalPage[]; pdfUrl?: string | null; responses: PageResult; answerKey: Key; roll?: string; name?: string; onChange?: (responses: PageResult) => void }) {
+export function SheetDisplay({ pages, pdfUrl, responses, answerKey, roll, onChange }: { pages: OriginalPage[]; pdfUrl?: string | null; responses: PageResult; answerKey: Key; roll?: string; onChange?: (responses: PageResult) => void }) {
   const [page, setPage] = useState<SheetPage>(() => onChange && !pendingOnPage(responses, 1) && pendingOnPage(responses, 2) ? 2 : 1);
   return (
     <div className="@container space-y-3">
@@ -213,7 +215,7 @@ export function SheetDisplay({ pages, pdfUrl, responses, answerKey, roll, name, 
         </section>
         <section className="min-w-0 space-y-2">
           <h3 className="font-bold">Theme UI</h3>
-          <ThemePreview responses={responses} answerKey={answerKey} roll={roll} name={name} page={page} onChange={onChange} />
+          <ThemePreview responses={responses} answerKey={answerKey} roll={roll} page={page} onChange={onChange} />
         </section>
       </div>
     </div>
@@ -259,7 +261,7 @@ export function OMRSheetPreview({
           <section className="space-y-3">
             <h3 className="font-bold">Tamanna theme UI sheet</h3>
             <PagePicker page={inlinePage} onChange={setInlinePage} pdfUrl={originalPdfUrl} />
-            <ThemePreview responses={responses} answerKey={answerKey} roll={roll} name={name} page={inlinePage} />
+            <ThemePreview responses={responses} answerKey={answerKey} roll={roll} page={inlinePage} />
           </section>
         </div>
       </Card>
@@ -279,7 +281,7 @@ export function OMRSheetPreview({
             <button type="button" aria-label="Close OMR sheet" onClick={() => dialogRef.current?.close()} className="rounded-lg p-2 hover:bg-brand-100 focus-visible:outline-2 focus-visible:outline-brand-700"><X size={20} /></button>
           </header>
           <div className="space-y-4 p-4 sm:p-6">
-            <SheetDisplay pages={originalPages} pdfUrl={originalPdfUrl} responses={responses} answerKey={answerKey} roll={roll} name={name} />
+            <SheetDisplay pages={originalPages} pdfUrl={originalPdfUrl} responses={responses} answerKey={answerKey} roll={roll} />
           </div>
         </dialog>
       )}
