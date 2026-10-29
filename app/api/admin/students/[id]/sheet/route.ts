@@ -26,11 +26,15 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     if (!sub) return failure("Could not find a saved sheet for this student.", 404);
     const paths = [...new Set<string>([...(sub.image_paths ?? []), ...(sub.pdf_path ? [sub.pdf_path] : [])])];
     const { data: signed, error: signError } = paths.length ? await sb.storage.from("sheets").createSignedUrls(paths, 3600) : { data: [], error: null };
-    if (signError || signed?.some((file) => file.error || !file.signedUrl)) throw new Error("Could not open the original files.", { cause: signError });
-    const images = (signed ?? []).filter((file) => file.path && /\.(jpe?g|png)$/i.test(file.path));
+    if (signError || (paths.length > 0 && signed?.length !== paths.length)) throw new Error("Could not open the original files.", { cause: signError });
+    const files = (signed ?? []).map((file) => {
+      if (file.error || !file.path || !file.signedUrl) throw new Error("Could not open the original files.");
+      return { path: file.path, signedUrl: file.signedUrl };
+    });
+    const images = files.filter((file) => /\.(jpe?g|png)$/i.test(file.path));
     const sheet: StudentSheet = {
       originals: images.map((file, i) => ({ label: `Page ${i + 1}`, url: file.signedUrl })),
-      pdfUrl: (signed ?? []).find((file) => file.path && /\.pdf$/i.test(file.path))?.signedUrl ?? null,
+      pdfUrl: files.find((file) => /\.pdf$/i.test(file.path))?.signedUrl ?? null,
       responses: (sub.responses ?? {}) as PageResult,
       answerKey,
       keyHash: keyHashOf(answerKey),

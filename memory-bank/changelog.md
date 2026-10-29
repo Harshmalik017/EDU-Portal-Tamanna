@@ -1,6 +1,10 @@
 # Changelog
 Format: [Keep a Changelog](https://keepachangelog.com), versions follow [SemVer](https://semver.org). See `versioning.md`.
 
+## [0.14.1] - 2026-10-29
+### Fixed
+- Validate and normalize nullable Supabase signed-file paths and URLs before creating sheet responses, fixing the Vercel TS2322 build error without type assertions or nullable image links. Incomplete signing results fail explicitly.
+
 ## [0.14.0] - 2026-10-29
 ### Added
 - Results-page profile dialogs without a scorecard, sharing the existing student detail form.

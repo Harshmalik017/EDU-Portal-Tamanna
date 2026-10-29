@@ -9,5 +9,6 @@ Supabase stores `students`, `submissions`, `answer_keys`, `scores`, and `setting
 - Key edits invalidate scores and hand verification. Class/gender edits reset verification and change the booklet norms.
 - `getKey` fetches the key once. `keyHashOf` fingerprints that exact snapshot, matching SQL `answer_key_hash`; scoring cannot silently use a newer key than the displayed one.
 - Results fetch no submissions, keys, or file URLs initially. `/api/admin/students/[id]/sheet` checks the signed-in user and admin role, loads only the latest submission plus key, and signs that student's files. Responses are private/no-store; cancellable queries follow the dialog's request signal.
+- Signed results are checked for missing entries, errors, empty paths, and null URLs, then normalized to non-null strings before creating image/PDF links. Invalid signing results fail explicitly rather than returning partial or nullable image links.
 - Local scripts prepare, upload, reconcile, and score resumably. Keep manifests outside the repository. No import is a hand check.
 - Do not seed `supabase/answer_key.sql`: its old example rows are not the official key. Review and upload the supplied official key with `copies:key`.
