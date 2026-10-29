@@ -6,6 +6,7 @@ export type Student = {
   id: string; name: string; roll_number: string; class: string; gender: string; school: string; scores: ScoreRow[];
   block?: string; district?: string; review_issues?: string[];
   excluded?: boolean; exclude_reason?: string | null;
+  report_ready?: boolean;
   verification_status?: Verification; verified_by?: string | null; verified_at?: string | null;
   manual_scores?: Record<string, number> | null; verification_note?: string | null;
 };

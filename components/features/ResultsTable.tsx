@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { ArrowUpDown, ClipboardCheck, FileSpreadsheet, FileText, Printer, Search, Table2, Trash2, UserRound } from "lucide-react";
 import { TESTS } from "@/lib/tamanna/tests";
 import { bandOf, normalizeClass, stenOf } from "@/lib/tamanna/norms";
+import { reviewComplete, sectionNotFilled } from "@/lib/tamanna/results";
 import { resultsCsv } from "@/lib/tamanna/export";
 import { supabase } from "@/lib/supabase/client";
 import type { Student } from "@/lib/types";
@@ -15,13 +16,13 @@ import { useToast } from "@/components/Toast";
 const PAGE = 20;
 const StudentProfileDialog = dynamic(() => import("@/components/features/StudentProfileDialog").then((m) => m.StudentProfileDialog));
 const StudentSheetDialog = dynamic(() => import("@/components/features/StudentSheetDialog").then((m) => m.StudentSheetDialog));
-const raw = (r: Student, c: string) => r.scores.find((s) => s.test_code === c)?.correct ?? null;
+const raw = (r: Student, c: string) => { const score = r.scores.find((s) => s.test_code === c); return sectionNotFilled(score, c) ? null : score?.correct ?? null; };
 const sten = (r: Student, c: string) => { const v = raw(r, c); return r.excluded || v === null || r.scores.find((s) => s.test_code === c)?.uncertain ? null : stenOf(r.class, r.gender, c, v); };
 const tone = { Low: "bg-amber-100 text-amber-900", Average: "bg-blue-100 text-blue-900", High: "bg-green-100 text-green-900" } as const;
-const blurry = (r: Student) => r.scores.some((score) => (score.uncertain ?? 0) > 0);
-const status = (r: Student) => r.excluded ? "Excluded" : !r.scores.length ? "No scan" : blurry(r) ? "Review Pending" : "Scanned";
+const status = (r: Student) => r.excluded ? "Excluded" : !r.scores.length ? "No scan" : !reviewComplete(r) ? "Review Pending" : "Scanned";
 
-function Cell({ r, c }: { r: Student; c: string }) {
+export function ResultScore({ r, c }: { r: Student; c: string }) {
+  if (sectionNotFilled(r.scores.find((score) => score.test_code === c), c)) return <span className="text-xs font-semibold text-amber-900">Section not filled</span>;
   const v = raw(r, c), s = sten(r, c);
   const uncertain = r.scores.find((score) => score.test_code === c)?.uncertain ?? 0;
   return <span className="inline-flex flex-col items-start gap-1"><span className="whitespace-nowrap text-xs" title={uncertain > 0 ? "Provisional marks from clear answers" : undefined}>Section Score: <b>{v ?? "–"}</b></span><span className={`whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-bold ${s !== null ? tone[bandOf(s)] : "bg-slate-100 text-slate-700"}`} title={s !== null ? `Sten ${s}, ${bandOf(s)}` : uncertain > 0 ? "Review pending for a final Sten score" : "No Sten score available"}>STEN SCORE: {s ?? "–"}</span></span>;
@@ -32,8 +33,8 @@ function StudentPills({ student }: { student: Student }) {
 }
 
 function SheetAction({ student, onClick }: { student: Student; onClick: () => void }) {
-  const pending = blurry(student);
-  const complete = !student.excluded && TESTS.every((test) => student.scores.some((score) => score.test_code === test.code && (score.uncertain ?? 0) === 0));
+  const complete = reviewComplete(student);
+  const pending = !student.excluded && student.scores.length > 0 && !complete;
   return <Button variant="soft" className={`!min-h-9 !bg-none !px-3 !py-2 text-xs !text-white ${complete ? "!border-green-800 !bg-green-700 hover:!bg-green-800 focus-visible:!outline-green-700" : "!border-blue-800 !bg-blue-700 hover:!bg-blue-800 focus-visible:!outline-blue-700"}`} aria-label={`OMR sheet for ${student.name}, roll ${student.roll_number}${pending ? ", Review Pending" : complete ? ", No review pending" : ""}`} onClick={onClick}><ClipboardCheck size={15} /><span className="flex flex-col items-start"><span>OMR Sheet</span>{pending && <span className="text-[10px] font-semibold">Review Pending</span>}{(student.excluded || !student.scores.length) && <span className="text-[10px] font-semibold">{student.excluded ? "Excluded" : "No scan"}</span>}</span></Button>;
 }
 
@@ -90,7 +91,7 @@ export function ResultsTable({ rows }: { rows: Student[] }) {
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm font-semibold text-ink/80">{shown.length} students</p>
         <div className="flex flex-wrap gap-2">
-          <Link prefetch={false} href={`/admin/reports${cls ? `?class=${cls}` : ""}`} className="clay-btn-soft"><Printer size={18} /> Print all reports</Link>
+          {shown.some(reviewComplete) && <Link prefetch={false} href={`/admin/reports${cls ? `?class=${cls}` : ""}`} className="clay-btn-soft"><Printer size={18} /> Print reviewed reports</Link>}
           <Button onClick={exportCsv} disabled={!shown.length} className="!border-green-700 !bg-green-700 !text-white hover:!bg-green-800 focus-visible:!outline-green-700"><FileSpreadsheet size={18} /> Download CSV</Button>
         </div>
       </div>
@@ -118,10 +119,10 @@ export function ResultsTable({ rows }: { rows: Student[] }) {
               <tbody>{view.map((r) => (
                 <tr key={r.id} className="transition-colors hover:bg-brand-50/70">
                   <td className="border-b border-r border-(--line) px-3 py-2.5 font-semibold"><button type="button" className="min-h-11 underline focus-visible:outline-2 focus-visible:outline-brand-700" aria-label={`Profile for ${r.name}, roll ${r.roll_number}`} onClick={() => setProfile(r)}>{r.roll_number}</button></td><td className="border-b border-r border-(--line) px-3 py-2.5">{r.name || "Name pending"}<StudentPills student={r} /></td><td className="border-b border-r border-(--line) px-3 py-2.5">{r.school}</td>
-                  {TESTS.map((t) => <td key={t.code} className="border-b border-r border-(--line) px-3 py-2.5"><Cell r={r} c={t.code} /></td>)}
+                  {TESTS.map((t) => <td key={t.code} className="border-b border-r border-(--line) px-3 py-2.5"><ResultScore r={r} c={t.code} /></td>)}
                   <td className="border-b border-r border-(--line) px-3 py-2.5"><SheetAction student={r} onClick={() => setSheet({ student: r, mode: "check" })} /></td>
                   <td className="border-b border-(--line) px-3 py-2.5"><div className="flex items-center gap-2">
-                    <Link prefetch={false} scroll={false} href={`/admin/students/${r.id}/report`} aria-label={`Report for roll ${r.roll_number}`} title="Report" className="inline-flex min-h-9 items-center gap-1.5 rounded-xl bg-sky-100 px-3 py-1.5 text-xs font-bold text-sky-800 transition hover:bg-sky-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600"><FileText size={15} /> Report</Link>
+                    {reviewComplete(r) && <Link prefetch={false} scroll={false} href={`/admin/students/${r.id}/report`} aria-label={`Report for roll ${r.roll_number}`} title="Report" className="inline-flex min-h-9 items-center gap-1.5 rounded-xl bg-sky-100 px-3 py-1.5 text-xs font-bold text-sky-800 transition hover:bg-sky-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600"><FileText size={15} /> Report</Link>}
                     <Button variant="soft" className="!min-h-9 !px-3 !py-1.5 text-xs" onClick={() => setProfile(r)}><UserRound size={15} /> Profile</Button>
                     <button type="button" aria-label={`Delete ${r.name}, roll ${r.roll_number}`} title="Delete student" disabled={deletingId === r.id} onClick={() => deleteStudent(r)} className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-red-200 bg-red-50 text-red-700 transition hover:bg-red-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600 disabled:opacity-50"><Trash2 size={17} /></button>
                   </div></td>
@@ -133,10 +134,10 @@ export function ResultsTable({ rows }: { rows: Student[] }) {
               <div className="flex justify-between gap-2"><button type="button" className="text-left font-extrabold underline focus-visible:outline-2 focus-visible:outline-brand-700" onClick={() => setProfile(r)}>{r.name || "Name pending"} · {r.roll_number}</button></div>
               <StudentPills student={r} />
               <p className="mt-1 text-xs">{r.school}</p>
-              <p className="mt-2 grid grid-cols-2 gap-3 text-xs sm:grid-cols-3">{TESTS.map((t) => <span key={t.code} className="flex flex-col items-start gap-1"><b>{t.code}</b><Cell r={r} c={t.code} /></span>)}</p>
+              <p className="mt-2 grid grid-cols-2 gap-3 text-xs sm:grid-cols-3">{TESTS.map((t) => <span key={t.code} className="flex flex-col items-start gap-1"><b>{t.code}</b><ResultScore r={r} c={t.code} /></span>)}</p>
               <div className="mt-3 flex flex-wrap gap-2">
                 <SheetAction student={r} onClick={() => setSheet({ student: r, mode: "check" })} />
-                <Link prefetch={false} scroll={false} href={`/admin/students/${r.id}/report`} className="inline-flex min-h-9 items-center gap-1.5 rounded-xl bg-sky-100 px-3 py-1.5 text-xs font-bold text-sky-800 transition hover:bg-sky-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600"><FileText size={15} /> Report</Link>
+                {reviewComplete(r) && <Link prefetch={false} scroll={false} href={`/admin/students/${r.id}/report`} className="inline-flex min-h-9 items-center gap-1.5 rounded-xl bg-sky-100 px-3 py-1.5 text-xs font-bold text-sky-800 transition hover:bg-sky-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600"><FileText size={15} /> Report</Link>}
                 <Button variant="soft" className="!min-h-9 !px-3 !py-1.5 text-xs" onClick={() => setProfile(r)}><UserRound size={15} /> Profile</Button>
                 <button type="button" aria-label={`Delete ${r.name}, roll ${r.roll_number}`} title="Delete student" disabled={deletingId === r.id} onClick={() => deleteStudent(r)} className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-red-200 bg-red-50 text-red-700 transition hover:bg-red-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600 disabled:opacity-50"><Trash2 size={17} /></button>
               </div>

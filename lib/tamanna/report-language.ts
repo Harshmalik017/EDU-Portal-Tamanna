@@ -20,8 +20,10 @@ const en = {
   chart: "Sten scores by sub-test, grouped into Low, Average and High performance bands",
   legend: "Sten performance bands", language: "Report language", print: "Print or save as PDF",
   close: "Close report", excluded: "Excluded sheet: no interpretation is available.",
+  reviewPending: "Review Pending", reviewRequired: "Complete OMR sheet review before opening the report.", reviewSheet: "Review OMR sheet",
 };
 const hi: typeof en = {
+  reviewPending: "समीक्षा लंबित", reviewRequired: "रिपोर्ट खोलने से पहले ओएमआर उत्तर पत्रक की समीक्षा पूरी करें।", reviewSheet: "ओएमआर उत्तर पत्रक की समीक्षा करें",
   title: "अभिक्षमता परीक्षण रिपोर्ट", roll: "अनुक्रमांक", page: "पृष्ठ", of: "में से", rollNo: "अनुक्रमांक",
   class: "कक्षा", gender: "लिंग", school: "विद्यालय", block: "विकास खंड", district: "जनपद",
   recorded: "उत्तर पुस्तिका के अनुसार", missing: "दर्ज नहीं है", serial: "क्र. सं.", test: "उप-परीक्षण",

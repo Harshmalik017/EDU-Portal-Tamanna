@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, FileText, Trash2, UserRound } from "lucide-react";
 import { supabase } from "@/lib/supabase/client";
 import { buildProfile } from "@/lib/tamanna/profile";
+import { reviewComplete } from "@/lib/tamanna/results";
 import type { Key, Student as S } from "@/lib/types";
 import type { PageResult } from "@/lib/omr/reader";
 import { Button, Card, PageHeader } from "@/components/ui";
@@ -58,7 +59,7 @@ export function StudentView({ initial, imgs, pdfUrl, filePaths, responses, answe
         actions={
           <div className="flex flex-wrap gap-2">
             <Link href="/admin/results" className="clay-btn-soft"><ArrowLeft size={18} /> Back to results</Link>
-            <Link prefetch={false} scroll={false} href={`/admin/students/${id}/report`} className="clay-btn"><FileText size={18} /> Open report</Link>
+            {reviewComplete(s) && <Link prefetch={false} scroll={false} href={`/admin/students/${id}/report`} className="clay-btn"><FileText size={18} /> Open report</Link>}
           </div>
         }
       />

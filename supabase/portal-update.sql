@@ -87,6 +87,7 @@ grant execute on function public.log_account_activity(text) to authenticated;
 create index if not exists submissions_latest_idx on public.submissions(student_id, created_at desc, id desc);
 create or replace function public.scan_results() returns setof jsonb
 language plpgsql stable security invoker set search_path = public as $$
+declare fingerprint text;
 begin
   if not public.is_admin() then raise exception 'Admin access required'; end if;
   if (select count(*) from public.answer_keys) <> 240 or exists (
@@ -95,23 +96,30 @@ begin
     left join public.answer_keys k on k.test_code = tests.code and k.question_no = q.n
     where k.correct_option is null or k.correct_option not in ('A','B','C','D')
   ) then raise exception 'Could not load marks: the official answer key is incomplete'; end if;
+  fingerprint := public.answer_key_hash();
   return query
   select jsonb_build_object(
     'id', s.id, 'name', s.name, 'roll_number', s.roll_number, 'class', s.class,
     'gender', s.gender, 'school', s.school, 'block', s.block, 'district', s.district,
     'excluded', s.excluded, 'exclude_reason', s.exclude_reason,
+    'report_ready', coalesce(not s.excluded and submission.key_hash = fingerprint
+      and jsonb_array_length(marks.sections) = 7
+      and not exists(select 1 from jsonb_array_elements(marks.sections) section where (section->>'uncertain')::int > 0)
+      and (select count(*) = 7 from public.scores final where final.student_id = s.id
+        and final.test_code in ('LA','AR','VR','MR','NA','SA','PA')), false),
     'scores', coalesce(marks.sections, '[]'::jsonb)
   )
   from public.students s
   left join lateral (
-    select responses from public.submissions where student_id = s.id order by created_at desc, id desc limit 1
+    select responses, key_hash from public.submissions where student_id = s.id order by created_at desc, id desc limit 1
   ) submission on true
   left join lateral (
-    select jsonb_agg(jsonb_build_object('test_code', test.code, 'correct', counts.correct, 'uncertain', counts.uncertain) order by test.code) as sections
+    select jsonb_agg(jsonb_build_object('test_code', test.code, 'correct', counts.correct, 'blank', counts.blank, 'uncertain', counts.uncertain) order by test.code) as sections
     from (values ('LA',30),('AR',30),('VR',30),('MR',30),('NA',30),('SA',30),('PA',60)) as test(code, items)
     cross join lateral (
       select
         count(*) filter (where response.answer = k.correct_option) as correct,
+        count(*) filter (where response.present and response.answer is null) as blank,
         count(*) filter (where not response.present or (response.answer is not null and response.answer not in ('A','B','C','D','MULTI'))) as uncertain
       from generate_series(1, test.items) as q(n)
       join public.answer_keys k on k.test_code = test.code and k.question_no = q.n

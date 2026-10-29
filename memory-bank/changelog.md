@@ -1,6 +1,17 @@
 # Changelog
 Format: [Keep a Changelog](https://keepachangelog.com), versions follow [SemVer](https://semver.org). See `versioning.md`.
 
+## [0.18.1] - 2026-10-29
+### Fixed
+- Show Section not filled instead of both Section Score and STEN SCORE in desktop/mobile results when every answer in that sub-test is explicitly blank. Keep zero marks, unreadable/missing answers, and partly answered sections distinct. PA is one 60-question section, not two separate tests.
+- Return explicit blank counts and report readiness from the compact results RPC. Readiness requires all seven final scores, no uncertainty, a current-key latest submission, and a non-excluded sheet.
+- Share readiness between green OMR Sheet actions and Report links. Hide Report actions until review/scoring is complete on results and student details. Direct/intercepted report URLs show a review prompt instead of report pages; bulk printing includes reviewed sheets only.
+- Validate the current latest-submission fingerprint against the official key before individual or bulk reports render. Reuse existing student-detail data without a duplicate sheet fetch.
+### Validation
+- Results UI/action assertions, bilingual report/themed-sheet checks, CSV checks, typecheck, and production build passed.
+- Rolled-back database checks passed for entirely blank sections, zero marks, partly blank PA, missing/unreadable answers, MULTI, stale keys, missing final scores, exclusions, and anonymous/non-admin denial. Applied only the updated results RPC; no live student responses or scores changed.
+- Authenticated browser checks reconciled all 129 desktop result rows against the RPC, checked mobile Report visibility and green readiness, blocked pending direct/detail reports, verified bilingual eligible reports and state-preserving close, and confirmed bulk printing contains reviewed sheets only. No runtime errors or student-data writes occurred.
+
 ## [0.18.0] - 2026-10-29
 ### Added
 - Direct M controls on each themed question row. M retains the existing MULTI response and is not scored; choosing A–D replaces it. Show M = Multi select at the top right and highlight the entire multiple-mark row light red.
