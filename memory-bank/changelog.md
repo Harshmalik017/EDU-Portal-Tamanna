@@ -1,6 +1,17 @@
 # Changelog
 Format: [Keep a Changelog](https://keepachangelog.com), versions follow [SemVer](https://semver.org). See `versioning.md`.
 
+## [0.16.0] - 2026-10-29
+### Added
+- Top-bar desktop sidebar collapse/expand and mobile menu controls through a client shell, preserving server-rendered page data. Mobile navigation supports focus trapping, Escape, focus restoration, and responsive scroll-lock cleanup.
+- Direct correction through Theme UI circles on both OMR pages and student details. Question-number menus retain Blank, Multiple marks, and Needs checking choices; page controls show outstanding review counts.
+### Changed
+- Blue OMR Sheet buttons show Review Pending on a smaller second line inside the button only when answers are uncertain. Remove Review scan / Confirm blurry answers captions and per-section Provisional/blurry lines without changing marks or final-Sten safeguards.
+- Replace the editable Check marked answers section with the themed editor. Keep transactional Confirm and score, key fingerprint checks, explicit uncertainty, private on-demand loading, and disabled edits while saving.
+- Widen OMR dialogs to 1600px, reserve a full theme panel in wide comparisons, stack smaller comparisons, and adapt sheet columns to eliminate internal horizontal scrolling. PDF export retains two read-only four-column pages.
+### Validation
+- Changed-source lint passed with zero warnings. No tests, builds, typechecks, browser checks, or live-data checks were run, as requested.
+
 ## [0.15.1] - 2026-10-29
 ### Changed
 - Merge Check into one OMR Sheet action that opens the scan and answer confirmation together; remove the duplicate sheet action.

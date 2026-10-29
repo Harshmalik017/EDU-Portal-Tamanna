@@ -2,15 +2,16 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Download, FileText, Trash2, UserRound } from "lucide-react";
+import { ArrowLeft, FileText, Trash2, UserRound } from "lucide-react";
 import { supabase } from "@/lib/supabase/client";
 import { buildProfile } from "@/lib/tamanna/profile";
 import type { Key, Student as S } from "@/lib/types";
 import type { PageResult } from "@/lib/omr/reader";
 import { Button, Card, PageHeader } from "@/components/ui";
 import { useToast } from "@/components/Toast";
-import { AnswerReview } from "@/components/features/AnswerReview";
+import { SheetDisplay } from "@/components/features/OMRSheetPreview";
 import { StudentProfileForm } from "@/components/features/StudentProfileForm";
+import { OPTIONS, TESTS } from "@/lib/tamanna/tests";
 
 const tone = { Low: "bg-amber-100 text-amber-900", Average: "bg-blue-100 text-blue-900", High: "bg-green-100 text-green-900" } as const;
 
@@ -23,9 +24,11 @@ export function StudentView({ initial, imgs, pdfUrl, filePaths, responses, answe
   const [scoring, setScoring] = useState(false);
   useEffect(() => { setS(initial); setMarked(responses); }, [initial, responses]);
   const p = buildProfile(s);
+  const ready = TESTS.every((test) => marked[test.code]?.length === test.questions && marked[test.code].every((value) => value === null || value === "MULTI" || OPTIONS.some((option) => option === value)));
 
   async function saveAnswers() {
     if (!keyHash) return toast("Could not score. Save the complete official answer key first.");
+    if (!ready) return toast("Select an answer, blank, or multiple marks for every question.");
     setScoring(true);
     try {
       const { error } = await supabase.rpc("review_copy", { p_student_id: id, p_responses: marked, p_expected_key_hash: keyHash });
@@ -64,8 +67,6 @@ export function StudentView({ initial, imgs, pdfUrl, filePaths, responses, answe
           <h2 className="text-lg font-bold">Student details</h2>
           {s.excluded && <p className="clay-inset p-3 text-sm font-semibold">Excluded: {s.exclude_reason || "answer pattern"}.</p>}
           <StudentProfileForm initial={s}><Button type="button" variant="soft" onClick={del}><Trash2 size={18} /> Delete</Button></StudentProfileForm>
-          {imgs.length > 0 && <div><h3 className="mb-2 font-extrabold">Original scanned pages</h3>{imgs.map((u) => <img key={u} src={u} alt="Original scanned answer sheet" className="mb-3 w-full rounded-xl" />)}</div>}
-          {pdfUrl && <a href={pdfUrl} target="_blank" rel="noreferrer" className="clay-btn-soft w-fit"><Download size={18} /> Open original PDF</a>}
         </Card>
         <Card>
           <h2 className="mb-1 text-lg font-bold">Scorecard</h2>
@@ -83,8 +84,8 @@ export function StudentView({ initial, imgs, pdfUrl, filePaths, responses, answe
             </li>))}</ul>
         </Card>
       </div>
-      <AnswerReview responses={marked} answerKey={answerKey} onChange={setMarked} />
-      <Button onClick={saveAnswers} disabled={scoring || !keyHash}>{scoring ? "Saving…" : "Save checked answers and score"}</Button>
+      <Card><fieldset disabled={scoring} className="min-w-0"><SheetDisplay pages={imgs.map((url, index) => ({ label: `Page ${index + 1}`, url }))} pdfUrl={pdfUrl} responses={marked} answerKey={answerKey} roll={s.roll_number} name={s.name} onChange={setMarked} /></fieldset></Card>
+      <Button onClick={saveAnswers} disabled={scoring || !keyHash || !ready}>{scoring ? "Saving…" : "Confirm and score"}</Button>
     </div>
   );
 }

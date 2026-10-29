@@ -56,7 +56,7 @@ npm run copies -- score "C:\private\tamanna-import"
 - Defaults: Class X; Male when no written gender was read; the configured Jajaur school, Sidhauli block, Sitapur district. Admins can edit these.
 - For reviewed written genders, use a private JSON object such as `{"10001":"Male"}` and run `npm run copies -- details "C:\private\tamanna-import" "C:\private\reviewed-genders.json"` before upload. Do not infer gender from names.
 - Two-page PDFs propose pages 1 and 2 as the answer sides; verify their order. PDFs with other page counts need an explicit `answerPages` pair in the private manifest. All source pages are preserved even when no answers can be read.
-- Student Reports shows marks read from saved scans. Blurry sections show provisional known-answer marks and a blurry-answer count, without final Sten levels. Choose **Confirm blurry answers**, compare the originals, correct unreadable responses, then **Confirm and score** for final marks.
+- Student Reports shows marks read from saved scans. Copies with uncertain answers show **Review Pending** inside the blue **OMR Sheet** button. Known-answer marks remain provisional for blurry sections, without final Sten levels. Open the sheet, compare the originals, select circles on the Theme UI to correct responses, then **Confirm and score** for final marks. Use a question number to choose Blank, Multiple marks, or Needs checking.
 - Scoring requires a complete official key and complete, unambiguous responses. Changing the key invalidates old scores and verification; re-score afterward. Class or gender changes reset hand verification and use the new booklet norms.
 - Import does **not** count as human verification. Compare batches of 10–20 against the original sheets before sharing reports. There is no separate hand-check button or mandatory hand-check status in the current UI.
 
@@ -74,11 +74,13 @@ Open **Profile Settings** to edit your display name or change your password. Con
 
 **Theme UI → Export PDF** opens both themed pages in the browser's print dialog. Select **Save as PDF**. Original scanned PDFs remain unchanged.
 
+The top-bar menu button collapses or expands the desktop sidebar and opens the mobile menu. Sheet dialogs adapt their columns to the available space instead of horizontally scrolling.
+
 Node is pinned to 24.x. Vercel uses `npm ci` with the committed lockfile; its install and build commands remove the obsolete `NPM_CONFIG_CACHE_DIR` / `npm_config_cache_dir` setting before starting npm. Use `NPM_CONFIG_CACHE` / `npm_config_cache` if configuring an npm cache explicitly.
 
 The package manifest approves only the reviewed esbuild install script, pinned to its installed version. Review and renew that approval when upgrading esbuild; do not approve all dependency scripts.
 
-Results load student rows on the server. Profiles open as details-only dialogs. Use **Check answers** under **Check** to open original scans, correct responses, and **Confirm and score**. Sheets and private file links load only on demand; closing a dialog cancels its pending read. Reports do not prefetch.
+Results load student rows on the server. Profiles open as details-only dialogs. Use **OMR Sheet** to open original scans, correct themed circles, and **Confirm and score**. Sheets and private file links load only on demand; closing a dialog cancels its pending read. Reports do not prefetch.
 
 Vercel runs `npm run build`, not the optional test/check suite. For lint-only validation, run `npm run lint -- <changed source files>`. The full checks below remain available when explicitly wanted.
 

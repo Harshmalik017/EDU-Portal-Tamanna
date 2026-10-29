@@ -18,12 +18,12 @@ const raw = (r: Student, c: string) => r.scores.find((s) => s.test_code === c)?.
 const sten = (r: Student, c: string) => { const v = raw(r, c); return v === null || r.scores.find((s) => s.test_code === c)?.uncertain ? null : stenOf(r.class, r.gender, c, v); };
 const tone = { Low: "bg-amber-100 text-amber-900", Average: "bg-blue-100 text-blue-900", High: "bg-green-100 text-green-900" } as const;
 const blurry = (r: Student) => r.scores.some((score) => (score.uncertain ?? 0) > 0);
-const status = (r: Student) => r.excluded ? "Excluded" : !r.scores.length ? "No scan" : blurry(r) ? "Confirm blurry answers" : "Review scan";
+const status = (r: Student) => r.excluded ? "Excluded" : !r.scores.length ? "No scan" : blurry(r) ? "Review Pending" : "Scanned";
 
 function Cell({ r, c }: { r: Student; c: string }) {
   const v = raw(r, c), s = sten(r, c);
   const uncertain = r.scores.find((score) => score.test_code === c)?.uncertain ?? 0;
-  return <span className="inline-flex flex-col items-start gap-1"><span className="whitespace-nowrap text-xs">Section Score: <b>{v ?? "–"}</b></span><span className={`whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-bold ${s !== null ? tone[bandOf(s)] : "bg-slate-100 text-slate-700"}`} title={s !== null ? `Sten ${s}, ${bandOf(s)}` : uncertain > 0 ? "Confirm blurry answers for a final Sten score" : "No Sten score available"}>STEM SCORE: {s ?? "–"}</span>{uncertain > 0 && <span className="text-[11px] font-semibold text-amber-900">Provisional · {uncertain} blurry</span>}</span>;
+  return <span className="inline-flex flex-col items-start gap-1"><span className="whitespace-nowrap text-xs" title={uncertain > 0 ? "Provisional marks from clear answers" : undefined}>Section Score: <b>{v ?? "–"}</b></span><span className={`whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-bold ${s !== null ? tone[bandOf(s)] : "bg-slate-100 text-slate-700"}`} title={s !== null ? `Sten ${s}, ${bandOf(s)}` : uncertain > 0 ? "Review pending for a final Sten score" : "No Sten score available"}>STEM SCORE: {s ?? "–"}</span></span>;
 }
 
 function StudentPills({ student }: { student: Student }) {
@@ -31,7 +31,8 @@ function StudentPills({ student }: { student: Student }) {
 }
 
 function SheetAction({ student, onClick }: { student: Student; onClick: () => void }) {
-  return <div className="flex flex-col items-start gap-1"><Button variant="soft" className="!min-h-9 !bg-violet-100 !px-3 !py-1.5 text-xs !text-violet-900" aria-label={`OMR sheet for ${student.name}, roll ${student.roll_number}`} onClick={onClick}><ClipboardCheck size={15} /> OMR Sheet</Button><span className={`text-xs ${blurry(student) ? "font-semibold text-amber-900" : "text-ink/80"}`}>{status(student)}</span></div>;
+  const pending = blurry(student);
+  return <Button variant="soft" className="!min-h-9 !bg-blue-600 !px-3 !py-2 text-xs !text-white hover:!bg-blue-700 focus-visible:!outline-blue-700" aria-label={`OMR sheet for ${student.name}, roll ${student.roll_number}${pending ? ", Review Pending" : ""}`} onClick={onClick}><ClipboardCheck size={15} /><span className="flex flex-col items-start"><span>OMR Sheet</span>{pending && <span className="text-[10px] font-semibold">Review Pending</span>}{(student.excluded || !student.scores.length) && <span className="text-[10px] font-semibold">{student.excluded ? "Excluded" : "No scan"}</span>}</span></Button>;
 }
 
 export function ResultsTable({ rows }: { rows: Student[] }) {
@@ -96,7 +97,7 @@ export function ResultsTable({ rows }: { rows: Student[] }) {
       </div>
       <div className="mb-4 flex flex-wrap items-center gap-2 text-xs">
         <span className="font-semibold text-ink/80">Marks and Sten score</span>
-        <span className="text-amber-900">Provisional: marks from clear answers; confirm blurry answers for final marks.</span>
+        <span className="text-amber-900">Marks are provisional while review is pending.</span>
         <span className="rounded-full border border-amber-300 bg-amber-50 px-2.5 py-1 font-bold text-amber-900">Low · 1–3</span>
         <span className="rounded-full border border-blue-300 bg-blue-50 px-2.5 py-1 font-bold text-blue-900">Average · 4–7</span>
         <span className="rounded-full border border-green-300 bg-green-50 px-2.5 py-1 font-bold text-green-900">High · 8–10</span>

@@ -7,6 +7,7 @@
 | `/admin` | Server (dynamic) | zero client JS; reads SQL views |
 | `/admin/results`, `/students/[id]`, `/key`, `/calibrate` | Server fetch → client island | interactivity only where needed |
 | `/admin/scan` | Server fetch of key + template → client scanner | camera lazy-loaded, OMR runs in browser |
+The server admin layout passes fetched user identity and server-rendered children through a small client `AdminShell`. It owns only sidebar state; page data fetching remains on the server.
 Auth: `proxy.ts` (session refresh + redirect) → `admin/layout.tsx` (`is_admin()` check) → RLS (final authority).
 ## Network rules
 - Read compact result rows through `scan_results()` on the server once per navigation. SQL aggregates known-answer marks and uncertain counts against the current validated key; provisional sections receive no Sten interpretation. Fetch one student's sheet through the authenticated same-origin API only when its dialog opens; never preload all responses, answer keys, or signed URLs into results props.

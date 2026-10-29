@@ -1,14 +1,16 @@
 "use client";
 import Image from "next/image";
 import Link from "next/link";
-import { LogOut, UserRound } from "lucide-react";
+import { LogOut, Menu, PanelLeftClose, PanelLeftOpen, UserRound } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 
-export function TopBar({ userName, demo }: { userName?: string; demo?: boolean }) {
+export function TopBar({ userName, demo, menuOpen, sidebarCollapsed, onToggleMenu, onToggleSidebar }: { userName?: string; demo?: boolean; menuOpen: boolean; sidebarCollapsed: boolean; onToggleMenu: () => void; onToggleSidebar: () => void }) {
   const router = useRouter();
   return (
-    <header className="sticky top-0 z-20 flex h-14 items-center justify-between gap-2 border-b border-(--line) bg-[#f9fbf2]/90 px-4 pl-14 backdrop-blur sm:px-6 lg:px-10 2xl:px-12 print:hidden">
+    <header className="sticky top-0 z-20 flex h-14 items-center justify-between gap-2 border-b border-(--line) bg-[#f9fbf2]/90 px-4 backdrop-blur sm:px-6 lg:px-10 2xl:px-12 print:hidden">
+      <button id="admin-menu-toggle" type="button" aria-label="Open menu" aria-controls="admin-sidebar" aria-expanded={menuOpen} onClick={onToggleMenu} className="clay-btn-soft !min-h-9 !w-9 !shrink-0 !p-0 lg:hidden"><Menu size={18} /></button>
+      <button type="button" aria-label={sidebarCollapsed ? "Expand menu" : "Collapse menu"} aria-controls="admin-sidebar" aria-expanded={!sidebarCollapsed} onClick={onToggleSidebar} className="clay-btn-soft !hidden !min-h-9 !w-9 !shrink-0 !p-0 lg:!inline-flex">{sidebarCollapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}</button>
       <Link href="/admin" aria-label="Tamanna dashboard" className="lg:hidden">
         <span className="flex flex-col items-start">
           <Image src="/brand/logo.png" alt="Tamanna" width={96} height={21} priority />

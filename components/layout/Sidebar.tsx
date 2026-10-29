@@ -1,9 +1,9 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { FileText, KeyRound, LayoutDashboard, Menu, ScanLine, Table2, UserRound, X } from "lucide-react";
+import { FileText, KeyRound, LayoutDashboard, ScanLine, Table2, UserRound, X } from "lucide-react";
 
 const GROUPS = [
   { label: "School Portal", items: [
@@ -18,27 +18,43 @@ const GROUPS = [
   ] },
 ];
 
-export function Sidebar() {
+export function Sidebar({ open, collapsed, onClose }: { open: boolean; collapsed: boolean; onClose: () => void }) {
   const path = usePathname();
-  const [open, setOpen] = useState(false);
+  const sidebarRef = useRef<HTMLElement>(null);
   const [navigating, setNavigating] = useState(false);
   const active = (h: string) => (h === "/admin" ? path === h : path.startsWith(h));
   const navigate = (href: string) => {
-    setOpen(false);
+    onClose();
     if (href !== path) setNavigating(true);
   };
-  useEffect(() => { setOpen(false); setNavigating(false); }, [path]);
+  useEffect(() => { onClose(); setNavigating(false); }, [path, onClose]);
   useEffect(() => {
     if (!open) return;
+    const desktop = window.matchMedia("(min-width: 1024px)");
+    if (desktop.matches) { onClose(); return; }
+    const resize = () => { if (desktop.matches) onClose(); };
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    const esc = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
-    window.addEventListener("keydown", esc);
+    sidebarRef.current?.querySelector("button")?.focus();
+    const keyboard = (event: KeyboardEvent) => {
+      if (event.key === "Escape") { event.preventDefault(); onClose(); }
+      if (event.key === "Tab") {
+        const items = sidebarRef.current?.querySelectorAll<HTMLElement>("a[href],button:not([disabled])");
+        if (!items?.length) return;
+        const first = items[0], last = items[items.length - 1];
+        if (event.shiftKey && (document.activeElement === first || !sidebarRef.current?.contains(document.activeElement))) { event.preventDefault(); last.focus(); }
+        else if (!event.shiftKey && (document.activeElement === last || !sidebarRef.current?.contains(document.activeElement))) { event.preventDefault(); first.focus(); }
+      }
+    };
+    window.addEventListener("keydown", keyboard);
+    desktop.addEventListener("change", resize);
     return () => {
       document.body.style.overflow = previousOverflow;
-      window.removeEventListener("keydown", esc);
+      window.removeEventListener("keydown", keyboard);
+      desktop.removeEventListener("change", resize);
+      if (!desktop.matches) document.getElementById("admin-menu-toggle")?.focus();
     };
-  }, [open]);
+  }, [open, onClose]);
 
   const nav = (
     <div className="flex h-full flex-col">
@@ -89,22 +105,13 @@ export function Sidebar() {
           Student Reports
         </Link>
       </nav>
-      <button
-        type="button"
-        aria-label="Open menu"
-        aria-expanded={open}
-        onClick={() => setOpen(true)}
-        className="clay-btn-soft fixed left-3 top-2.5 z-30 !min-h-9 !w-9 !p-0 lg:hidden print:hidden"
-      >
-        <Menu size={18} />
-      </button>
-      {open && <div className="fixed inset-0 z-40 bg-[#25331a]/50 lg:hidden print:hidden" onClick={() => setOpen(false)} aria-hidden />}
-      <aside aria-label="Main menu" className={`fixed inset-y-0 left-0 z-50 flex w-72 flex-col overflow-hidden border-r border-brand-200 bg-brand-50 transition-transform lg:z-20 lg:w-64 lg:translate-x-0 print:hidden ${open ? "translate-x-0" : "-translate-x-full"}`}>
-        {open && <button aria-label="Close menu" onClick={() => setOpen(false)} className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-lg bg-red-600 text-white shadow-sm hover:bg-red-700"><X size={16} /></button>}
+      {open && <div className="fixed inset-0 z-40 bg-[#25331a]/50 lg:hidden print:hidden" onClick={onClose} aria-hidden />}
+      <aside ref={sidebarRef} id="admin-sidebar" aria-label="Main menu" className={`fixed inset-y-0 left-0 z-50 flex w-72 flex-col overflow-hidden border-r border-brand-200 bg-brand-50 transition-transform lg:z-20 lg:w-64 print:hidden ${open ? "visible translate-x-0" : "invisible -translate-x-full"} ${collapsed ? "lg:invisible lg:-translate-x-full" : "lg:visible lg:translate-x-0"}`}>
+        {open && <button aria-label="Close menu" onClick={() => { onClose(); document.getElementById("admin-menu-toggle")?.focus(); }} className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-lg bg-red-600 text-white shadow-sm hover:bg-red-700 lg:hidden"><X size={16} /></button>}
         {nav}
       </aside>
       {navigating && (
-        <div role="status" aria-label="Loading page" aria-busy="true" className="fixed inset-0 z-[45] overflow-y-auto bg-[#f9fbf2] px-4 pt-20 pb-24 sm:px-6 lg:left-64 lg:px-10 lg:pt-24 lg:pb-10 2xl:px-12">
+        <div role="status" aria-label="Loading page" aria-busy="true" className={`fixed inset-0 z-[45] overflow-y-auto bg-[#f9fbf2] px-4 pt-20 pb-24 sm:px-6 lg:px-10 lg:pt-24 lg:pb-10 2xl:px-12 ${collapsed ? "" : "lg:left-64"}`}>
           <div className="space-y-6">
             <div className="clay-inset h-10 w-56 animate-pulse" />
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
