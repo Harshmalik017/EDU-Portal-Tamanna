@@ -1,6 +1,15 @@
 # Changelog
 Format: [Keep a Changelog](https://keepachangelog.com), versions follow [SemVer](https://semver.org). See `versioning.md`.
 
+## [0.18.6] - 2026-11-04
+### Fixed
+- Allow the same-origin bulk print frame on `/admin/reports` instead of blocking it with the global DENY header. Keep all other routes frame-denied and explicitly block external framing of reports with CSP.
+- Add effective-header regression checks alongside the results checks. Preserve report authentication, admin checks, language/class selection, and individual report dialogs.
+### Validation
+- Effective-header/results checks, bilingual report assertions, typecheck, changed-source lint, production build, and whitespace checks passed.
+- Actual local production responses use SAMEORIGIN plus frame-ancestors 'self' for both report languages; results retain DENY, and signed-out report requests still redirect to login.
+- Synthetic browser checks using copied production headers confirmed both languages load in the same-origin frame and invoke printing without navigation, then clean up. A different-origin frame was blocked by CSP. Print was stubbed; no live student data was used.
+
 ## [0.18.5] - 2026-11-04
 ### Fixed
 - Open the print / Save as PDF dialog directly from both All Reports buttons without leaving Student Reports or showing a bulk preview. Keep individual report dialogs unchanged.

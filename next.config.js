@@ -12,6 +12,10 @@ module.exports = {
   async headers() {
     return [
       { source: "/(.*)", headers: security },
+      { source: "/admin/reports", headers: [
+        { key: "X-Frame-Options", value: "SAMEORIGIN" },
+        { key: "Content-Security-Policy", value: "frame-ancestors 'self'" },
+      ] },
       { source: "/brand/:path*", headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }] },
     ];
   },

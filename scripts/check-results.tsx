@@ -9,6 +9,15 @@ import type { Student } from "@/lib/types";
 (globalThis as unknown as { React: typeof React }).React = React;
 
 async function main() {
+  const { default: nextConfig } = await import("../next.config");
+  const { getPathMatch } = await import("next/dist/shared/lib/router/utils/path-match");
+  const headerRules = await nextConfig.headers();
+  for (const path of ["/", "/login", "/admin", "/admin/results", "/admin/reports", "/admin/students/synthetic/report", "/brand/logo.png"]) {
+    const headers = new Map(headerRules.filter((rule) => getPathMatch(rule.source)(path)).flatMap((rule) => rule.headers.map(({ key, value }) => [key.toLowerCase(), value] as const)));
+    assert.equal(headers.get("x-frame-options"), path === "/admin/reports" ? "SAMEORIGIN" : "DENY");
+    assert.equal(headers.get("content-security-policy"), path === "/admin/reports" ? "frame-ancestors 'self'" : undefined);
+    assert.equal(headers.get("x-content-type-options"), "nosniff");
+  }
   const { ResultScore, ResultsTable } = await import("@/components/features/ResultsTable");
   const { AppRouterContext } = await import("next/dist/shared/lib/app-router-context.shared-runtime");
   const { ReportDialog } = await import("@/components/report/ReportDialog");
