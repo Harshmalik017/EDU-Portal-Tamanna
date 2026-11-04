@@ -10,6 +10,16 @@ import { TESTS } from "@/lib/tamanna/tests";
 async function main() {
   const { ReportPages } = await import("../components/report/ReportPages");
   const { SheetDisplay } = await import("../components/features/OMRSheetPreview");
+  const { ScanClient } = await import("../components/features/ScanClient");
+  const scanner = renderToStaticMarkup(React.createElement(ScanClient, {
+    initialKey: Object.fromEntries(TESTS.map((test) => [test.code, Array.from({ length: test.questions }, () => "A")])),
+    template: [],
+  }));
+  assert.ok(scanner.includes("Upload one PDF"));
+  assert.ok(scanner.includes("Scan both pages"));
+  for (const label of ["Marks counted", "Marks appear here", "Save student report", "Confirm and score"]) {
+    assert.ok(!scanner.includes(label), `Scan page must not show ${label}`);
+  }
   const sheet = renderToStaticMarkup(React.createElement(SheetDisplay, {
     pages: [], roll: "10001", responses: { LA: ["MULTI", "UNCERTAIN", "A", null] }, answerKey: { LA: ["B", "B", "A", "B"] }, onChange: () => {},
   }));

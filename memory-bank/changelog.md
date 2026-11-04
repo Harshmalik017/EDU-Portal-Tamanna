@@ -1,6 +1,16 @@
 # Changelog
 Format: [Keep a Changelog](https://keepachangelog.com), versions follow [SemVer](https://semver.org). See `versioning.md`.
 
+## [0.19.0] - 2026-11-04
+### Added
+- Open the shared wide OMR review dialog automatically after a two-page PDF upload or camera scan. Compare the original on the left with editable Theme UI answers on the right; stack on smaller screens.
+- Add for review saves student details, edited responses, page images, and the unchanged original PDF without final scores. Keep scoring and reports on Student Reports only; remove the scan page's Marks counted panel and scoring action.
+### Fixed
+- Keep uncertain edits out of final scoring, preserve draft edits when closing and reopening the dialog, and clean up failed uploads and PDF preview URLs.
+### Validation
+- Typecheck, scanner lint, OMR detector checks, results/readiness checks, themed-sheet/report checks, and production build passed.
+- Synthetic browser checks covered automatic PDF/camera review, both-page edits, pending saves without scoring, original PDF bytes, failed-save cleanup, draft reopening, keyboard focus cycling, disabled in-flight controls, desktop comparison, mobile stacking without overflow, and preview URL cleanup. No live student data was accessed or changed.
+
 ## [0.18.6] - 2026-11-04
 ### Fixed
 - Allow the same-origin bulk print frame on `/admin/reports` instead of blocking it with the global DENY header. Keep all other routes frame-denied and explicitly block external framing of reports with CSP.
