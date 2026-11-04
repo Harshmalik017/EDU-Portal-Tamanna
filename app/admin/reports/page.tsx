@@ -23,7 +23,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ c
   return (
     <div>
       <div className="no-print mb-4 flex flex-wrap items-center gap-3"><PrintButton label={`Print ${rows.length} reports`} /><p className="text-sm font-semibold">{cls ? `Class ${cls}` : "All classes"} · 3 pages each</p></div>
-      <div lang={language}>{rows.map((s) => <ReportPages key={s.id} s={s} language={language} />)}</div>
+      <div data-bulk-reports lang={language}>{rows.map((s) => <ReportPages key={s.id} s={s} language={language} />)}</div>
       {!rows.length && <p className="clay p-8 text-center">No reports to print yet.</p>}
     </div>
   );

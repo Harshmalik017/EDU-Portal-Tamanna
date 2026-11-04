@@ -46,10 +46,10 @@ async function main() {
   const router = { bfcacheId: "synthetic", back() {}, forward() {}, refresh() {}, push() {}, replace() {}, prefetch() {} };
   const pending = { ...student, id: "pending", report_ready: false };
   const table = renderToStaticMarkup(<AppRouterContext.Provider value={router}><ResultsTable rows={[student, pending]} /></AppRouterContext.Provider>);
-  for (const [language, label] of [["hi", "Hindi"], ["en", "English"]]) {
-    assert.equal((table.match(new RegExp(`href="/admin/reports\\?language=${language}"`, "g")) ?? []).length, 1);
-    assert.ok(table.includes(`All Reports (${label})`));
+  for (const label of ["Hindi", "English"]) {
+    assert.match(table, new RegExp(`<button[^>]*>[\\s\\S]*?All Reports \\(${label}\\)</button>`));
   }
+  assert.ok(!table.includes('href="/admin/reports'));
   assert.ok(!table.includes("Print reviewed reports"));
   assert.equal((table.match(/href="\/admin\/students\/synthetic\/report"/g) ?? []).length, 2);
   assert.ok(!table.includes('href="/admin/students/pending/report"'));

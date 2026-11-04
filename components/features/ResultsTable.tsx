@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
-import { ArrowUpDown, ClipboardCheck, FileSpreadsheet, FileText, Printer, Search, Table2, Trash2, UserRound } from "lucide-react";
+import { ArrowUpDown, ClipboardCheck, FileSpreadsheet, FileText, Search, Table2, Trash2, UserRound } from "lucide-react";
 import { TESTS } from "@/lib/tamanna/tests";
 import { bandOf, normalizeClass, stenOf } from "@/lib/tamanna/norms";
 import { reviewComplete, sectionNotFilled } from "@/lib/tamanna/results";
@@ -12,6 +12,7 @@ import { supabase } from "@/lib/supabase/client";
 import type { Student } from "@/lib/types";
 import { Button, Card, Input, PageHeader, Select } from "@/components/ui";
 import { useToast } from "@/components/Toast";
+import { BulkReportButtons } from "@/components/report/BulkReportButtons";
 
 const PAGE = 20;
 const StudentProfileDialog = dynamic(() => import("@/components/features/StudentProfileDialog").then((m) => m.StudentProfileDialog));
@@ -91,10 +92,7 @@ export function ResultsTable({ rows }: { rows: Student[] }) {
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm font-semibold text-ink/80">{shown.length} students</p>
         <div className="flex flex-wrap gap-2">
-          {shown.some(reviewComplete) && <>
-            <Link prefetch={false} href={`/admin/reports?language=hi${cls ? `&class=${cls}` : ""}`} className="clay-btn-soft"><Printer size={18} /> All Reports (Hindi)</Link>
-            <Link prefetch={false} href={`/admin/reports?language=en${cls ? `&class=${cls}` : ""}`} className="clay-btn-soft"><Printer size={18} /> All Reports (English)</Link>
-          </>}
+          {shown.some(reviewComplete) && <BulkReportButtons cls={cls} />}
           <Button onClick={exportCsv} disabled={!shown.length} className="!border-green-700 !bg-green-700 !text-white hover:!bg-green-800 focus-visible:!outline-green-700"><FileSpreadsheet size={18} /> Download CSV</Button>
         </div>
       </div>

@@ -1,6 +1,14 @@
 # Changelog
 Format: [Keep a Changelog](https://keepachangelog.com), versions follow [SemVer](https://semver.org). See `versioning.md`.
 
+## [0.18.5] - 2026-11-04
+### Fixed
+- Open the print / Save as PDF dialog directly from both All Reports buttons without leaving Student Reports or showing a bulk preview. Keep individual report dialogs unchanged.
+- Load the selected language/class in an off-screen frame, wait for fonts/images, block duplicate print jobs, show preparation errors, and clean up after printing or cancellation.
+### Validation
+- Results button/readiness checks, bilingual report assertions, typecheck, changed-source lint, production build, and whitespace checks passed.
+- Synthetic browser checks verified both language/class URLs, font/image readiness before print invocation, no results navigation or preview, duplicate-job blocking, afterprint cleanup, focus/search preservation, keyboard activation, mobile width, unmount cancellation, and session/empty/image/timeout errors. Browser print was stubbed; no live student data was used.
+
 ## [0.18.4] - 2026-11-04
 ### Fixed
 - Replace Print reviewed reports with All Reports (Hindi) and All Reports (English). Preserve the selected class and reviewed/current-key eligibility.
