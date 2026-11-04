@@ -5,6 +5,8 @@ import { TESTS } from "@/lib/tamanna/tests";
 import { reviewComplete, sectionNotFilled } from "@/lib/tamanna/results";
 import { reportLabels } from "@/lib/tamanna/report-language";
 import type { Student } from "@/lib/types";
+import { ActivityLogTable } from "@/components/features/ActivityLogTable";
+import { activityDate, activityDetails, activityLabel, type ActivityLog } from "@/lib/tamanna/activity";
 
 (globalThis as unknown as { React: typeof React }).React = React;
 
@@ -73,7 +75,33 @@ async function main() {
   const archived = renderToStaticMarkup(<AppRouterContext.Provider value={router}><ResultsTable archived rows={[{ ...student, archived_at: new Date().toISOString() }]} /></AppRouterContext.Provider>);
   assert.ok(archived.includes("Restore"));
   assert.ok(archived.includes("Delete after"));
+  assert.ok(archived.includes("Clear archive"));
+  assert.ok(archived.includes('href="/admin/archive"'));
+  const expired = renderToStaticMarkup(<AppRouterContext.Provider value={router}><ResultsTable archived rows={[{ ...student, archived_at: "2020-01-01T00:00:00Z" }]} /></AppRouterContext.Provider>);
+  assert.match(expired, /aria-label="Select roll 99999"[^>]*\/>/);
+  assert.ok(!expired.match(/aria-label="Select roll 99999"[^>]*disabled/));
+  assert.match(expired, /disabled=""[^>]*>[\s\S]*?Deletion pending/);
+  const deleting = renderToStaticMarkup(<AppRouterContext.Provider value={router}><ResultsTable archived rows={[{ ...student, archived_at: new Date().toISOString(), deletion_pending: true }]} /></AppRouterContext.Provider>);
+  assert.ok(deleting.includes("Deletion started"));
+  assert.match(deleting, /disabled=""[^>]*>[\s\S]*?Deletion started/);
   for (const action of ["OMR Sheet", "Section Score", "Download CSV", "All Reports", 'href="/admin/students/synthetic/report"']) assert.ok(!archived.includes(action));
+  const log: ActivityLog = {
+    id: "synthetic-log", created_at: "2026-01-01T00:00:00Z", category: "students", action: "Student archived",
+    actor_email: null, student_id: "synthetic", student_name: "Synthetic log student", student_gender: "Female", student_roll_number: "99999", detail: "Roll 99999",
+  };
+  const logs = renderToStaticMarkup(<ActivityLogTable rows={[log, { ...log, id: "unknown", student_name: null, student_gender: null }]} />);
+  assert.match(logs, /<th[^>]*>Date and time<\/th><\/tr><\/thead>/);
+  for (const label of ["Synthetic log student", "Female", "99999", "Student moved to Archive", "System", "Not recorded", "IST"]) assert.ok(logs.includes(label), label);
+  assert.ok(!logs.includes("Import / system") && !logs.includes("Roll 99999"));
+  for (const action of ["Student deleted", "Sheet uploaded", "Sheet removed", "Section scored", "Answer key insert", "Answer key update", "Setting delete"]) assert.notEqual(activityLabel(action), action);
+  assert.equal(activityDetails("Roll 99999 · LA"), "Language Aptitude");
+  assert.equal(activityDetails("PA question 60"), "Perceptual Aptitude · Question 60");
+  assert.equal(activityDetails("Historical upload · Roll 99999"), "Earlier answer sheet upload");
+  assert.equal(activityDetails("answer_key_hash"), "Answer key refreshed");
+  assert.equal(activityDetails("template"), "Answer sheet layout");
+  assert.match(activityDate(log.created_at), /01 Jan 2026.*5:30.*IST/);
+  const accountLog = renderToStaticMarkup(<ActivityLogTable rows={[{ ...log, student_id: null, student_roll_number: null, student_name: null, student_gender: null }]} />);
+  assert.ok(!accountLog.includes("Not recorded"));
   const pendingReport = renderToStaticMarkup(<AppRouterContext.Provider value={router}><ReportDialog student={pending} /></AppRouterContext.Provider>);
   assert.ok(!pendingReport.includes('class="report-page '));
   assert.ok(!pendingReport.includes(reportLabels("hi").print));

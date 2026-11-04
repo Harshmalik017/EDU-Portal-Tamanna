@@ -18,9 +18,21 @@ create policy "admin read logs" on public.activity_logs for select to authentica
 revoke all on public.activity_logs from anon, authenticated;
 grant select on public.activity_logs to authenticated;
 
+-- Student identity snapshots remain understandable after a permanent deletion.
+alter table public.activity_logs add column if not exists student_name text;
+alter table public.activity_logs add column if not exists student_gender text;
+alter table public.activity_logs add column if not exists student_roll_number text;
+create index if not exists activity_logs_student_idx on public.activity_logs(student_id, created_at desc, id desc) where student_id is not null;
+update public.activity_logs log set
+  student_name = coalesce(log.student_name, student.name),
+  student_gender = coalesce(log.student_gender, student.gender),
+  student_roll_number = coalesce(log.student_roll_number, student.roll_number)
+from public.students student where student.id = log.student_id
+  and (log.student_name is null or log.student_gender is null or log.student_roll_number is null);
+
 create or replace function public.record_portal_activity() returns trigger
 language plpgsql security definer set search_path = public as $$
-declare row_data jsonb; category_name text; description text; student uuid; extra text; roll text;
+declare row_data jsonb; category_name text; description text; student uuid; extra text; roll text; person_name text; person_gender text;
 begin
   row_data := case when tg_op = 'DELETE' then to_jsonb(old) else to_jsonb(new) end;
   case tg_table_name
@@ -36,6 +48,7 @@ begin
           then case when row_data->>'archived_at' is null then 'Student restored' else 'Student archived' end
         else 'Student profile updated' end;
       extra := 'Roll ' || coalesce(row_data->>'roll_number', 'not recorded');
+      roll := row_data->>'roll_number'; person_name := row_data->>'name'; person_gender := row_data->>'gender';
     when 'submissions' then
       category_name := 'scans'; student := (row_data->>'student_id')::uuid;
       if tg_op = 'UPDATE' and new.responses is not distinct from old.responses then return null; end if;
@@ -53,11 +66,16 @@ begin
     else raise exception 'Unsupported activity source';
   end case;
   if student is not null and tg_table_name <> 'students' then
-    select roll_number into roll from public.students where id = student;
+    select roll_number, name, gender into roll, person_name, person_gender from public.students where id = student;
+    if not found then
+      select student_roll_number, student_name, student_gender into roll, person_name, person_gender
+        from public.activity_logs where student_id = student and student_roll_number is not null
+        order by created_at desc, id desc limit 1;
+    end if;
     extra := concat_ws(' · ', case when roll is not null then 'Roll ' || roll end, extra);
   end if;
-  insert into public.activity_logs(category, action, actor_id, actor_email, student_id, detail)
-  values(category_name, description, auth.uid(), auth.jwt()->>'email', student, extra);
+  insert into public.activity_logs(created_at, category, action, actor_id, actor_email, student_id, detail, student_name, student_gender, student_roll_number)
+  values(clock_timestamp(), category_name, description, auth.uid(), auth.jwt()->>'email', student, extra, person_name, person_gender, roll);
   return null;
 end $$;
 revoke all on function public.record_portal_activity() from public, anon, authenticated;
@@ -69,8 +87,8 @@ do $$ declare table_name text; begin
 end $$;
 
 -- Only historical uploads have trustworthy event timestamps; do not invent older edits.
-insert into public.activity_logs(created_at, category, action, student_id, detail, source_id)
-select sub.created_at, 'scans', 'Sheet uploaded', sub.student_id, 'Historical upload · Roll ' || s.roll_number, sub.id
+insert into public.activity_logs(created_at, category, action, student_id, detail, source_id, student_name, student_gender, student_roll_number)
+select sub.created_at, 'scans', 'Sheet uploaded', sub.student_id, 'Historical upload · Roll ' || s.roll_number, sub.id, s.name, s.gender, s.roll_number
 from public.submissions sub join public.students s on s.id = sub.student_id
 on conflict (source_id) do nothing;
 

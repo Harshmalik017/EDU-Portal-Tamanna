@@ -8,6 +8,7 @@ export type Student = {
   excluded?: boolean; exclude_reason?: string | null;
   report_ready?: boolean;
   archived_at?: string | null;
+  deletion_pending?: boolean;
   verification_status?: Verification; verified_by?: string | null; verified_at?: string | null;
   manual_scores?: Record<string, number> | null; verification_note?: string | null;
 };

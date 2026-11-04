@@ -72,11 +72,22 @@ begin
   if not public.is_admin() then raise exception 'Admin access required'; end if;
   return query select jsonb_build_object(
     'id', id, 'name', name, 'roll_number', roll_number, 'class', class, 'gender', gender,
-    'school', school, 'archived_at', archived_at, 'report_ready', false, 'scores', '[]'::jsonb
+    'school', school, 'archived_at', archived_at, 'deletion_pending', purge_token is not null,
+    'report_ready', false, 'scores', '[]'::jsonb
   ) from students where archived_at is not null order by archived_at desc, id;
 end $$;
 revoke all on function public.archived_students() from public, anon;
 grant execute on function public.archived_students() to authenticated;
+
+create or replace function public.student_purge_paths(p_id uuid) returns text[]
+language sql stable set search_path = public as $$
+  select coalesce(array_agg(distinct path), '{}'::text[]) from (
+    select unnest(coalesce(image_paths, '{}'::text[])) as path from submissions where student_id = p_id
+    union select pdf_path from submissions where student_id = p_id and pdf_path is not null
+    union select name from storage.objects where bucket_id = 'sheets' and starts_with(name, p_id::text || '/')
+  ) files where path is not null;
+$$;
+revoke all on function public.student_purge_paths(uuid) from public, anon, authenticated;
 
 -- A lease prevents concurrent cleanup jobs. Expired restores are always rejected.
 create or replace function public.claim_student_purges(p_limit integer default 25) returns setof jsonb
@@ -92,23 +103,41 @@ begin
   loop
     token := gen_random_uuid();
     update students set purge_token = token, purge_started_at = now() where id = person.id;
-    select coalesce(array_agg(distinct path), '{}'::text[]) into paths from (
-      select unnest(coalesce(image_paths, '{}'::text[])) as path from submissions where student_id = person.id
-      union select pdf_path from submissions where student_id = person.id and pdf_path is not null
-      union select name from storage.objects where bucket_id = 'sheets' and starts_with(name, person.id::text || '/')
-    ) files where path is not null;
+    paths := public.student_purge_paths(person.id);
     return next jsonb_build_object('id', person.id, 'token', token, 'paths', to_jsonb(paths));
   end loop;
 end $$;
 revoke all on function public.claim_student_purges(integer) from public, anon, authenticated;
 grant execute on function public.claim_student_purges(integer) to service_role;
 
+create or replace function public.claim_selected_student_purges(p_ids uuid[]) returns setof jsonb
+language plpgsql security definer set search_path = public as $$
+declare expected integer; person record; token uuid;
+begin
+  if not public.is_admin() then raise exception 'Admin access required'; end if;
+  select count(distinct id) into expected from unnest(p_ids) id;
+  if expected = 0 or expected > 10000 or expected <> cardinality(p_ids) then raise exception 'Select between 1 and 10000 distinct students'; end if;
+  perform 1 from students where id = any(p_ids) order by id for update;
+  if (select count(*) from students where id = any(p_ids) and archived_at is not null
+      and (purge_started_at is null or purge_started_at < now() - interval '15 minutes')) <> expected then
+    raise exception 'Could not delete: a selected student is active, missing, or already being deleted';
+  end if;
+  for person in select id from students where id = any(p_ids) order by id loop
+    token := gen_random_uuid();
+    update students set purge_token = token, purge_started_at = now() where id = person.id;
+    return next jsonb_build_object('id', person.id, 'token', token, 'paths', to_jsonb(public.student_purge_paths(person.id)));
+  end loop;
+end $$;
+revoke all on function public.claim_selected_student_purges(uuid[]) from public, anon;
+grant execute on function public.claim_selected_student_purges(uuid[]) to authenticated;
+
 create or replace function public.finish_student_purge(p_id uuid, p_token uuid) returns void
 language plpgsql security definer set search_path = public as $$
+declare admin_access boolean := public.is_admin();
 begin
-  if coalesce(auth.role(), '') <> 'service_role' then raise exception 'Service access required'; end if;
+  if not admin_access and coalesce(auth.role(), '') <> 'service_role' then raise exception 'Admin access required'; end if;
   perform 1 from students where id = p_id and purge_token = p_token
-    and archived_at <= now() - interval '30 days' for update;
+    and archived_at is not null and (admin_access or archived_at <= now() - interval '30 days') for update;
   if not found then raise exception 'Could not delete: cleanup lease changed'; end if;
   if exists(select 1 from storage.objects where bucket_id = 'sheets' and starts_with(name, p_id::text || '/')) then
     raise exception 'Could not delete: student files still exist';
@@ -116,7 +145,17 @@ begin
   delete from students where id = p_id;
 end $$;
 revoke all on function public.finish_student_purge(uuid,uuid) from public, anon, authenticated;
-grant execute on function public.finish_student_purge(uuid,uuid) to service_role;
+grant execute on function public.finish_student_purge(uuid,uuid) to authenticated, service_role;
+
+create or replace function public.release_student_purge(p_id uuid, p_token uuid) returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if not public.is_admin() and coalesce(auth.role(), '') <> 'service_role' then raise exception 'Admin access required'; end if;
+  -- Keep the token: partial file deletion must never make this copy restorable.
+  update students set purge_started_at = null where id = p_id and purge_token = p_token and archived_at is not null;
+end $$;
+revoke all on function public.release_student_purge(uuid,uuid) from public, anon;
+grant execute on function public.release_student_purge(uuid,uuid) to authenticated, service_role;
 
 -- Answer edits and final scoring must not race an archive operation.
 create or replace function public.require_active_student() returns trigger

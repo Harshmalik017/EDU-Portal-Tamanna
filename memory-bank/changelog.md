@@ -1,6 +1,17 @@
 # Changelog
 Format: [Keep a Changelog](https://keepachangelog.com), versions follow [SemVer](https://semver.org). See `versioning.md`.
 
+## [0.21.0] - 2026-11-04
+### Added
+- Add a dedicated Archive page and sidebar menu directly below Activity Logs, including collapsed and mobile navigation. Redirect the previous archive URL.
+- Add multiselect permanent deletion and Clear archive with explicit irreversible confirmations. Clear includes students hidden by filters; retain restore for eligible copies.
+- Preserve student name, gender, and roll in activity history after permanent deletion. Use plain activity/category/section labels and show IST date/time in the final column.
+### Fixed
+- Share file-first cleanup between manual and scheduled deletion. Reject active, missing, or busy selections atomically, retain partially deleted records for retry, and block restoration once deletion starts.
+### Validation
+- Typecheck, changed-source lint, archive/results/report checks, production build, and rolled-back archive/results database checks passed. Installed the additive migration with existing student/submission/score preservation checks and verified anonymous denial.
+- Synthetic browser checks covered full/collapsed/mobile navigation, selection across pages, expired-copy deletion, filter-independent Clear archive, confirmation/cancellation, busy controls, partial-failure retries, restoration, conflict handling, keyboard focus trapping, and 390px layouts. Logs kept identity fields and IST date/time last with accessible internal scrolling. No live students were archived or deleted.
+
 ## [0.20.0] - 2026-11-04
 ### Added
 - Add responsive individual/page/all-matching selection and bulk Delete to Student Reports. Delete moves records to Archive, with single/bulk restore for 30 days and explicit confirmation.

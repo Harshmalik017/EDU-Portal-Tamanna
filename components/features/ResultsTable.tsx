@@ -15,6 +15,7 @@ import { useToast } from "@/components/Toast";
 import { BulkReportButtons } from "@/components/report/BulkReportButtons";
 import { Dialog } from "@/components/ui/Dialog";
 import { archiveDeadline, canRestore } from "@/lib/tamanna/archive";
+import { deleteArchivedStudents } from "@/lib/supabase/archive";
 
 const PAGE = 20;
 const StudentProfileDialog = dynamic(() => import("@/components/features/StudentProfileDialog").then((m) => m.StudentProfileDialog));
@@ -50,7 +51,7 @@ export function ResultsTable({ rows, archived = false }: { rows: Student[]; arch
   const [profile, setProfile] = useState<Student | null>(null);
   const [sheet, setSheet] = useState<{ student: Student; mode: "view" | "check" } | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [confirmation, setConfirmation] = useState<string[] | null>(null);
+  const [confirmation, setConfirmation] = useState<{ ids: string[]; action: "archive" | "restore" | "delete"; all?: boolean } | null>(null);
   const [busy, setBusy] = useState(false);
   const get = (r: Student, by: string): string | number => TESTS.some((t) => t.code === by) ? raw(r, by) ?? -1 : by === "status" ? status(r) : by === "deadline" ? r.archived_at ? archiveDeadline(r.archived_at) : 0 : by === "archived_at" ? r.archived_at ?? "" : by === "roll_number" ? r.roll_number : by === "name" ? r.name : r.school;
   const shown = useMemo(() => rows
@@ -60,9 +61,10 @@ export function ResultsTable({ rows, archived = false }: { rows: Student[]; arch
   const currentPage = Math.min(page, pages - 1);
   const view = shown.slice(currentPage * PAGE, currentPage * PAGE + PAGE);
   const selectedIds = shown.filter((student) => selected.has(student.id)).map((student) => student.id);
-  const eligible = (student: Student) => !archived || canRestore(student.archived_at);
-  const selectable = shown.filter(eligible);
-  const pageSelectable = view.filter(eligible);
+  const restorable = (student: Student) => canRestore(student.archived_at) && !student.deletion_pending;
+  const restoreSelected = selectedIds.length > 0 && shown.filter((student) => selected.has(student.id)).every(restorable);
+  const selectable = shown;
+  const pageSelectable = view;
   const pageSelected = pageSelectable.length > 0 && pageSelectable.every((student) => selected.has(student.id));
   const heads: [string, string][] = [["roll_number", "Roll no."], ["name", "Name"], ["school", "School"], ...(!archived ? [...TESTS.map((t) => [t.code, t.code] as [string, string]), ["status", "OMR sheet"] as [string, string]] : [["archived_at", "Archived"], ["deadline", "Delete after"]] as [string, string][])];
 
@@ -81,26 +83,34 @@ export function ResultsTable({ rows, archived = false }: { rows: Student[]; arch
     });
   }
   async function changeArchive() {
-    if (!confirmation?.length) return toast("Select students first.");
+    if (!confirmation?.ids.length) return toast("Select students first.");
     setBusy(true);
     try {
-      const { data, error } = await supabase.rpc("archive_students", { p_ids: confirmation, p_restore: archived });
-      if (error || data !== confirmation.length) return toast(`Could not ${archived ? "restore" : "archive"} students.${error ? ` ${error.message}` : " Refresh and try again."}`);
-      toast(archived ? "Restored and saved." : "Saved to Archive.");
+      if (confirmation.action === "delete") {
+        await deleteArchivedStudents(supabase, confirmation.ids);
+        toast("Students permanently deleted.");
+      } else {
+        const restoring = confirmation.action === "restore";
+        const { data, error } = await supabase.rpc("archive_students", { p_ids: confirmation.ids, p_restore: restoring });
+        if (error || data !== confirmation.ids.length) return toast(`Could not ${restoring ? "restore" : "archive"} students.${error ? ` ${error.message}` : " Refresh and try again."}`);
+        toast(restoring ? "Restored and saved." : "Saved to Archive.");
+      }
       setSelected(new Set()); setConfirmation(null); setProfile(null); setSheet(null);
       router.refresh();
     } catch (error) {
-      console.error("Could not update student archive.", error); toast("Could not update student archive.");
+      console.error("Could not update student archive.", error);
+      toast(error instanceof Error && error.message.startsWith("Could not") ? error.message : "Could not update student archive.");
+      setConfirmation(null); router.refresh();
     } finally {
       setBusy(false);
     }
   }
-  const selectionBox = (student: Student) => <input type="checkbox" aria-label={`Select roll ${student.roll_number}`} checked={selected.has(student.id)} disabled={busy || !eligible(student)} onChange={() => toggle(student.id)} className="h-5 w-5 shrink-0 accent-brand-700" />;
+  const selectionBox = (student: Student) => <input type="checkbox" aria-label={`Select roll ${student.roll_number}`} checked={selected.has(student.id)} disabled={busy} onChange={() => toggle(student.id)} className="h-5 w-5 shrink-0 accent-brand-700" />;
   const archiveDates = (student: Student) => {
     const date = student.archived_at;
     return date ? <><span>{new Date(date).toLocaleDateString("en-IN")}</span><span>{new Date(archiveDeadline(date)).toLocaleDateString("en-IN")}</span></> : null;
   };
-  const restoreAction = (student: Student) => <Button variant="soft" disabled={busy || !canRestore(student.archived_at)} onClick={() => setConfirmation([student.id])}><RotateCcw size={15} />{canRestore(student.archived_at) ? "Restore" : "Deletion pending"}</Button>;
+  const restoreAction = (student: Student) => <Button variant="soft" disabled={busy || !restorable(student)} onClick={() => setConfirmation({ ids: [student.id], action: "restore" })}><RotateCcw size={15} />{student.deletion_pending ? "Deletion started" : restorable(student) ? "Restore" : "Deletion pending"}</Button>;
 
   function exportCsv() {
     const a = document.createElement("a");
@@ -110,10 +120,10 @@ export function ResultsTable({ rows, archived = false }: { rows: Student[]; arch
 
   return (
     <div className="space-y-6">
-    <PageHeader title="Student reports" icon={Table2} />
+    <PageHeader title={archived ? "Archive" : "Student reports"} icon={archived ? Archive : Table2} />
     <nav aria-label="Student record view" className="flex flex-wrap gap-2">
       <Link prefetch={false} href="/admin/results" aria-current={!archived ? "page" : undefined} className={!archived ? "clay-btn" : "clay-btn-soft"}>Active students</Link>
-      <Link prefetch={false} href="/admin/results?archived=1" aria-current={archived ? "page" : undefined} className={archived ? "clay-btn" : "clay-btn-soft"}><Archive size={18} /> Archive</Link>
+      <Link prefetch={false} href="/admin/archive" aria-current={archived ? "page" : undefined} className={archived ? "clay-btn" : "clay-btn-soft"}><Archive size={18} /> Archive</Link>
     </nav>
     <Card>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
@@ -121,6 +131,7 @@ export function ResultsTable({ rows, archived = false }: { rows: Student[]; arch
         <div className="flex flex-wrap gap-2">
           {!archived && shown.some(reviewComplete) && <BulkReportButtons cls={cls} />}
           {!archived && <Button onClick={exportCsv} disabled={!shown.length} className="!border-green-700 !bg-green-700 !text-white hover:!bg-green-800 focus-visible:!outline-green-700"><FileSpreadsheet size={18} /> Download CSV</Button>}
+          {archived && <Button variant="soft" disabled={busy || !rows.length} onClick={() => setConfirmation({ ids: rows.map((student) => student.id), action: "delete", all: true })}><Trash2 size={18} /> Clear archive</Button>}
         </div>
       </div>
       {archived ? <p className="mb-4 text-sm font-semibold">Restore within 30 days. Expired students and files are permanently deleted by daily cleanup.</p> : <div className="mb-4 flex flex-wrap items-center gap-2 text-xs">
@@ -143,7 +154,9 @@ export function ResultsTable({ rows, archived = false }: { rows: Student[]; arch
         {selectable.length > selectedIds.length && <Button variant="soft" disabled={busy} onClick={() => setSelected(new Set(selectable.map((student) => student.id)))}>Select all {selectable.length} matching results</Button>}
         {selectedIds.length > 0 && <>
           <Button variant="soft" disabled={busy} onClick={() => setSelected(new Set())}>Clear selection</Button>
-          <Button variant="soft" disabled={busy} onClick={() => setConfirmation(selectedIds)}>{archived ? <RotateCcw size={18} /> : <Trash2 size={18} />}{archived ? "Restore selected" : "Delete selected"}</Button>
+          {archived && <Button variant="soft" disabled={busy || !restoreSelected} onClick={() => setConfirmation({ ids: selectedIds, action: "restore" })}><RotateCcw size={18} /> Restore selected</Button>}
+          <Button variant="soft" disabled={busy} onClick={() => setConfirmation({ ids: selectedIds, action: archived ? "delete" : "archive" })}><Trash2 size={18} />{archived ? "Delete selected permanently" : "Delete selected"}</Button>
+          {archived && !restoreSelected && <span className="text-sm text-amber-900">Some selected students cannot be restored.</span>}
         </>}
       </div>}
       {!shown.length ? <p className="py-10 text-center">No results.</p> : (
@@ -164,7 +177,7 @@ export function ResultsTable({ rows, archived = false }: { rows: Student[]; arch
                     {archived ? restoreAction(r) : <>
                     {reviewComplete(r) && <Link prefetch={false} scroll={false} href={`/admin/students/${r.id}/report`} aria-label={`Report for roll ${r.roll_number}`} title="Report" className="inline-flex min-h-9 items-center gap-1.5 rounded-xl bg-sky-100 px-3 py-1.5 text-xs font-bold text-sky-800 transition hover:bg-sky-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600"><FileText size={15} /> Report</Link>}
                     <Button variant="soft" className="!min-h-9 !px-3 !py-1.5 text-xs" onClick={() => setProfile(r)}><UserRound size={15} /> Profile</Button>
-                    <button type="button" aria-label={`Delete ${r.name}, roll ${r.roll_number}`} title="Move to Archive" disabled={busy} onClick={() => setConfirmation([r.id])} className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-red-200 bg-red-50 text-red-700 transition hover:bg-red-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600 disabled:opacity-50"><Trash2 size={17} /></button></>}
+                    <button type="button" aria-label={`Delete ${r.name}, roll ${r.roll_number}`} title="Move to Archive" disabled={busy} onClick={() => setConfirmation({ ids: [r.id], action: "archive" })} className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-red-200 bg-red-50 text-red-700 transition hover:bg-red-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600 disabled:opacity-50"><Trash2 size={17} /></button></>}
                   </div></td>
                 </tr>))}</tbody>
             </table>
@@ -180,7 +193,7 @@ export function ResultsTable({ rows, archived = false }: { rows: Student[]; arch
                 <SheetAction student={r} onClick={() => setSheet({ student: r, mode: "check" })} />
                 {reviewComplete(r) && <Link prefetch={false} scroll={false} href={`/admin/students/${r.id}/report`} className="inline-flex min-h-9 items-center gap-1.5 rounded-xl bg-sky-100 px-3 py-1.5 text-xs font-bold text-sky-800 transition hover:bg-sky-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600"><FileText size={15} /> Report</Link>}
                 <Button variant="soft" className="!min-h-9 !px-3 !py-1.5 text-xs" onClick={() => setProfile(r)}><UserRound size={15} /> Profile</Button>
-                <button type="button" aria-label={`Delete ${r.name}, roll ${r.roll_number}`} title="Move to Archive" disabled={busy} onClick={() => setConfirmation([r.id])} className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-red-200 bg-red-50 text-red-700 transition hover:bg-red-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600 disabled:opacity-50"><Trash2 size={17} /></button></>}
+                <button type="button" aria-label={`Delete ${r.name}, roll ${r.roll_number}`} title="Move to Archive" disabled={busy} onClick={() => setConfirmation({ ids: [r.id], action: "archive" })} className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-red-200 bg-red-50 text-red-700 transition hover:bg-red-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600 disabled:opacity-50"><Trash2 size={17} /></button></>}
               </div>
             </li>))}</ul>
           <div className="mt-4 flex items-center justify-between">
@@ -192,12 +205,15 @@ export function ResultsTable({ rows, archived = false }: { rows: Student[]; arch
     </Card>
     {profile && <StudentProfileDialog key={profile.id} student={profile} onClose={() => setProfile(null)} />}
     {sheet && <StudentSheetDialog key={`${sheet.student.id}:${sheet.mode}`} student={sheet.student} mode={sheet.mode} onClose={() => setSheet(null)} />}
-    {confirmation && <Dialog title={archived ? "Restore students" : "Move students to Archive"} busy={busy} onClose={() => setConfirmation(null)}>
-      <p className="text-sm font-semibold">{confirmation.length} student{confirmation.length === 1 ? "" : "s"} selected</p>
-      {!archived && <p className="text-sm">Restore within 30 days. Student records, scores, and uploaded files are permanently deleted after that period.</p>}
+    {confirmation && <Dialog title={confirmation.action === "delete" ? confirmation.all ? "Clear archive" : "Permanently delete students" : archived ? "Restore students" : "Move students to Archive"} busy={busy} onClose={() => setConfirmation(null)}>
+      <p className="text-sm font-semibold">{confirmation.ids.length} student{confirmation.ids.length === 1 ? "" : "s"} selected</p>
+      {confirmation.action === "delete" ? <>
+        {confirmation.all && <p className="text-sm">All archived students, including those hidden by search and class filters.</p>}
+        <p className="text-sm font-semibold text-red-800">Permanently delete these students, scores, and uploaded files now. This cannot be undone.</p>
+      </> : !archived && <p className="text-sm">Restore within 30 days. Student records, scores, and uploaded files are permanently deleted after that period.</p>}
       <div className="flex flex-wrap justify-end gap-2">
         <Button variant="soft" disabled={busy} onClick={() => setConfirmation(null)}>Cancel</Button>
-        <Button disabled={busy} onClick={changeArchive}>{busy ? "Saving…" : archived ? "Restore students" : "Move to Archive"}</Button>
+        <Button disabled={busy} onClick={changeArchive}>{busy ? confirmation.action === "delete" ? "Deleting…" : "Saving…" : confirmation.action === "delete" ? "Delete permanently" : archived ? "Restore students" : "Move to Archive"}</Button>
       </div>
     </Dialog>}
     </div>

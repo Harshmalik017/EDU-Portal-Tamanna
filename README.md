@@ -70,12 +70,15 @@ Results and errors are recorded per PDF. `scoring-report.json` distinguishes sco
 
 - Check Sheets assigns the next five-digit roll on save, across all classes and schools. There is no roll-number input. Allocation is database-serialized; the counter starts after the highest existing roll (10001 for an empty database), and archived/deleted rolls are not reused. Failed uploads can leave gaps. Profiles show rolls read-only.
 - Student Reports supports individual selection, Select page, and an explicit Select all matching results action. Search/class changes clear selection. Delete moves selected students to Archive; it does not immediately remove scores or files.
-- Open Archive to restore within 30 days. Archived students are omitted from active results, dashboard, CSV, reports, and sheet access. Restoration preserves their roll, answers, and scores.
+- Open **Archive**, directly below **Activity Logs** in the sidebar, to restore within 30 days. Archived students are omitted from active results, dashboard, CSV, reports, and sheet access. Restoration preserves their roll, answers, and scores.
+- Archive supports individual/page/all-matching selection and **Delete selected permanently**. **Clear archive** includes all archived students, even those hidden by search/class filters. Both actions confirm irreversible deletion of records, scores, and files. Once deletion starts, restoration is blocked; failed deletion can be retried.
 - After 30 days, restoration is blocked. Daily cleanup permanently deletes the original PDFs, page images, student, submissions, and scores. Existing activity logs remain as audit history. Cleanup runs at 02:30 UTC (08:00 IST), subject to GitHub scheduling delays.
 - Configure GitHub Actions repository secrets `ARCHIVE_SUPABASE_URL` and `ARCHIVE_SUPABASE_SERVICE_ROLE_KEY` with the project URL and server-only service-role key. The `Clean expired student archives` workflow runs daily and supports manual dispatch. No owner key is added to Vercel or browser code.
 - Cleanup leases each expired record, deletes private files through the Storage API, then deletes database records. Storage failures retain the archived record for retry; the job fails explicitly. Do not delete `storage.objects` rows directly.
 
 Run `npm run check:archive` for synthetic cleanup/cutoff checks. `npm run check:archive:database` validates a rolled-back synthetic transaction; add `-- --apply` to install only the lifecycle migration and its active-results/activity dependencies while checking that existing records are unchanged. `npm run archive:cleanup -- --apply` performs real expired-record cleanup using private local settings.
+
+Activity Logs uses plain activity labels and includes student name, gender, and roll. Date and time is the last column, in IST. New events retain identity snapshots after permanent deletion; older events without a surviving identity show **Not recorded**.
 
 Add **only** `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` to Vercel, then deploy. Provisioning/import commands use private local settings; Vercel does not need the admin password or owner keys.
 

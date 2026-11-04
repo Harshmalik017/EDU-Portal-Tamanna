@@ -8,7 +8,7 @@ async function main() {
   if (url !== "https://zhrlfkvmmrgwainsfyha.supabase.co" || !accessToken) throw new Error("Could not validate archive database access.");
   const lifecycle = await readFile("supabase/student-lifecycle.sql", "utf8");
   const portal = await readFile("supabase/portal-update.sql", "utf8");
-  const activityStart = portal.indexOf("create or replace function public.record_portal_activity()");
+  const activityStart = portal.indexOf("-- Student identity snapshots");
   const activityEnd = portal.indexOf("revoke all on function public.record_portal_activity()");
   const resultsStart = portal.indexOf("create or replace function public.scan_results()");
   if (activityStart < 0 || activityEnd < 0 || resultsStart < 0) throw new Error("Could not find lifecycle dependencies.");
@@ -35,6 +35,7 @@ begin
   if baseline > 99994 then raise exception 'Insufficient unused roll numbers for transaction checks'; end if;
   insert into students(id,name,class,gender,school) values(first_id,'Synthetic archive check','X','Male','Synthetic archive transaction') returning roll_number into first_roll;
   insert into students(id,name,class,gender,school) values(second_id,'Synthetic archive check','X','Male','Synthetic archive transaction') returning roll_number into second_roll;
+  update students set name='Synthetic updated identity', gender='Female' where id=first_id;
   if first_roll::integer <> baseline + 1 or second_roll::integer <> baseline + 2 then raise exception 'Roll allocation is not incremental'; end if;
   rejected := false;
   begin update students set roll_number = '99999' where id = first_id;
@@ -71,6 +72,13 @@ begin
     rejected := true;
   end;
   if not rejected or (select archived_at from students where id=first_id) is not null then raise exception 'Bulk archive was not atomic'; end if;
+  rejected := false;
+  begin perform claim_selected_student_purges(array[first_id,second_id]);
+  exception when others then
+    if sqlerrm not like 'Could not delete:%' then raise; end if;
+    rejected := true;
+  end;
+  if not rejected or exists(select 1 from students where id=any(array[first_id,second_id]) and purge_token is not null) then raise exception 'Mixed active/archive permanent deletion was not atomic'; end if;
   perform archive_students(array[first_id]);
   update students set archived_at=now()-interval '30 days' where id=first_id;
   update students set archived_at=now()-interval '31 days' where id=second_id;
@@ -111,7 +119,39 @@ begin
   perform finish_student_purge(first_id,claimed_token);
   if exists(select 1 from students where id=first_id) or exists(select 1 from submissions where student_id=first_id)
     or exists(select 1 from scores where student_id=first_id) then raise exception 'Purge left student data'; end if;
-  delete from students where id=third_id;
+  if not exists(select 1 from activity_logs where student_id=first_id and action='Student deleted'
+      and student_name='Synthetic updated identity' and student_gender='Female' and student_roll_number=first_roll)
+    or exists(select 1 from activity_logs where student_id=first_id and action in ('Sheet removed','Section score cleared')
+      and (student_name is distinct from 'Synthetic updated identity' or student_gender is distinct from 'Female' or student_roll_number is distinct from first_roll))
+    then raise exception 'Permanent deletion lost student identity in audit history'; end if;
+  perform release_student_purge(second_id,second_token);
+  if not exists(select 1 from claim_student_purges(100) r where r->>'id'=second_id::text and r->>'token'<>second_token::text) then raise exception 'Automatic cleanup did not reclaim a released failed deletion'; end if;
+  perform set_config('request.jwt.claims', jsonb_build_object('role','authenticated','sub',admin_id)::text, true);
+  rejected := false;
+  begin perform claim_selected_student_purges(array[third_id,second_id]);
+  exception when others then if sqlerrm not like 'Could not delete:%' then raise; end if; rejected := true; end;
+  if not rejected or (select purge_token from students where id=third_id) is not null then raise exception 'Busy selection claimed other students'; end if;
+  select r into claimed from claim_selected_student_purges(array[third_id]) r;
+  claimed_token := (claimed->>'token')::uuid;
+  if claimed_token is null or not exists(select 1 from archived_students() r where r->>'id'=third_id::text and r->>'deletion_pending'='true') then raise exception 'Explicit early deletion was not marked pending'; end if;
+  rejected := false;
+  begin perform archive_students(array[third_id],true);
+  exception when others then if sqlerrm not like 'Could not update students:%' then raise; end if; rejected := true; end;
+  if not rejected then raise exception 'Restored a student after deletion started'; end if;
+  rejected := false;
+  begin perform claim_selected_student_purges(array[third_id]);
+  exception when others then if sqlerrm not like 'Could not delete:%' then raise; end if; rejected := true; end;
+  if not rejected then raise exception 'Concurrent explicit deletion accepted'; end if;
+  perform release_student_purge(third_id,claimed_token);
+  if (select purge_token from students where id=third_id) is distinct from claimed_token then raise exception 'Failed deletion became restorable'; end if;
+  rejected := false;
+  begin perform archive_students(array[third_id],true);
+  exception when others then if sqlerrm not like 'Could not update students:%' then raise; end if; rejected := true; end;
+  if not rejected then raise exception 'Released partial deletion became restorable'; end if;
+  select r into claimed from claim_selected_student_purges(array[third_id]) r;
+  if claimed->>'token'=claimed_token::text then raise exception 'Retry did not renew lease'; end if;
+  perform finish_student_purge(third_id,(claimed->>'token')::uuid);
+  if exists(select 1 from students where id=third_id) then raise exception 'Admin early deletion did not finish'; end if;
   insert into students(id,name,class,gender,school) values(fourth_id,'Synthetic archive check','IX','Female','Synthetic archive transaction') returning roll_number into fourth_roll;
   if fourth_roll::integer <> baseline + 4 then raise exception 'Deleted roll was reused'; end if;
   rejected := false;
@@ -132,13 +172,25 @@ begin
   begin perform claim_student_purges();
   exception when others then if sqlerrm <> 'Service access required' then raise; end if; rejected := true; end;
   if not rejected then raise exception 'Non-service cleanup accepted'; end if;
+  rejected := false;
+  begin perform claim_selected_student_purges(array[fourth_id]);
+  exception when others then if sqlerrm <> 'Admin access required' then raise; end if; rejected := true; end;
+  if not rejected then raise exception 'Non-admin claimed explicit deletion'; end if;
+  rejected := false;
+  begin perform finish_student_purge(fourth_id,gen_random_uuid());
+  exception when others then if sqlerrm <> 'Admin access required' then raise; end if; rejected := true; end;
+  if not rejected then raise exception 'Non-admin finalized explicit deletion'; end if;
+  rejected := false;
+  begin perform release_student_purge(fourth_id,gen_random_uuid());
+  exception when others then if sqlerrm <> 'Admin access required' then raise; end if; rejected := true; end;
+  if not rejected then raise exception 'Non-admin released explicit deletion'; end if;
   perform set_config('request.jwt.claims', jsonb_build_object('role','authenticated','sub',admin_id)::text, true);
 end $test$;
 set local role authenticated;
 do $permissions$
-declare rejected boolean; generated text;
+declare rejected boolean; generated text; generated_id uuid; claimed jsonb;
 begin
-  insert into students(name,class,gender,school) values('Synthetic role check','IX','Female','Synthetic archive transaction') returning roll_number into generated;
+  insert into students(name,class,gender,school) values('Synthetic role check','IX','Female','Synthetic archive transaction') returning roll_number,id into generated,generated_id;
   if generated !~ '^[0-9]{5}$' then raise exception 'Admin auto-allocation failed'; end if;
   rejected := false;
   begin update student_roll_counter set last_roll = 10000;
@@ -148,9 +200,14 @@ begin
   begin perform claim_student_purges();
   exception when insufficient_privilege then rejected := true; end;
   if not rejected then raise exception 'Admin can execute service-only cleanup'; end if;
+  perform archive_students(array[generated_id]);
+  select r into claimed from claim_selected_student_purges(array[generated_id]) r;
+  if claimed is null or jsonb_array_length(claimed->'paths')<>0 then raise exception 'Authenticated admin claim failed'; end if;
+  perform finish_student_purge(generated_id,(claimed->>'token')::uuid);
+  if exists(select 1 from students where id=generated_id) then raise exception 'Authenticated admin deletion failed'; end if;
 end $permissions$;
 rollback;`);
-  console.log("Archive database checks passed in a rolled-back synthetic transaction: incremental immutable rolls, archive/restore, all-or-nothing bulk changes, preserved scores, report exclusion, exact 30-day cutoff, cleanup leases, cascading deletion, no roll reuse, and role denial.");
+  console.log("Archive database checks passed in a rolled-back synthetic transaction: immutable incremental rolls, archive/restore, atomic selections, preserved scores, report exclusion, exact cutoff, automatic and explicit deletion, leases/retries, file-first guard, retained identity snapshots, no roll reuse, and role denial.");
   if (process.argv.includes("--apply")) {
     await query(`begin;
 create temporary table lifecycle_snapshot as select
@@ -170,7 +227,7 @@ commit;`);
     const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
     if (!key) throw new Error("Could not verify anonymous archive access: missing public key.");
     const anon = createClient(url, key, { auth: { persistSession: false } });
-    for (const [name, params] of [["archived_students", {}], ["archive_students", { p_ids: [], p_restore: false }], ["claim_student_purges", {}]] as const) {
+    for (const [name, params] of [["archived_students", {}], ["archive_students", { p_ids: [], p_restore: false }], ["claim_student_purges", {}], ["claim_selected_student_purges", { p_ids: [] }], ["finish_student_purge", { p_id: "11111111-1111-4111-8111-111111111111", p_token: "22222222-2222-4222-8222-222222222222" }], ["release_student_purge", { p_id: "11111111-1111-4111-8111-111111111111", p_token: "22222222-2222-4222-8222-222222222222" }]] as const) {
       const { error } = await anon.rpc(name, params);
       if (error?.code !== "42501") throw new Error(`Could not verify anonymous denial for ${name}.`);
     }
