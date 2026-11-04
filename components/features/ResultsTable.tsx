@@ -91,7 +91,10 @@ export function ResultsTable({ rows }: { rows: Student[] }) {
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm font-semibold text-ink/80">{shown.length} students</p>
         <div className="flex flex-wrap gap-2">
-          {shown.some(reviewComplete) && <Link prefetch={false} href={`/admin/reports${cls ? `?class=${cls}` : ""}`} className="clay-btn-soft"><Printer size={18} /> Print reviewed reports</Link>}
+          {shown.some(reviewComplete) && <>
+            <Link prefetch={false} href={`/admin/reports?language=hi${cls ? `&class=${cls}` : ""}`} className="clay-btn-soft"><Printer size={18} /> All Reports (Hindi)</Link>
+            <Link prefetch={false} href={`/admin/reports?language=en${cls ? `&class=${cls}` : ""}`} className="clay-btn-soft"><Printer size={18} /> All Reports (English)</Link>
+          </>}
           <Button onClick={exportCsv} disabled={!shown.length} className="!border-green-700 !bg-green-700 !text-white hover:!bg-green-800 focus-visible:!outline-green-700"><FileSpreadsheet size={18} /> Download CSV</Button>
         </div>
       </div>

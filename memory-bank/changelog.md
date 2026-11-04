@@ -1,6 +1,13 @@
 # Changelog
 Format: [Keep a Changelog](https://keepachangelog.com), versions follow [SemVer](https://semver.org). See `versioning.md`.
 
+## [0.18.4] - 2026-11-04
+### Fixed
+- Replace Print reviewed reports with All Reports (Hindi) and All Reports (English). Preserve the selected class and reviewed/current-key eligibility.
+- Pass the selected language to every bulk report and its print/PDF output. Existing bulk URLs without a language retain English.
+### Validation
+- Results button/readiness assertions, three-page bilingual report checks, typecheck, changed-source lint, production build, and whitespace checks passed.
+
 ## [0.18.3] - 2026-10-29
 ### Fixed
 - Keep Original upload visible below the OMR dialog header while scrolling the themed answers in side-by-side layout. Fit the original image within the available height; preserve normal scrolling on narrow stacked layouts.

@@ -46,10 +46,16 @@ async function main() {
   const router = { bfcacheId: "synthetic", back() {}, forward() {}, refresh() {}, push() {}, replace() {}, prefetch() {} };
   const pending = { ...student, id: "pending", report_ready: false };
   const table = renderToStaticMarkup(<AppRouterContext.Provider value={router}><ResultsTable rows={[student, pending]} /></AppRouterContext.Provider>);
+  for (const [language, label] of [["hi", "Hindi"], ["en", "English"]]) {
+    assert.equal((table.match(new RegExp(`href="/admin/reports\\?language=${language}"`, "g")) ?? []).length, 1);
+    assert.ok(table.includes(`All Reports (${label})`));
+  }
+  assert.ok(!table.includes("Print reviewed reports"));
   assert.equal((table.match(/href="\/admin\/students\/synthetic\/report"/g) ?? []).length, 2);
   assert.ok(!table.includes('href="/admin/students/pending/report"'));
   const pendingOnly = renderToStaticMarkup(<AppRouterContext.Provider value={router}><ResultsTable rows={[pending]} /></AppRouterContext.Provider>);
-  assert.ok(!pendingOnly.includes('href="/admin/reports"'));
+  assert.ok(!pendingOnly.includes('href="/admin/reports'));
+  assert.ok(!pendingOnly.includes("All Reports ("));
   assert.ok(!pendingOnly.includes('href="/admin/students/pending/report"'));
   const pendingReport = renderToStaticMarkup(<AppRouterContext.Provider value={router}><ReportDialog student={pending} /></AppRouterContext.Provider>);
   assert.ok(!pendingReport.includes('class="report-page '));
