@@ -1,4 +1,5 @@
 import type { PageResult } from "@/lib/omr/reader";
+import type { Column } from "@/lib/omr/template";
 
 export type ScoreRow = { test_code: string; correct: number; wrong?: number; blank?: number; flagged?: number; uncertain?: number };
 export type Verification = "pending" | "verified" | "mismatch";
@@ -14,6 +15,10 @@ export type Student = {
 };
 export type Key = Record<string, (string | undefined)[]>;
 export type StudentSheet = {
+  submissionId: string | null;
+  imagePaths: string[];
+  pdfPath: string | null;
+  template: Column[];
   originals: { label: string; url: string }[];
   pdfUrl: string | null;
   responses: PageResult;

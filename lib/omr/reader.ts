@@ -66,6 +66,25 @@ export async function renderPdfPages(file: File): Promise<{ pages: [File, File];
   }
 }
 
+export async function readReplacement(files: File[], template: Column[]) {
+  let pages: [File, File];
+  let archive: File | null = null;
+  if (files.length === 1 && (files[0].type === "application/pdf" || /\.pdf$/i.test(files[0].name))) {
+    ({ pages, archive } = await renderPdfPages(files[0]));
+  } else if (files.length === 2 && files.every((file) => /^image\/(jpeg|png)$/.test(file.type))) {
+    pages = await Promise.all([preparePage(files[0], 1), preparePage(files[1], 2)]);
+  } else {
+    throw new Error("Select one two-page PDF or two page images in front/back order.");
+  }
+  const readings = await Promise.all([inspectPage(pages[0], 1, template), inspectPage(pages[1], 2, template)]);
+  const detected = { ...readings[0].answers, ...readings[1].answers };
+  const responses: PageResult = Object.fromEntries(TESTS.map((test) => [test.code,
+    Array.from({ length: test.questions }, (_, index) => detected[test.code]?.[index] === undefined ? "UNCERTAIN" : detected[test.code][index]),
+  ]));
+  const issues = readings.flatMap((reading, index) => reading.quality.issues.map((issue) => `Page ${index + 1}: ${issue}`));
+  return { pages, archive, responses, issues };
+}
+
 export async function load(file: File | Blob) {
   const bmp = await createImageBitmap(file);
   const canvas = document.createElement("canvas");

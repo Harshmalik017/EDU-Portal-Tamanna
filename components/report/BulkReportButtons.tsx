@@ -2,10 +2,12 @@
 import { useEffect, useRef, useState } from "react";
 import { Printer } from "lucide-react";
 import { Button } from "@/components/ui";
+import { Dialog } from "@/components/ui/Dialog";
 import { useToast } from "@/components/Toast";
 import type { ReportLanguage } from "@/lib/tamanna/report-language";
 
-export async function printBulkReports(language: ReportLanguage, cls: string, signal: AbortSignal) {
+export async function printBulkReports(language: ReportLanguage, cls: string, signal: AbortSignal, onProgress: (percent: number) => void = () => {}) {
+  onProgress(0);
   const frame = document.createElement("iframe");
   frame.title = `Print all reports (${language === "hi" ? "Hindi" : "English"})`;
   frame.setAttribute("aria-hidden", "true");
@@ -36,9 +38,15 @@ export async function printBulkReports(language: ReportLanguage, cls: string, si
           const reports = doc?.querySelector("[data-bulk-reports]");
           if (!doc || !printWindow || reports?.getAttribute("lang") !== language) throw new Error("Could not load reports. Check your session and try again.");
           if (!reports.querySelector(".report-page")) throw new Error("No reviewed reports to print.");
-          await Promise.all([doc.fonts.ready, ...Array.from(reports.querySelectorAll("img"), (image) => image.decode())]);
+          onProgress(40);
+          const images = Array.from(reports.querySelectorAll("img"));
+          let completed = 0;
+          const total = images.length + 1;
+          const advance = () => { if (!finished && !signal.aborted) onProgress(40 + Math.floor(++completed / total * 55)); };
+          await Promise.all([doc.fonts.ready.then(advance), ...images.map(async (image) => { await image.decode(); advance(); })]);
           if (finished || signal.aborted) return;
           clearTimeout(timeout);
+          onProgress(100);
           afterPrint = () => { finished = true; resolve(); };
           printWindow.addEventListener("afterprint", afterPrint, { once: true });
           printWindow.focus();
@@ -64,6 +72,7 @@ export function BulkReportButtons({ cls }: { cls: string }) {
   const job = useRef<AbortController | null>(null);
   const trigger = useRef<HTMLButtonElement | null>(null);
   const [printing, setPrinting] = useState<ReportLanguage | null>(null);
+  const [progress, setProgress] = useState(0);
   useEffect(() => () => { job.current?.abort(); }, []);
   useEffect(() => {
     if (printing === null && trigger.current) {
@@ -77,9 +86,10 @@ export function BulkReportButtons({ cls }: { cls: string }) {
     trigger.current = button;
     const controller = new AbortController();
     job.current = controller;
+    setProgress(0);
     setPrinting(language);
     try {
-      await printBulkReports(language, cls, controller.signal);
+      await printBulkReports(language, cls, controller.signal, setProgress);
     } catch (error) {
       if (!controller.signal.aborted) {
         console.error("Bulk report printing failed.", error);
@@ -87,13 +97,17 @@ export function BulkReportButtons({ cls }: { cls: string }) {
       }
     } finally {
       job.current = null;
-      if (!controller.signal.aborted) setPrinting(null);
+      setPrinting(null);
     }
   }
 
   return <>
     <Button variant="soft" disabled={printing !== null} aria-busy={printing === "hi"} onClick={(event) => void print("hi", event.currentTarget)}><Printer size={18} /> All Reports (Hindi)</Button>
     <Button variant="soft" disabled={printing !== null} aria-busy={printing === "en"} onClick={(event) => void print("en", event.currentTarget)}><Printer size={18} /> All Reports (English)</Button>
-    {printing && <span role="status" className="self-center text-sm">Preparing reports...</span>}
+    {printing && <Dialog compact title={`All reports (${printing === "hi" ? "Hindi" : "English"})`} onClose={() => job.current?.abort()}>
+      <div role="status" aria-live="polite" className="flex items-center justify-between gap-3 text-sm font-semibold"><span>{progress === 100 ? "Ready to save as PDF" : "Processing reports"}</span><span>{progress}%</span></div>
+      <progress aria-label="Report processing" value={progress} max={100} className="h-3 w-full accent-brand-700" />
+      <Button variant="soft" onClick={() => job.current?.abort()}>Cancel</Button>
+    </Dialog>}
   </>;
 }

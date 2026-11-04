@@ -16,8 +16,11 @@ export function keyHashOf(key: Key): string {
   const rows = Object.keys(key).sort().flatMap((test) => key[test].map((answer, i) => `${test}:${i + 1}:${answer}`));
   return createHash("sha256").update(rows.join("|")).digest("hex");
 }
-export async function getTemplate(): Promise<Column[]> {
-  const { data } = await (await createServer()).from("settings").select("value").eq("key", "template").maybeSingle();
+export async function getTemplate(signal?: AbortSignal): Promise<Column[]> {
+  let query = (await createServer()).from("settings").select("value").eq("key", "template");
+  if (signal) query = query.abortSignal(signal);
+  const { data, error } = await query.maybeSingle();
+  if (error) throw new Error("Could not load the OMR template.", { cause: error });
   const v = data?.value;
   if (!Array.isArray(v) || v.length !== DEFAULT_TEMPLATE.length) return DEFAULT_TEMPLATE;
   return v.map((saved, index) => {

@@ -12,7 +12,7 @@ set local request.jwt.claims = '{"role":"service_role"}';
 do $test$
 declare student uuid := gen_random_uuid(); submission uuid := gen_random_uuid();
   original jsonb; changed jsonb; pending jsonb; fingerprint text; source text := repeat('a',64);
-  outcome text; rejected boolean; persisted jsonb;
+  outcome text; rejected boolean; persisted jsonb; images text[]; pdf text;
 begin
   select jsonb_object_agg(code, answers) into original from (
     select code, jsonb_agg('A'::text) as answers from
@@ -66,6 +66,40 @@ begin
   outcome := rescan_copy(student,submission,pending,pending,source,fingerprint,
     '{"class":"X","gender":"Male","excluded":false}', array['Review Pending']);
   if outcome <> 'review' then raise exception 'Retry failed'; end if;
+  images := array[student::text || '/11111111-1111-4111-8111-111111111111/side-1.jpg', student::text || '/11111111-1111-4111-8111-111111111111/side-2.jpg'];
+  pdf := student::text || '/11111111-1111-4111-8111-111111111111/answer-sheet.pdf';
+  insert into storage.objects(bucket_id,name) select 'sheets', unnest(images || array[pdf]);
+  outcome := replace_copy(student,submission,pending,'{}',null,fingerprint,changed,images,pdf,repeat('b',64),'{}');
+  if outcome <> 'scored' or (select count(*) from scores where student_id=student) <> 7 then raise exception 'Replacement did not score'; end if;
+  if (select image_paths from submissions where id=submission) <> images
+     or (select pdf_path from submissions where id=submission) <> pdf
+     or (select source_sha256 from submissions where id=submission) <> repeat('b',64) then raise exception 'Files not replaced'; end if;
+  if (select roll_number from students where id=student) <> '99999' then raise exception 'Replacement changed identity'; end if;
+  rejected := false;
+  begin
+    perform replace_copy(student,submission,pending,'{}',null,fingerprint,original,images,pdf,repeat('c',64),'{}');
+  exception when others then
+    if sqlerrm not like 'Submission changed.%' then raise; end if;
+    rejected := true;
+  end;
+  if not rejected then raise exception 'Stale replacement accepted'; end if;
+  rejected := false;
+  begin
+    perform replace_copy(student,submission,changed,images,pdf,fingerprint,pending,
+      array['another-student/side-1.jpg','another-student/side-2.jpg'],null,repeat('c',64),'{}');
+  exception when others then
+    if sqlerrm <> 'Replacement file is missing or invalid' then raise; end if;
+    rejected := true;
+  end;
+  if not rejected or (select responses from submissions where id=submission) <> changed then raise exception 'Invalid replacement changed answers'; end if;
+  update students set excluded=true where id=student;
+  update submissions set image_paths='{}',pdf_path=null where id=submission;
+  outcome := replace_copy(student,submission,changed,'{}',null,fingerprint,original,images,pdf,repeat('c',64),'{}');
+  if outcome <> 'excluded' or exists(select 1 from scores where student_id=student) then raise exception 'Excluded replacement produced scores'; end if;
+  delete from submissions where id=submission;
+  outcome := replace_copy(student,null,'{}','{}',null,fingerprint,pending,images,pdf,repeat('d',64),'{}');
+  if outcome <> 'review' or (select count(*) from submissions where student_id=student) <> 1 then raise exception 'No-scan replacement failed'; end if;
+  if has_function_privilege('anon','public.replace_copy(uuid,uuid,jsonb,text[],text,text,jsonb,text[],text,text,text[])','execute') then raise exception 'Anonymous replacement allowed'; end if;
   rejected := false;
   perform set_config('request.jwt.claims', jsonb_build_object('role','authenticated','sub',gen_random_uuid())::text, true);
   begin
@@ -76,6 +110,14 @@ begin
     rejected := true;
   end;
   if not rejected then raise exception 'Non-admin rescan accepted'; end if;
+  rejected := false;
+  begin
+    perform replace_copy(student,null,'{}','{}',null,fingerprint,pending,images,pdf,repeat('e',64),'{}');
+  exception when others then
+    if sqlerrm <> 'Admin access required' then raise; end if;
+    rejected := true;
+  end;
+  if not rejected then raise exception 'Non-admin replacement accepted'; end if;
   perform set_config('request.jwt.claims', '{"role":"service_role"}', true);
 end $test$;
 rollback;`;
@@ -85,6 +127,15 @@ rollback;`;
     body: JSON.stringify({ query: checks }),
   });
   if (!response.ok) throw new Error(`Could not check rescan transactions (${response.status}): ${await response.text()}`);
+  if (process.argv.includes("--apply")) {
+    const installed = await fetch("https://api.supabase.com/v1/projects/zhrlfkvmmrgwainsfyha/database/query", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${process.env.SUPABASE_ACCESS_TOKEN}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ query: migration }),
+    });
+    if (!installed.ok) throw new Error(`Could not install rescan RPCs (${installed.status}): ${await installed.text()}`);
+    console.log("Installed only the additive rescan/replacement RPCs. Existing student records were not modified.");
+  }
   const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!key) throw new Error("Could not check anonymous denial: missing public key.");
   const anon = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, key, { auth: { persistSession: false } });

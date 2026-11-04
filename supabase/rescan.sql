@@ -46,3 +46,48 @@ begin
 end $$;
 revoke all on function public.rescan_copy(uuid,uuid,jsonb,jsonb,text,text,jsonb,text[]) from public, anon;
 grant execute on function public.rescan_copy(uuid,uuid,jsonb,jsonb,text,text,jsonb,text[]) to authenticated, service_role;
+
+-- Swap files only after a complete replacement upload; stale dialogs cannot overwrite newer work.
+create or replace function public.replace_copy(
+  p_student_id uuid, p_submission_id uuid, p_expected_responses jsonb,
+  p_expected_images text[], p_expected_pdf text, p_expected_key_hash text,
+  p_responses jsonb, p_image_paths text[], p_pdf_path text, p_source_hash text, p_issues text[]
+) returns text language plpgsql security invoker set search_path = public as $$
+declare person public.students; saved public.submissions; outcome text; path text; paths text[];
+begin
+  if not (is_admin() or auth.role() = 'service_role') then raise exception 'Admin access required'; end if;
+  lock table answer_keys in share mode;
+  if answer_key_hash() is distinct from p_expected_key_hash then raise exception 'Answer key changed'; end if;
+  select * into person from students where id = p_student_id for update;
+  if not found or person.archived_at is not null then raise exception 'Active student not found'; end if;
+  select * into saved from submissions where student_id = p_student_id order by created_at desc, id desc limit 1 for update;
+  if saved.id is distinct from p_submission_id
+     or coalesce(saved.responses, '{}'::jsonb) is distinct from p_expected_responses
+     or coalesce(saved.image_paths, '{}'::text[]) is distinct from p_expected_images
+     or saved.pdf_path is distinct from p_expected_pdf then
+    raise exception 'Submission changed. Reopen the OMR sheet and try again';
+  end if;
+  if cardinality(p_image_paths) is distinct from 2 or p_source_hash is null or p_source_hash !~ '^[a-f0-9]{64}$' then
+    raise exception 'Two uploaded pages and a source checksum are required';
+  end if;
+  paths := p_image_paths || case when p_pdf_path is null then '{}'::text[] else array[p_pdf_path] end;
+  if (select count(distinct value) from unnest(paths) value) <> cardinality(paths) then raise exception 'Duplicate replacement paths'; end if;
+  foreach path in array paths loop
+    if path is null or path !~ ('^' || p_student_id::text || '/[0-9a-f-]{36}/(side-[12]\.jpg|answer-sheet\.pdf)$')
+       or path = any(coalesce(saved.image_paths, '{}'::text[]) || case when saved.pdf_path is null then '{}'::text[] else array[saved.pdf_path] end)
+       or not exists(select 1 from storage.objects where bucket_id = 'sheets' and name = path) then
+      raise exception 'Replacement file is missing or invalid';
+    end if;
+  end loop;
+  if p_image_paths[1] !~ '/side-1\.jpg$' or p_image_paths[2] !~ '/side-2\.jpg$'
+     or (p_pdf_path is not null and p_pdf_path !~ '/answer-sheet\.pdf$') then raise exception 'Invalid replacement page order'; end if;
+  if saved.id is null then
+    insert into submissions(student_id, responses) values(p_student_id, p_responses) returning * into saved;
+  end if;
+  outcome := rescan_copy(p_student_id, saved.id, p_responses, saved.responses, saved.source_sha256, p_expected_key_hash,
+    jsonb_build_object('class',person.class,'gender',person.gender,'excluded',person.excluded), p_issues);
+  update submissions set image_paths = p_image_paths, pdf_path = p_pdf_path, source_sha256 = p_source_hash where id = saved.id;
+  return outcome;
+end $$;
+revoke all on function public.replace_copy(uuid,uuid,jsonb,text[],text,text,jsonb,text[],text,text,text[]) from public, anon;
+grant execute on function public.replace_copy(uuid,uuid,jsonb,text[],text,text,jsonb,text[],text,text,text[]) to authenticated, service_role;

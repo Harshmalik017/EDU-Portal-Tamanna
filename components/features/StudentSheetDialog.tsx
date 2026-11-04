@@ -9,6 +9,7 @@ import { supabase } from "@/lib/supabase/client";
 import { OPTIONS, TESTS } from "@/lib/tamanna/tests";
 import type { Student, StudentSheet } from "@/lib/types";
 import type { PageResult } from "@/lib/omr/reader";
+import { ReplaceSheetDialog } from "@/components/features/ReplaceSheetDialog";
 
 export function StudentSheetDialog({ student, mode, onClose }: { student: Student; mode: "view" | "check"; onClose: () => void }) {
   const [sheet, setSheet] = useState<StudentSheet | null>(null);
@@ -17,6 +18,7 @@ export function StudentSheetDialog({ student, mode, onClose }: { student: Studen
   const [loading, setLoading] = useState(true);
   const [attempt, setAttempt] = useState(0);
   const [busy, setBusy] = useState(false);
+  const [replacing, setReplacing] = useState(false);
   const router = useRouter();
   const toast = useToast();
   useEffect(() => {
@@ -53,15 +55,18 @@ export function StudentSheetDialog({ student, mode, onClose }: { student: Studen
       console.error("Could not score the checked sheet.", failure); toast("Could not score the checked sheet.");
     } finally { setBusy(false); }
   }
-  return <Dialog wide busy={busy} title={`OMR sheet · ${student.name || "Name pending"} · ${student.roll_number}`} onClose={onClose}>
+  return <><Dialog wide busy={busy || replacing} title={`OMR sheet · ${student.name || "Name pending"} · ${student.roll_number}`} onClose={onClose}
+    headerActions={sheet && !loading && !error && <Button variant="soft" disabled={busy || replacing} onClick={() => setReplacing(true)}>Reupload OMR</Button>}>
     {loading ? <p role="status">Loading student sheet…</p> : error ? <div role="alert" className="space-y-3"><p>{error}</p><Button variant="soft" onClick={() => setAttempt((value) => value + 1)}>Try again</Button></div> : sheet && <>
-      <fieldset disabled={busy} className="min-w-0"><SheetDisplay pages={sheet.originals} pdfUrl={sheet.pdfUrl} responses={marked} answerKey={sheet.answerKey} roll={student.roll_number} onChange={mode === "check" ? setMarked : undefined} /></fieldset>
+      <fieldset disabled={busy || replacing} className="min-w-0"><SheetDisplay pages={sheet.originals} pdfUrl={sheet.pdfUrl} responses={marked} answerKey={sheet.answerKey} roll={student.roll_number} onChange={mode === "check" ? setMarked : undefined} /></fieldset>
       {mode === "check" && <>
         <div className="sticky bottom-0 flex flex-wrap items-center justify-between gap-3 border-t border-(--line) bg-[#fbfdf4] py-3">
           {!ready && <p className="text-sm font-semibold text-amber-900">Select an answer, No response, or M for each ? row on both pages.</p>}
-          <Button onClick={save} disabled={!ready || busy}>{busy ? "Saving…" : "Confirm and score"}</Button>
+          <Button onClick={save} disabled={!ready || busy || replacing}>{busy ? "Saving…" : "Confirm and score"}</Button>
         </div>
       </>}
     </>}
-  </Dialog>;
+  </Dialog>
+  {replacing && sheet && <ReplaceSheetDialog student={student} sheet={sheet} onClose={() => setReplacing(false)} onSaved={() => { setReplacing(false); setAttempt((value) => value + 1); }} />}
+  </>;
 }

@@ -4,6 +4,52 @@ import { createCanvas, loadImage } from "@napi-rs/canvas";
 import { readCopy, rescanPages } from "@/lib/omr/reader";
 import { COPY_GRID, PART_BREAKS, REF_HEIGHT, REF_WIDTH } from "@/lib/omr/template";
 import { TESTS } from "@/lib/tamanna/tests";
+import { createClient } from "@supabase/supabase-js";
+import { replaceSheet } from "@/lib/supabase/replace-sheet";
+import type { StudentSheet } from "@/lib/types";
+
+async function checkReplacementUploads() {
+  const student = "11111111-1111-4111-8111-111111111111";
+  const previous: StudentSheet = { submissionId: student, imagePaths: [`${student}/old.jpg`], pdfPath: `${student}/old.pdf`, originals: [], pdfUrl: null, responses: {}, answerKey: {}, keyHash: "synthetic", template: [] };
+  const replacement = { pages: [new File(["front"], "front.jpg", { type: "image/jpeg" }), new File(["back"], "back.jpg", { type: "image/jpeg" })] as [File, File], archive: new File(["original-pdf"], "original.pdf", { type: "application/pdf" }), responses: { LA: ["UNCERTAIN"] }, issues: [] };
+  for (const mode of ["success", "upload", "rpc", "ambiguous", "reconcile", "cleanup", "invalid-result"] as const) {
+    const calls: string[] = [], uploaded: string[] = [];
+    let payload: Record<string, unknown> | undefined;
+    const client = createClient("https://synthetic.supabase.invalid", "synthetic", {
+      auth: { persistSession: false, autoRefreshToken: false },
+      global: { fetch: async (input, init) => {
+        const path = new URL(String(input)).pathname;
+        calls.push(`${init?.method ?? "GET"} ${path}`);
+        if (path.includes("/storage/") && init?.method === "POST") {
+          if (mode === "upload" && uploaded.length === 1) return Response.json({ message: "Synthetic upload failure" }, { status: 400 });
+          uploaded.push(path.split("/sheets/")[1]);
+          return Response.json({ Key: path });
+        }
+        if (path.endsWith("/rpc/replace_copy")) {
+          payload = JSON.parse(String(init?.body)) as Record<string, unknown>;
+          return Response.json(["rpc", "ambiguous", "reconcile", "cleanup"].includes(mode) ? { message: "Synthetic save failure" } : mode === "invalid-result" ? "unexpected" : "review", { status: ["rpc", "ambiguous", "reconcile", "cleanup"].includes(mode) ? 400 : 200 });
+        }
+        if (path.endsWith("/submissions")) return Response.json(mode === "reconcile" ? { message: "Synthetic read failure" } : { image_paths: mode === "ambiguous" ? uploaded.slice(0, 2) : previous.imagePaths }, { status: mode === "reconcile" ? 400 : 200 });
+        if (init?.method === "DELETE") {
+          const body = JSON.parse(String(init.body)) as { prefixes: string[] };
+          assert.deepEqual(body.prefixes, uploaded);
+          assert.ok(!body.prefixes.includes(previous.imagePaths[0]));
+          return Response.json(mode === "cleanup" ? { message: "Synthetic cleanup failure" } : [], { status: mode === "cleanup" ? 400 : 200 });
+        }
+        throw new Error(`Unexpected request: ${path}`);
+      } },
+    });
+    if (mode === "success") assert.equal(await replaceSheet(client, student, previous, replacement), "review");
+    else await assert.rejects(() => replaceSheet(client, student, previous, replacement), /Could not/);
+    if (mode !== "upload") {
+      assert.deepEqual(payload?.p_expected_images, previous.imagePaths);
+      assert.equal(payload?.p_expected_pdf, previous.pdfPath);
+      assert.match(String(payload?.p_source_hash), /^[a-f0-9]{64}$/);
+      assert.ok(uploaded.every((path) => path.startsWith(`${student}/`) && !previous.imagePaths.includes(path)));
+    }
+    assert.equal(calls.some((call) => call.startsWith("DELETE ")), ["upload", "rpc", "cleanup"].includes(mode));
+  }
+}
 
 async function main() {
   const file = process.argv[2];
@@ -38,6 +84,7 @@ async function main() {
     return;
   }
   const blank = new Uint8ClampedArray(REF_WIDTH * REF_HEIGHT).fill(255);
+  await checkReplacementUploads();
   assert.throws(() => rescanPages([blank]), /two complete/);
   assert.throws(() => rescanPages([blank, new Uint8ClampedArray(1)]), /two complete/);
   const unreadable = rescanPages([blank, blank]);

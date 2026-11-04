@@ -30,7 +30,16 @@ try {
 }
 assert.equal(allocateRoll([], 0), "10001");
 assert.equal(allocateRoll([], 128), "10129");
+assert.equal(allocateRoll([], 0, 10132), "10133");
+assert.equal(allocateRoll([], 40, 10132), "10173");
+assert.equal(allocateRoll([{ roll: "10133" }], 0, 10132), "10134");
+assert.equal(allocateRoll([{ roll: "10129" }], 0, 10132), "10133");
+assert.throws(() => allocateRoll([], 0, 99999), /five-digit/);
+assert.throws(() => allocateRoll([], 0, NaN), /invalid/);
+assert.throws(() => allocateRoll([], -1), /invalid/);
+assert.throws(() => allocateRoll([{ roll: "invalid" }], 0), /invalid/);
 assert.equal(proposedName("Example Student 2_260101_120000.pdf"), "Example Student 2");
+assert.equal(proposedName("Example_Student_261103_140741.pdf"), "Example Student");
 assert.equal(loginEmail(" ADMIN "), ADMIN_EMAIL);
 assert.equal(loginEmail("teacher@school.org"), "teacher@school.org");
 const marked: PageResult = Object.fromEntries(TESTS.map((t) => [t.code, Array<string | null>(t.questions).fill("A")]));

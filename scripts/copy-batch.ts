@@ -16,16 +16,21 @@ export type CopyEntry = {
   pages: number; answerPages: [number, number] | null; issues: string[]; readingIssues?: string[]; responses: PageResult;
   status: "prepared" | "uploaded" | "failed"; error?: string; uploadedId?: string;
 };
-type Manifest = { version: 1; source: string; entries: CopyEntry[] };
+type Manifest = { version: 1; source: string; afterRoll?: number; entries: CopyEntry[] };
 const sha = (bytes: Uint8Array | string) => createHash("sha256").update(bytes).digest("hex");
 const school = "Pt. Deen Dayal Upadhyay Rajkiya Model Inter College, Jajaur";
 
 export function proposedName(filename: string) {
-  return filename.replace(/_\d{6}_\d{6}\.pdf$/i, "").trim();
+  return filename.replace(/_\d{6}_\d{6}\.pdf$/i, "").replace(/_/g, " ").trim();
 }
 
-export function allocateRoll(existing: CopyEntry[], index: number) {
-  const max = existing.reduce((n, e) => Math.max(n, Number(e.roll)), 10000);
+export function allocateRoll(existing: Pick<CopyEntry, "roll">[], index: number, afterRoll = 10000) {
+  if (!Number.isInteger(afterRoll) || afterRoll < 10000 || afterRoll > 99999 ||
+    !Number.isInteger(index) || index < 0) throw new Error("Could not allocate: invalid roll boundary or index.");
+  const max = existing.reduce((n, e) => {
+    if (!/^\d{5}$/.test(e.roll)) throw new Error("Could not allocate: invalid existing roll number.");
+    return Math.max(n, Number(e.roll));
+  }, afterRoll);
   const roll = max + index + 1;
   if (roll > 99999) throw new Error("Could not allocate another five-digit roll number.");
   return String(roll);
@@ -74,11 +79,15 @@ export async function renderPdf(bytes: Uint8Array, output: string) {
   return gray;
 }
 
-async function prepare(source: string, output: string) {
+async function prepare(source: string, output: string, afterRoll?: number) {
   const file = path.join(output, "manifest.json");
   const previous = await loadManifest(file);
   if (previous && previous.source !== source) throw new Error("Could not reuse this manifest with a different source folder.");
-  const manifest: Manifest = previous ?? { version: 1, source, entries: [] };
+  if (afterRoll !== undefined) {
+    allocateRoll([], 0, afterRoll);
+    if (previous && (previous.afterRoll ?? 10000) !== afterRoll) throw new Error("Could not change the starting roll of an existing manifest.");
+  }
+  const manifest: Manifest = previous ?? { version: 1, source, afterRoll, entries: [] };
   const names = (await readdir(source)).filter((f) => /\.pdf$/i.test(f)).sort();
   for (const filename of names) {
     const bytes = await readFile(path.join(source, filename)), hash = sha(bytes);
@@ -88,7 +97,7 @@ async function prepare(source: string, output: string) {
     if (!entry) {
       entry = {
         file: filename, hash, importHash: sha(`${filename}\0${hash}`), id: randomUUID(),
-        roll: allocateRoll(manifest.entries, 0), name: proposedName(filename), class: "X", gender: "Male", genderSource: "default",
+        roll: allocateRoll(manifest.entries, 0, manifest.afterRoll), name: proposedName(filename), class: "X", gender: "Male", genderSource: "default",
         pages: 0, answerPages: null, issues: [], responses: {}, status: "prepared",
       };
       manifest.entries.push(entry);
@@ -98,7 +107,7 @@ async function prepare(source: string, output: string) {
       const pages = await renderPdf(bytes, path.join(output, entry.id));
       entry.pages = pages.length;
       entry.answerPages ??= pages.length === 2 ? [1, 2] : null;
-      entry.issues = ["Name proposed from filename; compare with handwriting.", "Class X is the batch default; check it.", entry.genderSource === "written" ? "Gender transcribed from the written sheet." : "Male is the batch default; check written gender.", "Pending hand check."];
+      entry.issues = ["Name proposed from filename; compare with handwriting.", "Class X is the batch default; check it.", entry.genderSource === "written" ? "Gender checked against the written sheet." : "Male is the batch default; check written gender.", "Pending hand check."];
       entry.responses = {};
       entry.readingIssues = [];
       if (entry.answerPages) {
@@ -254,13 +263,16 @@ async function scoreBatch(output: string) {
 }
 
 async function main() {
-  const [command, first, second] = process.argv.slice(2);
+  const [command, first, second, option, boundary, ...extra] = process.argv.slice(2);
   if (command === "prepare" && first && second) {
+    if (extra.length || (option !== undefined && (option !== "--after-roll" || !boundary || !/^\d{5}$/.test(boundary)))) {
+      throw new Error("Usage: copy-batch prepare <PDF folder> <private output folder> [--after-roll <five-digit roll>]");
+    }
     const output = path.resolve(second);
     const relative = path.relative(process.cwd(), output);
     if (!relative.startsWith("..") || path.isAbsolute(relative)) throw new Error("Choose a private output folder outside this Git repository.");
     await mkdir(output, { recursive: true });
-    return prepare(path.resolve(first), output);
+    return prepare(path.resolve(first), output, boundary === undefined ? undefined : Number(boundary));
   }
   if ((command === "upload" || command === "reconcile") && first) return upload(path.resolve(first), command === "reconcile");
   if (command === "score" && first) return scoreBatch(path.resolve(first));
@@ -274,11 +286,11 @@ async function main() {
       const entry = manifest.entries.find((e) => e.roll === roll);
       if (!entry || entry.status === "uploaded") throw new Error(`Roll ${roll} is missing or already uploaded. Edit uploaded students in the portal.`);
       entry.gender = gender; entry.genderSource = "written";
-      entry.issues = entry.issues.map((issue) => issue === "Male is the batch default; check written gender." ? "Gender transcribed from the written sheet." : issue);
+      entry.issues = entry.issues.map((issue) => issue === "Male is the batch default; check written gender." ? "Gender checked against the written sheet." : issue);
     }
     await saveManifest(file, manifest); console.log("Reviewed gender details saved privately.");
     return;
   }
-  throw new Error("Usage: copy-batch prepare <PDF folder> <private output folder> | upload/reconcile/score <private output folder> | details <private output folder> <reviewed details JSON>");
+  throw new Error("Usage: copy-batch prepare <PDF folder> <private output folder> [--after-roll <five-digit roll>] | upload/reconcile/score <private output folder> | details <private output folder> <reviewed details JSON>");
 }
 if (process.argv[1]?.endsWith("copy-batch.ts")) main().catch((error) => { console.error(error instanceof Error ? error.message : error); process.exitCode = 1; });

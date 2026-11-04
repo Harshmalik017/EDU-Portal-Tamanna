@@ -10,7 +10,54 @@ import { activityDate, activityDetails, activityLabel, type ActivityLog } from "
 
 (globalThis as unknown as { React: typeof React }).React = React;
 
+async function checkBulkProgress() {
+  const { printBulkReports } = await import("@/components/report/BulkReportButtons");
+  const previous = Object.getOwnPropertyDescriptor(globalThis, "document");
+  try {
+    for (const mode of ["success", "empty", "wrong-language", "abort"] as const) {
+      const progress: number[] = [];
+      let removed = false, printed = false, src = "";
+      const controller = new AbortController();
+      const printWindow = Object.assign(new EventTarget(), {
+        focus() {},
+        print() { printed = true; queueMicrotask(() => printWindow.dispatchEvent(new Event("afterprint"))); },
+      });
+      const reports = {
+        getAttribute: () => mode === "wrong-language" ? "en" : "hi",
+        querySelector: () => mode === "empty" ? null : {},
+        querySelectorAll: () => [{ decode: async () => {} }, { decode: async () => {} }],
+      };
+      const frame = {
+        title: "", tabIndex: 0, style: { cssText: "" }, src: "",
+        onload: null as (() => Promise<void>) | null, onerror: null as (() => void) | null,
+        setAttribute() {}, remove() { removed = true; },
+        contentWindow: printWindow,
+        contentDocument: { querySelector: () => reports, fonts: { ready: Promise.resolve() } },
+      };
+      Object.defineProperty(globalThis, "document", { configurable: true, value: {
+        createElement: () => frame,
+        body: { appendChild() { src = frame.src; if (mode === "abort") controller.abort(); else void frame.onload?.(); } },
+      } });
+      const job = printBulkReports("hi", "IX", controller.signal, (percent) => progress.push(percent));
+      if (mode === "success") {
+        await job;
+        assert.deepEqual(progress, [0, 40, 58, 76, 95, 100]);
+        assert.ok(printed);
+      } else {
+        await assert.rejects(job, mode === "abort" ? /cancelled/ : mode === "empty" ? /No reviewed/ : /Could not/);
+        assert.ok(!printed);
+      }
+      assert.ok(removed);
+      assert.equal(src, "/admin/reports?language=hi&class=IX");
+    }
+  } finally {
+    if (previous) Object.defineProperty(globalThis, "document", previous);
+    else Reflect.deleteProperty(globalThis, "document");
+  }
+}
+
 async function main() {
+  await checkBulkProgress();
   const { default: nextConfig } = await import("../next.config");
   const { getPathMatch } = await import("next/dist/shared/lib/router/utils/path-match");
   const headerRules = await nextConfig.headers();
@@ -79,9 +126,17 @@ async function main() {
   assert.ok(!pendingOnly.includes('href="/admin/reports'));
   assert.ok(!pendingOnly.includes("All Reports ("));
   assert.ok(!pendingOnly.includes('href="/admin/students/pending/report"'));
-  assert.ok(table.includes('aria-label="Select current page"'));
+  assert.ok(table.includes('aria-label="Select all matching results"'));
   assert.ok(table.includes('aria-label="Select roll 99999"'));
-  assert.ok(table.includes("Select all 2 matching results"));
+  for (const removed of ["Select all 2 matching results", "Select page", ">Select</th>", "Marks and Sten score", "Marks are provisional", "Active students", 'href="/admin/archive"']) assert.ok(!table.includes(removed), removed);
+  assert.ok(table.indexOf("0 selected") < table.indexOf('id="search-name,-roll-no.-or-school"'));
+  assert.match(table, /<h1[^>]*>Student reports<\/h1><span[^>]*>2 students<\/span>/);
+  assert.ok(table.includes('aria-label="STEN scoring"'));
+  assert.ok(table.includes('type="submit"'));
+  const manyRows = renderToStaticMarkup(<AppRouterContext.Provider value={router}><ResultsTable rows={Array.from({ length: 25 }, (_, index) => ({ ...student, id: `row-${index}`, roll_number: String(10001 + index) }))} /></AppRouterContext.Provider>);
+  assert.ok(manyRows.includes("Page 1 of 2"));
+  assert.equal((manyRows.match(/aria-label="Results pagination"/g) ?? []).length, 2);
+  assert.equal((manyRows.match(/aria-label="Select roll /g) ?? []).length, 40);
   const archived = renderToStaticMarkup(<AppRouterContext.Provider value={router}><ResultsTable archived rows={[{ ...student, archived_at: new Date().toISOString() }]} /></AppRouterContext.Provider>);
   assert.ok(archived.includes("Restore"));
   assert.ok(archived.includes("Delete after"));

@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServer, getServerUser } from "@/lib/supabase/server";
-import { getKey, keyHashOf } from "@/lib/supabase/data";
+import { getKey, getTemplate, keyHashOf } from "@/lib/supabase/data";
 import type { StudentSheet } from "@/lib/types";
 import type { PageResult } from "@/lib/omr/reader";
 
@@ -18,13 +18,17 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const { data: isAdmin, error: roleError } = await sb.rpc("is_admin");
     if (roleError) throw new Error("Could not check admin access.", { cause: roleError });
     if (!isAdmin) return failure("Could not open the sheet. Admin access is required.", 403);
-    const [{ data: sub, error }, answerKey] = await Promise.all([
-      sb.from("submissions").select("image_paths,pdf_path,responses,students!inner(archived_at)").eq("student_id", id).is("students.archived_at", null).order("created_at", { ascending: false }).limit(1).abortSignal(request.signal).maybeSingle(),
+    const [{ data: student, error }, answerKey, template] = await Promise.all([
+      sb.from("students").select("id,submissions(id,image_paths,pdf_path,responses)").eq("id", id).is("archived_at", null)
+        .order("created_at", { referencedTable: "submissions", ascending: false }).order("id", { referencedTable: "submissions", ascending: false })
+        .limit(1, { referencedTable: "submissions" }).abortSignal(request.signal).maybeSingle(),
       getKey(request.signal),
+      getTemplate(request.signal),
     ]);
     if (error) throw new Error("Could not load saved answers.", { cause: error });
-    if (!sub) return failure("Could not find a saved sheet for this student.", 404);
-    const paths = [...new Set<string>([...(sub.image_paths ?? []), ...(sub.pdf_path ? [sub.pdf_path] : [])])];
+    if (!student) return failure("Could not find this active student.", 404);
+    const sub = student.submissions[0];
+    const paths = [...new Set<string>([...(sub?.image_paths ?? []), ...(sub?.pdf_path ? [sub.pdf_path] : [])])];
     const { data: signed, error: signError } = paths.length ? await sb.storage.from("sheets").createSignedUrls(paths, 3600) : { data: [], error: null };
     if (signError || (paths.length > 0 && signed?.length !== paths.length)) throw new Error("Could not open the original files.", { cause: signError });
     const files = (signed ?? []).map((file) => {
@@ -33,9 +37,13 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     });
     const images = files.filter((file) => /\.(jpe?g|png)$/i.test(file.path));
     const sheet: StudentSheet = {
+      submissionId: sub?.id ?? null,
+      imagePaths: sub?.image_paths ?? [],
+      pdfPath: sub?.pdf_path ?? null,
+      template,
       originals: images.map((file, i) => ({ label: `Page ${i + 1}`, url: file.signedUrl })),
       pdfUrl: files.find((file) => /\.pdf$/i.test(file.path))?.signedUrl ?? null,
-      responses: (sub.responses ?? {}) as PageResult,
+      responses: (sub?.responses ?? {}) as PageResult,
       answerKey,
       keyHash: keyHashOf(answerKey),
     };

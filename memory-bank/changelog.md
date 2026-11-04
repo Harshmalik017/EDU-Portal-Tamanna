@@ -1,6 +1,31 @@
 # Changelog
 Format: [Keep a Changelog](https://keepachangelog.com), versions follow [SemVer](https://semver.org). See `versioning.md`.
 
+## [0.22.0] - 2026-11-04
+### Added
+- Add confirmed OMR replacement from each student's sheet dialog. Accept a fresh two-page PDF or two images, preserve the student and roll, atomically replace answers/files, and re-evaluate clear copies. Uncertain copies remain Review Pending; excluded students stay excluded.
+- Upload replacement files before committing the swap. Reject stale dialogs, changed keys, invalid files, and archived students. Remove old files after success, with explicit cleanup errors and retry.
+- Add a compact bulk-report processing dialog with resource-based percentage progress and cancellation.
+- Include the pending batch-import improvements and CI workflow. Repair the workflow's collapsed YAML formatting and use the repository's Node 24 runtime.
+### Changed
+- Keep student counts beside the results heading and STEN legend pills on the right. Remove the active/archive shortcuts and provisional-score helper text from Student Reports.
+- Use a compact inline selected-count/search/classes/report-download/CSV toolbar. Fix select arrow spacing and add Previous/Next pagination above and below the table.
+- The table header checkbox selects all filtered students across pages, with indeterminate state for partial selections. Remove the separate Select page and Select all matching buttons.
+- CSV now matches the visible data columns: roll, name with class/gender pills, school, seven section score/STEN cells, and OMR status. Omit UI actions and hidden metadata. Individual and bulk report PDFs remain name-free.
+### Validation
+- Results, export, OMR, replacement-upload, report, archive, typecheck, and changed-source lint checks passed.
+- Production build, batch-import/norm checks, and exact bulk-progress/cancellation/frame-cleanup regression checks passed.
+- Replacement/scoring, concurrent edits, invalid paths, pending/excluded copies, missing scans, and permission checks passed in rolled-back synthetic database transactions.
+- Installed only the additive rescan/replacement RPCs; no live student records were modified. Synthetic desktop browser checks confirmed the inline toolbar, all-page selection, partial checkbox state, pagination selection, search, and class filtering.
+
+## [0.21.2] - 2026-11-04
+### Added
+- Reimport the replacement batch after confirming the prior 41 records were deleted and the live last roll was 10173. Assign 10174 through 10214 using a fresh private manifest.
+- Preserve all 41 replacement two-page PDFs and their 82 page images. All copies remain Review Pending for uncertain marks; no final reports or scores were guessed.
+### Validation
+- Verified original and page-image checksums, active student identities, demographics, all 240 response positions per copy, and report blocking through a read-only admin results transaction.
+- Paginated snapshots confirm all 172 prior students, 172 prior submissions, and 1,204 prior score records are unchanged. Identifiable import and recovery files remain outside Git.
+
 ## [0.21.1] - 2026-11-04
 ### Fixed
 - Display Roll number as plain text in the Student Reports Profile dialog instead of a read-only input. Keep other profile details editable and leave roll numbers out of save requests.
@@ -40,6 +65,26 @@ Format: [Keep a Changelog](https://keepachangelog.com), versions follow [SemVer]
 ### Validation
 - Typecheck, scanner lint, OMR detector checks, results/readiness checks, themed-sheet/report checks, and production build passed.
 - Synthetic browser checks covered automatic PDF/camera review, both-page edits, pending saves without scoring, original PDF bytes, failed-save cleanup, draft reopening, keyboard focus cycling, disabled in-flight controls, desktop comparison, mobile stacking without overflow, and preview URL cleanup. No live student data was accessed or changed.
+
+## [0.18.8] - 2026-11-04
+### Added
+- Import 41 additional students from the requested folder. Every supplied PDF contains only the first answer-sheet page; retain readable front answers and represent missing NA, SA, and PA answers as UNCERTAIN.
+- Keep all 41 copies Review Pending with no final scores or reports. Flag six missing or apparently unsupported class headers for confirmation rather than silently assigning Class X.
+### Validation
+- Reconciled all new students and all 240 answer positions per copy against the private manifest. Uploaded single-page originals and page images passed checksum verification.
+- A read-only admin transaction confirmed all new reports remain blocked. Paginated snapshots confirmed all 172 prior students, 172 prior submissions, and 1,204 prior score records are unchanged.
+- Identifiable scans, demographic checks, manifests, and recovery snapshots remain outside Git.
+
+## [0.18.7] - 2026-11-04
+### Added
+- Add `--after-roll` to private batch preparation. Persist the boundary for resumable imports and reject invalid boundaries or changes to an existing manifest.
+- Import the requested 41 two-page sheets after the existing last roll. Four reports are ready; 37 remain Review Pending without guessed final scores. Preserve originals and leave all existing records unchanged.
+### Fixed
+- Turn filename underscores into spaces in proposed student names. Check written gender rather than infer it from a name; use Not specified for blank or unclear headers.
+### Validation
+- Import regression checks, typecheck, changed-script lint, booklet norms, bilingual report checks, and whitespace checks passed.
+- Reconciled all new students, 240 answer positions per sheet, two page images, and original PDF checksums. A read-only admin transaction confirmed report readiness matches persisted scores. Existing student, submission, and score records match the private pre-import snapshot.
+- Student scans, demographic overrides, manifests, and recovery snapshots remain outside Git.
 
 ## [0.18.6] - 2026-11-04
 ### Fixed
