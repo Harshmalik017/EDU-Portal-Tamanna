@@ -7,6 +7,7 @@ export type Student = {
   block?: string; district?: string; review_issues?: string[];
   excluded?: boolean; exclude_reason?: string | null;
   report_ready?: boolean;
+  archived_at?: string | null;
   verification_status?: Verification; verified_by?: string | null; verified_at?: string | null;
   manual_scores?: Record<string, number> | null; verification_note?: string | null;
 };

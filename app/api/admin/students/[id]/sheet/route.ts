@@ -19,7 +19,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     if (roleError) throw new Error("Could not check admin access.", { cause: roleError });
     if (!isAdmin) return failure("Could not open the sheet. Admin access is required.", 403);
     const [{ data: sub, error }, answerKey] = await Promise.all([
-      sb.from("submissions").select("image_paths,pdf_path,responses").eq("student_id", id).order("created_at", { ascending: false }).limit(1).abortSignal(request.signal).maybeSingle(),
+      sb.from("submissions").select("image_paths,pdf_path,responses,students!inner(archived_at)").eq("student_id", id).is("students.archived_at", null).order("created_at", { ascending: false }).limit(1).abortSignal(request.signal).maybeSingle(),
       getKey(request.signal),
     ]);
     if (error) throw new Error("Could not load saved answers.", { cause: error });

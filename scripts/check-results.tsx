@@ -33,6 +33,7 @@ async function main() {
     { ...student, scores: student.scores.map((score) => ({ ...score, uncertain: 1 })) },
     { ...student, excluded: true },
     { ...student, report_ready: false },
+    { ...student, archived_at: new Date().toISOString() },
   ]) assert.equal(reviewComplete(pending), false);
 
   for (const test of TESTS) {
@@ -66,6 +67,13 @@ async function main() {
   assert.ok(!pendingOnly.includes('href="/admin/reports'));
   assert.ok(!pendingOnly.includes("All Reports ("));
   assert.ok(!pendingOnly.includes('href="/admin/students/pending/report"'));
+  assert.ok(table.includes('aria-label="Select current page"'));
+  assert.ok(table.includes('aria-label="Select roll 99999"'));
+  assert.ok(table.includes("Select all 2 matching results"));
+  const archived = renderToStaticMarkup(<AppRouterContext.Provider value={router}><ResultsTable archived rows={[{ ...student, archived_at: new Date().toISOString() }]} /></AppRouterContext.Provider>);
+  assert.ok(archived.includes("Restore"));
+  assert.ok(archived.includes("Delete after"));
+  for (const action of ["OMR Sheet", "Section Score", "Download CSV", "All Reports", 'href="/admin/students/synthetic/report"']) assert.ok(!archived.includes(action));
   const pendingReport = renderToStaticMarkup(<AppRouterContext.Provider value={router}><ReportDialog student={pending} /></AppRouterContext.Provider>);
   assert.ok(!pendingReport.includes('class="report-page '));
   assert.ok(!pendingReport.includes(reportLabels("hi").print));

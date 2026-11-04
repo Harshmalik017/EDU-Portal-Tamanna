@@ -8,7 +8,7 @@ import type { Student } from "@/lib/types";
 
 export default async function Dashboard({ searchParams }: { searchParams: Promise<{ class?: string }> }) {
   const sp = await searchParams;
-  const { data } = await (await createServer()).from("students").select("id,class,gender,excluded,verification_status,scores(test_code,correct)");
+  const { data } = await (await createServer()).from("students").select("id,class,gender,excluded,verification_status,scores(test_code,correct)").is("archived_at", null);
   const all = (data ?? []) as unknown as Student[];
   const cls = normalizeClass(sp.class);
   const rows = all.filter((s) => !s.excluded && (!cls || normalizeClass(s.class) === cls));

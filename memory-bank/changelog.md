@@ -1,6 +1,18 @@
 # Changelog
 Format: [Keep a Changelog](https://keepachangelog.com), versions follow [SemVer](https://semver.org). See `versioning.md`.
 
+## [0.20.0] - 2026-11-04
+### Added
+- Add responsive individual/page/all-matching selection and bulk Delete to Student Reports. Delete moves records to Archive, with single/bulk restore for 30 days and explicit confirmation.
+- Add daily service-only cleanup of expired archived students and private files. Lease cleanup, delete files through Storage before deleting records, and retain failed records for retry.
+- Allocate five-digit rolls atomically from a permanent global high-water counter. Remove roll entry from scanning and make profile rolls read-only; never reuse rolls after archive or deletion.
+### Fixed
+- Exclude archived students from active results, dashboard, CSV, individual/bulk reports, and sheet reads. Block archived answer edits and scoring while preserving saved answers and scores for restoration.
+### Validation
+- Typecheck, changed-source lint, archive cleanup checks, results/themed-sheet/report checks, production build, and rolled-back archive/results database checks passed.
+- Installed the additive migration with identity/submission/score preservation checks. Confirmed anonymous denial and service-only cleanup. Configured private daily-workflow credentials; the live cleanup readiness check found no expired records.
+- Synthetic browser checks covered cross-page/all-matching selection, filter resets, cancellation/conflict handling, disabled in-flight controls, mobile layouts, bulk archive/restore, expired restore blocking, hidden archived report actions, and scanner-assigned rolls without manual entry. No live students were archived or deleted during validation.
+
 ## [0.19.0] - 2026-11-04
 ### Added
 - Open the shared wide OMR review dialog automatically after a two-page PDF upload or camera scan. Compare the original on the left with editable Theme UI answers on the right; stack on smaller screens.

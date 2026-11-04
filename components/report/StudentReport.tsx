@@ -7,7 +7,7 @@ import { reviewComplete } from "@/lib/tamanna/results";
 export async function StudentReport({ id, intercepted = false }: { id: string; intercepted?: boolean }) {
   const sb = await createServer();
   const [{ data, error }, key] = await Promise.all([
-    sb.from("students").select("id,roll_number,class,gender,school,block,district,excluded,scores(test_code,correct,wrong,blank,flagged),submissions(key_hash)").eq("id", id)
+    sb.from("students").select("id,roll_number,class,gender,school,block,district,excluded,scores(test_code,correct,wrong,blank,flagged),submissions(key_hash)").eq("id", id).is("archived_at", null)
       .order("created_at", { referencedTable: "submissions", ascending: false }).order("id", { referencedTable: "submissions", ascending: false }).limit(1, { referencedTable: "submissions" }).maybeSingle(),
     getKey(),
   ]);

@@ -26,12 +26,15 @@ begin
   case tg_table_name
     when 'students' then
       if tg_op = 'UPDATE' and
-        (to_jsonb(new) - array['verification_status','verified_by','verified_at','manual_scores','verification_note','review_issues']) =
-        (to_jsonb(old) - array['verification_status','verified_by','verified_at','manual_scores','verification_note','review_issues']) then
+        (to_jsonb(new) - array['verification_status','verified_by','verified_at','manual_scores','verification_note','review_issues','purge_token','purge_started_at']) =
+        (to_jsonb(old) - array['verification_status','verified_by','verified_at','manual_scores','verification_note','review_issues','purge_token','purge_started_at']) then
         return null;
       end if;
       category_name := 'students'; student := (row_data->>'id')::uuid;
-      description := case tg_op when 'INSERT' then 'Student added' when 'DELETE' then 'Student deleted' else 'Student profile updated' end;
+      description := case when tg_op = 'INSERT' then 'Student added' when tg_op = 'DELETE' then 'Student deleted'
+        when row_data->>'archived_at' is distinct from to_jsonb(old)->>'archived_at'
+          then case when row_data->>'archived_at' is null then 'Student restored' else 'Student archived' end
+        else 'Student profile updated' end;
       extra := 'Roll ' || coalesce(row_data->>'roll_number', 'not recorded');
     when 'submissions' then
       category_name := 'scans'; student := (row_data->>'student_id')::uuid;
@@ -84,6 +87,7 @@ grant execute on function public.log_account_activity(text) to authenticated;
 
 -- Compact, current-key scan marks. Unreadable answers are counted, never guessed.
 -- Provisional marks do not populate final scores or make reports verified.
+alter table public.students add column if not exists archived_at timestamptz;
 create index if not exists submissions_latest_idx on public.submissions(student_id, created_at desc, id desc);
 create or replace function public.scan_results() returns setof jsonb
 language plpgsql stable security invoker set search_path = public as $$
@@ -109,7 +113,7 @@ begin
         and final.test_code in ('LA','AR','VR','MR','NA','SA','PA')), false),
     'scores', coalesce(marks.sections, '[]'::jsonb)
   )
-  from public.students s
+  from (select * from public.students where archived_at is null) s
   left join lateral (
     select responses, key_hash from public.submissions where student_id = s.id order by created_at desc, id desc limit 1
   ) submission on true

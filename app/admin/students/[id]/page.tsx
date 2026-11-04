@@ -10,7 +10,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
   const { id } = await params;
   const sb = await createServer();
   const [{ data: student, error }, answerKey] = await Promise.all([
-    sb.from("students").select("*,scores(*)").eq("id", id).maybeSingle(),
+    sb.from("students").select("*,scores(*)").eq("id", id).is("archived_at", null).maybeSingle(),
     getKey(),
   ]);
   if (error) throw new Error("Could not load student details.", { cause: error });
@@ -23,5 +23,5 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
   const imgs = (signed ?? []).filter((file) => file.path && /\.(jpe?g|png)$/i.test(file.path)).map((file) => file.signedUrl).filter((url): url is string => !!url);
   const pdfUrl = (signed ?? []).find((file) => file.path && /\.pdf$/i.test(file.path))?.signedUrl ?? null;
   const initial: Student = { ...student, report_ready: reviewComplete(student) && sub?.key_hash === keyHashOf(answerKey) };
-  return <StudentView initial={initial} imgs={imgs} pdfUrl={pdfUrl} filePaths={paths} responses={(sub?.responses ?? {}) as PageResult} answerKey={answerKey} keyHash={keyHashOf(answerKey)} />;
+  return <StudentView initial={initial} imgs={imgs} pdfUrl={pdfUrl} responses={(sub?.responses ?? {}) as PageResult} answerKey={answerKey} keyHash={keyHashOf(answerKey)} />;
 }

@@ -13,7 +13,7 @@ import { SheetDisplay } from "@/components/features/OMRSheetPreview";
 import { Dialog } from "@/components/ui/Dialog";
 import { useToast } from "@/components/Toast";
 
-const EMPTY = { name: "", roll_number: "", class: "X", gender: "Male", school: "Pt. Deen Dayal Upadhyay Rajkiya Model Inter College, Jajaur", block: "Sidhauli", district: "Sitapur" };
+const EMPTY = { name: "", class: "X", gender: "Male", school: "Pt. Deen Dayal Upadhyay Rajkiya Model Inter College, Jajaur", block: "Sidhauli", district: "Sitapur" };
 const CameraCapture = dynamic(() => import("@/components/CameraCapture").then((m) => m.CameraCapture), { ssr: false });
 const CLASSES = ["IX", "X"]; // Tamanna is for classes IX and X
 type N = 1 | 2;
@@ -125,18 +125,15 @@ export function ScanClient({ initialKey, template }: { initialKey: Key; template
   }
 
   async function save() {
-    if (!answers || !/^\d{5}$/.test(info.roll_number.trim())) return toast("Enter a five-digit roll number.");
+    if (!answers) return toast("Select an answer sheet first.");
     if (!info.name.trim()) return toast("Enter student name.");
     if (!info.class || !info.gender) return toast("Select class and gender.");
     setBusy(true);
     let studentId: string | null = null;
     const paths: string[] = [];
     try {
-      const { data: dup, error: duplicateError } = await supabase.from("students").select("id").eq("roll_number", info.roll_number.trim()).eq("class", info.class).eq("school", info.school).limit(1);
-      if (duplicateError) return toast("Could not check for a duplicate roll number.");
-      if (dup?.length) return toast("Could not save. This roll number already exists.");
-      const { data: st, error } = await supabase.from("students").insert({ ...info, name: info.name.trim(), roll_number: info.roll_number.trim(), excluded: exclude, exclude_reason: exclude ? patterns.join("; ") : null }).select("id").single();
-      if (error || !st) return toast("Could not save. Try again.");
+      const { data: st, error } = await supabase.from("students").insert({ ...info, name: info.name.trim(), excluded: exclude, exclude_reason: exclude ? patterns.join("; ") : null }).select("id,roll_number").single();
+      if (error || !st) return toast(`Could not save student. ${error?.message ?? "No student record was returned."}`);
       studentId = st.id;
       for (const n of [1, 2] as N[]) {
         if (!files[n]) continue;
@@ -154,7 +151,7 @@ export function ScanClient({ initialKey, template }: { initialKey: Key; template
       }
       const { error: submissionError } = await supabase.from("submissions").insert({ student_id: st.id, responses: answers, image_paths: paths.filter((path) => !path.endsWith(".pdf")), pdf_path: paths.find((path) => path.endsWith(".pdf")) ?? null });
       if (submissionError) throw new Error("Could not save the responses.", { cause: submissionError });
-      toast("Saved for review.");
+      toast(`Roll ${st.roll_number} saved for review.`);
       setPages({}); setInfo(EMPTY); setExclude(false);
     } catch (failure) {
       console.error("Could not save the scanned sheet.", failure);
@@ -167,7 +164,6 @@ export function ScanClient({ initialKey, template }: { initialKey: Key; template
   }
 
   const studentFields = <div className="grid gap-3 sm:grid-cols-2">
-    <Input label="Roll number" placeholder="e.g. 10001" value={info.roll_number} onChange={(e) => setInfo({ ...info, roll_number: e.target.value })} />
     <Input label="Student name" value={info.name} onChange={(e) => setInfo({ ...info, name: e.target.value })} />
     <Select label="Class" options={CLASSES} value={info.class} onChange={(e) => setInfo({ ...info, class: e.target.value })} />
     <Select label="Gender" options={["Male", "Female", "Not specified"]} value={info.gender} onChange={(e) => setInfo({ ...info, gender: e.target.value })} />
@@ -213,7 +209,7 @@ export function ScanClient({ initialKey, template }: { initialKey: Key; template
         )}
       </Card>
 
-      {reviewOpen && answers && <Dialog wide busy={busy} title={`OMR sheet · ${info.name || "Name pending"} · ${info.roll_number}`} onClose={() => setReviewOpen(false)}>
+      {reviewOpen && answers && <Dialog wide busy={busy} title={`OMR sheet · ${info.name || "Name pending"}`} onClose={() => setReviewOpen(false)}>
         <fieldset disabled={busy} className="min-w-0 space-y-4">
           {studentFields}
           <SheetDisplay
@@ -221,7 +217,6 @@ export function ScanClient({ initialKey, template }: { initialKey: Key; template
             pdfUrl={pdfUrl}
             responses={answers}
             answerKey={displayKey}
-            roll={info.roll_number}
             onChange={setAnswers}
           />
           {patterns.length > 0 && <div className="clay-inset space-y-2 p-3 text-sm">

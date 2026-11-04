@@ -17,7 +17,7 @@ async function main() {
   }));
   assert.ok(scanner.includes("Upload one PDF"));
   assert.ok(scanner.includes("Scan both pages"));
-  for (const label of ["Marks counted", "Marks appear here", "Save student report", "Confirm and score"]) {
+  for (const label of ["Marks counted", "Marks appear here", "Save student report", "Confirm and score", "Roll number"]) {
     assert.ok(!scanner.includes(label), `Scan page must not show ${label}`);
   }
   const sheet = renderToStaticMarkup(React.createElement(SheetDisplay, {

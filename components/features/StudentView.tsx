@@ -16,13 +16,14 @@ import { OPTIONS, TESTS } from "@/lib/tamanna/tests";
 
 const tone = { Low: "bg-amber-100 text-amber-900", Average: "bg-blue-100 text-blue-900", High: "bg-green-100 text-green-900" } as const;
 
-export function StudentView({ initial, imgs, pdfUrl, filePaths, responses, answerKey, keyHash }: { initial: S; imgs: string[]; pdfUrl: string | null; filePaths: string[]; responses: PageResult; answerKey: Key; keyHash: string }) {
+export function StudentView({ initial, imgs, pdfUrl, responses, answerKey, keyHash }: { initial: S; imgs: string[]; pdfUrl: string | null; responses: PageResult; answerKey: Key; keyHash: string }) {
   const id = initial.id;
   const router = useRouter();
   const toast = useToast();
   const [s, setS] = useState<S>(initial);
   const [marked, setMarked] = useState(responses);
   const [scoring, setScoring] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   useEffect(() => { setS(initial); setMarked(responses); }, [initial, responses]);
   const p = buildProfile(s);
   const ready = TESTS.every((test) => marked[test.code]?.length === test.questions && marked[test.code].every((value) => value === null || value === "MULTI" || OPTIONS.some((option) => option === value)));
@@ -41,14 +42,15 @@ export function StudentView({ initial, imgs, pdfUrl, filePaths, responses, answe
     } finally { setScoring(false); }
   }
   async function del() {
-    if (!confirm(`Delete ${s.name || `roll ${s.roll_number}`} and all scores? This cannot be undone.`)) return;
-    if (filePaths.length) {
-      const { error: storageError } = await supabase.storage.from("sheets").remove(filePaths);
-      if (storageError) return toast("Could not delete student files.");
-    }
-    const { error } = await supabase.from("students").delete().eq("id", id);
-    if (error) return toast("Could not delete student.");
-    toast("Deleted"); router.push("/admin/results"); router.refresh();
+    if (!confirm(`Move roll ${s.roll_number} to Archive? Restore within 30 days before permanent deletion.`)) return;
+    setDeleting(true);
+    try {
+      const { error } = await supabase.rpc("archive_students", { p_ids: [id], p_restore: false });
+      if (error) return toast(`Could not archive student. ${error.message}`);
+      toast("Student archived."); router.push("/admin/results"); router.refresh();
+    } catch (error) {
+      console.error("Could not archive student.", error); toast("Could not archive student.");
+    } finally { setDeleting(false); }
   }
 
   return (
@@ -67,7 +69,7 @@ export function StudentView({ initial, imgs, pdfUrl, filePaths, responses, answe
         <Card className="space-y-4">
           <h2 className="text-lg font-bold">Student details</h2>
           {s.excluded && <p className="clay-inset p-3 text-sm font-semibold">Excluded: {s.exclude_reason || "answer pattern"}.</p>}
-          <StudentProfileForm initial={s}><Button type="button" variant="soft" onClick={del}><Trash2 size={18} /> Delete</Button></StudentProfileForm>
+          <fieldset disabled={deleting || scoring}><StudentProfileForm initial={s}><Button type="button" variant="soft" disabled={deleting} onClick={del}><Trash2 size={18} /> Delete</Button></StudentProfileForm></fieldset>
         </Card>
         <Card>
           <h2 className="mb-1 text-lg font-bold">Scorecard</h2>
@@ -85,8 +87,8 @@ export function StudentView({ initial, imgs, pdfUrl, filePaths, responses, answe
             </li>))}</ul>
         </Card>
       </div>
-      <Card><fieldset disabled={scoring} className="min-w-0"><SheetDisplay pages={imgs.map((url, index) => ({ label: `Page ${index + 1}`, url }))} pdfUrl={pdfUrl} responses={marked} answerKey={answerKey} roll={s.roll_number} onChange={setMarked} /></fieldset></Card>
-      <Button onClick={saveAnswers} disabled={scoring || !keyHash || !ready}>{scoring ? "Saving…" : "Confirm and score"}</Button>
+      <Card><fieldset disabled={scoring || deleting} className="min-w-0"><SheetDisplay pages={imgs.map((url, index) => ({ label: `Page ${index + 1}`, url }))} pdfUrl={pdfUrl} responses={marked} answerKey={answerKey} roll={s.roll_number} onChange={setMarked} /></fieldset></Card>
+      <Button onClick={saveAnswers} disabled={scoring || deleting || !keyHash || !ready}>{scoring ? "Saving…" : "Confirm and score"}</Button>
     </div>
   );
 }

@@ -12,7 +12,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ c
   const language: ReportLanguage = sp.language === "hi" ? "hi" : "en";
   const sb = await createServer();
   const [{ data, error }, key] = await Promise.all([
-    sb.from("students").select("id,roll_number,class,gender,school,block,district,excluded,scores(test_code,correct,wrong,blank,flagged),submissions(key_hash)").eq("excluded", false).order("roll_number")
+    sb.from("students").select("id,roll_number,class,gender,school,block,district,excluded,scores(test_code,correct,wrong,blank,flagged),submissions(key_hash)").is("archived_at", null).eq("excluded", false).order("roll_number")
       .order("created_at", { referencedTable: "submissions", ascending: false }).order("id", { referencedTable: "submissions", ascending: false }).limit(1, { referencedTable: "submissions" }),
     getKey(),
   ]);

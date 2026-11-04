@@ -19,6 +19,8 @@ Auth: `proxy.ts` (session refresh + redirect) → `admin/layout.tsx` (`is_admin(
 - Images are compressed before upload; original PDFs are stored unchanged in private storage.
 - Browser PDF rendering produces unmasked previews; the original PDF is stored unchanged in private Supabase storage. Local batch imports preserve every page and verify source/image checksums. No real student files are bundled publicly.
 - Signed URLs expire in 1 hour; bucket is private.
+- Archive/restore uses an atomic admin RPC. Server queries exclude archived students from active screens and reports; a separate compact archive RPC supplies restoration metadata. Archived answers/scores cannot be edited. A database high-water counter allocates immutable global rolls, including concurrent browser saves.
+- GitHub Actions performs daily 30-day archive cleanup with repository-only service credentials, never browser/Vercel owner keys. Service-only leased RPCs identify expired records; the worker deletes files through Storage before cascading record deletion. Failed jobs retain retryable archive records and report errors. Existing audit logs are retained.
 ## Security
 RLS on every table via `is_admin()`; `admins` table has no API policies; views use `security_invoker`; only the public anon key is in the browser; security headers in `next.config.js`.
 All routes deny framing except `/admin/reports`, which uses `X-Frame-Options: SAMEORIGIN` and `Content-Security-Policy: frame-ancestors 'self'` for the off-screen bulk print frame. External framing remains blocked; report authentication, admin checks, and RLS are unchanged.

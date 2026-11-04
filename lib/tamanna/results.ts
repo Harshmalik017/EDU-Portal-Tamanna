@@ -6,8 +6,8 @@ export function sectionNotFilled(score: ScoreRow | undefined, code: string): boo
   return !!score && !!test && score.blank === test.questions && (score.uncertain ?? 0) === 0;
 }
 
-export function reviewComplete(student: Pick<Student, "scores" | "excluded" | "report_ready">): boolean {
-  return !student.excluded && student.report_ready !== false && TESTS.every((test) =>
+export function reviewComplete(student: Pick<Student, "scores" | "excluded" | "report_ready" | "archived_at">): boolean {
+  return !student.archived_at && !student.excluded && student.report_ready !== false && TESTS.every((test) =>
     student.scores.some((score) => score.test_code === test.code && (score.uncertain ?? 0) === 0),
   );
 }

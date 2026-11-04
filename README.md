@@ -22,7 +22,7 @@ The older `NEXT_PUBLIC_SUPABASE_ANON_KEY` is a fallback. The publishable key tak
 
 ## School database and admin
 
-1. Run `supabase/schema.sql`, then `supabase/portal-update.sql`, in the Supabase SQL Editor. They create private storage, admin-only rules, scan-mark aggregates, and activity logs. They are safe to rerun. Existing legacy roll numbers move to `roll_number`; historical names are left empty for checking. Resolve any existing duplicate rolls in the same class and school before adding the unique identity index.
+1. Run `supabase/schema.sql`, `supabase/portal-update.sql`, `supabase/rescan.sql`, then `supabase/student-lifecycle.sql`, in the Supabase SQL Editor. They create private storage, admin-only rules, scan-mark aggregates, activity logs, and archive/roll allocation. They are safe to rerun. Existing legacy roll numbers move to `roll_number`; historical names are left empty for checking. Resolve any existing duplicate rolls in the same class and school before adding the unique identity index.
 2. Alternatively, save a Supabase personal access token in `.env.local` as `SUPABASE_ACCESS_TOKEN`, then run `npm run setup:database`. This command is restricted to this school's project.
 3. Save the project's server-only secret/service-role key as `SUPABASE_SERVICE_ROLE_KEY` in `.env.local`.
 4. Run `npm run setup:admin`. Sign in as **admin**. Its generated password is saved only in `.env.local` as `ADMIN_PASSWORD`; it is not printed or committed. Existing passwords are unchanged. To deliberately set a new password, update `ADMIN_PASSWORD` locally and run `npm run setup:admin -- --rotate`.
@@ -65,6 +65,17 @@ Uploads use deterministic private paths. A failed operation is listed in `upload
 Results and errors are recorded per PDF. `scoring-report.json` distinguishes scored, pending review, and failed copies. No copy is silently skipped.
 
 ## Deploy and publish
+
+### Student archive and automatic rolls
+
+- Check Sheets assigns the next five-digit roll on save, across all classes and schools. There is no roll-number input. Allocation is database-serialized; the counter starts after the highest existing roll (10001 for an empty database), and archived/deleted rolls are not reused. Failed uploads can leave gaps. Profiles show rolls read-only.
+- Student Reports supports individual selection, Select page, and an explicit Select all matching results action. Search/class changes clear selection. Delete moves selected students to Archive; it does not immediately remove scores or files.
+- Open Archive to restore within 30 days. Archived students are omitted from active results, dashboard, CSV, reports, and sheet access. Restoration preserves their roll, answers, and scores.
+- After 30 days, restoration is blocked. Daily cleanup permanently deletes the original PDFs, page images, student, submissions, and scores. Existing activity logs remain as audit history. Cleanup runs at 02:30 UTC (08:00 IST), subject to GitHub scheduling delays.
+- Configure GitHub Actions repository secrets `ARCHIVE_SUPABASE_URL` and `ARCHIVE_SUPABASE_SERVICE_ROLE_KEY` with the project URL and server-only service-role key. The `Clean expired student archives` workflow runs daily and supports manual dispatch. No owner key is added to Vercel or browser code.
+- Cleanup leases each expired record, deletes private files through the Storage API, then deletes database records. Storage failures retain the archived record for retry; the job fails explicitly. Do not delete `storage.objects` rows directly.
+
+Run `npm run check:archive` for synthetic cleanup/cutoff checks. `npm run check:archive:database` validates a rolled-back synthetic transaction; add `-- --apply` to install only the lifecycle migration and its active-results/activity dependencies while checking that existing records are unchanged. `npm run archive:cleanup -- --apply` performs real expired-record cleanup using private local settings.
 
 Add **only** `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` to Vercel, then deploy. Provisioning/import commands use private local settings; Vercel does not need the admin password or owner keys.
 
