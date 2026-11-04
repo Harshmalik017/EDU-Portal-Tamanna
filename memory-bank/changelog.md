@@ -1,6 +1,13 @@
 # Changelog
 Format: [Keep a Changelog](https://keepachangelog.com), versions follow [SemVer](https://semver.org). See `versioning.md`.
 
+## [0.21.1] - 2026-11-04
+### Fixed
+- Display Roll number as plain text in the Student Reports Profile dialog instead of a read-only input. Keep other profile details editable and leave roll numbers out of save requests.
+- Add regression checks for the view-only roll and editable profile fields.
+### Validation
+- Profile/results regression checks, typecheck, changed-source lint, and production build passed.
+
 ## [0.21.0] - 2026-11-04
 ### Added
 - Add a dedicated Archive page and sidebar menu directly below Activity Logs, including collapsed and mobile navigation. Redirect the previous archive URL.

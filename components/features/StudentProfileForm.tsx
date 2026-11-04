@@ -28,7 +28,10 @@ export function StudentProfileForm({ initial, onSaved, onBusyChange, children }:
   }
   return <form onSubmit={save} className="space-y-4">
     <fieldset disabled={busy} className="grid gap-3 sm:grid-cols-2">
-      <Input label="Roll number" readOnly value={student.roll_number} />
+      <dl className="text-sm">
+        <dt className="font-semibold">Roll number</dt>
+        <dd className="mt-1 py-3 font-semibold">{initial.roll_number}</dd>
+      </dl>
       <Input label="Student name" required value={student.name} onChange={(e) => setStudent({ ...student, name: e.target.value })} />
       <Select label="Class" options={["IX", "X"]} value={student.class} onChange={(e) => setStudent({ ...student, class: e.target.value })} />
       <Select label="Gender" options={["Male", "Female", "Not specified"]} value={student.gender} onChange={(e) => setStudent({ ...student, gender: e.target.value })} />

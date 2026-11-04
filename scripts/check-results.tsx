@@ -23,6 +23,7 @@ async function main() {
   const { ResultScore, ResultsTable } = await import("@/components/features/ResultsTable");
   const { AppRouterContext } = await import("next/dist/shared/lib/app-router-context.shared-runtime");
   const { ReportDialog } = await import("@/components/report/ReportDialog");
+  const { StudentProfileDialog } = await import("@/components/features/StudentProfileDialog");
   const student: Student = {
     id: "synthetic", name: "Synthetic", roll_number: "99999", class: "X", gender: "Male", school: "Synthetic",
     scores: TESTS.map((test) => ({ test_code: test.code, correct: 0, blank: 0, uncertain: 0 })),
@@ -56,6 +57,15 @@ async function main() {
   const missing = renderToStaticMarkup(<ResultScore r={{ ...student, scores: [] }} c="LA" />);
   assert.ok(!missing.includes("Section not filled"));
   const router = { bfcacheId: "synthetic", back() {}, forward() {}, refresh() {}, push() {}, replace() {}, prefetch() {} };
+  const profile = renderToStaticMarkup(<AppRouterContext.Provider value={router}><StudentProfileDialog student={student} onClose={() => {}} /></AppRouterContext.Provider>);
+  assert.match(profile, /<dt[^>]*>Roll number<\/dt><dd[^>]*>99999<\/dd>/);
+  assert.doesNotMatch(profile, /<input\b[^>]*(?:id="roll-number"|value="99999")/);
+  for (const id of ["student-name", "school", "block", "district"]) {
+    const field = profile.match(new RegExp(`<input\\b[^>]*id="${id}"[^>]*>`))?.[0];
+    assert.ok(field, `${id} remains available`);
+    assert.doesNotMatch(field, /readonly|disabled/i);
+  }
+  assert.ok(profile.includes("Save changes"));
   const pending = { ...student, id: "pending", report_ready: false };
   const table = renderToStaticMarkup(<AppRouterContext.Provider value={router}><ResultsTable rows={[student, pending]} /></AppRouterContext.Provider>);
   for (const label of ["Hindi", "English"]) {
