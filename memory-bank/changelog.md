@@ -1,6 +1,30 @@
 # Changelog
 Format: [Keep a Changelog](https://keepachangelog.com), versions follow [SemVer](https://semver.org). See `versioning.md`.
 
+## [0.22.3] - 2026-11-13
+### Fixed
+- Right-align All Reports (Hindi), All Reports (English), and Download CSV as one compact responsive toolbar group. Preserve left-side search/selection, button order, and narrow-screen wrapping.
+- Update the memory bank with the STEN class guards, confirmed Class X data correction, and report-toolbar behavior.
+### Validation
+- Results, export, report, booklet norms, typecheck, changed-source lint, and production build passed.
+- Synthetic browser checks using production CSS confirmed exact right-edge alignment at 1440, 1024, 768, 390, and 320px, with no clipped buttons or page overflow.
+
+## [0.22.2] - 2026-11-13
+### Fixed
+- Correct six missing/unsupported stored classes to X after explicit confirmation that all current students are in Class X. The other 207 records were already correct.
+### Validation
+- Verified all 213 students now have Class X. All six affected copies have seven valid booklet STEN scores and pass report readiness with the current official key.
+- Full before/after fingerprints confirm all 213 submissions and 1,491 raw-score rows are unchanged. Student identities, rolls, and archive state are preserved; recovery metadata stays outside Git.
+
+## [0.22.1] - 2026-11-13
+### Fixed
+- Explain missing STEN scores when class is blank or outside the booklet's IX/X norms. Preserve confirmed raw marks; never guess a class or substitute another class's norms.
+- Keep unsupported-class copies out of green readiness, individual reports, and bulk reports even when database scoring is complete. Include the same blocker in CSV.
+- Show the stored unsupported class accurately in Profile and require a supported class before saving. OMR confirmation warns when only raw marks can be saved.
+### Validation
+- Results, CSV export, report, booklet norms, typecheck, changed-source lint, production build, and whitespace checks passed.
+- Read-only diagnosis confirmed complete, current-key raw scores on the affected copies; missing/unsupported classes block STEN conversion. No live student data was changed.
+
 ## [0.22.0] - 2026-11-04
 ### Added
 - Add confirmed OMR replacement from each student's sheet dialog. Accept a fresh two-page PDF or two images, preserve the student and roll, atomically replace answers/files, and re-evaluate clear copies. Uncertain copies remain Review Pending; excluded students stay excluded.

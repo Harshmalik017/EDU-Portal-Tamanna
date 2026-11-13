@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { Archive, ArrowUpDown, ClipboardCheck, FileSpreadsheet, FileText, RotateCcw, Search, Table2, Trash2, UserRound } from "lucide-react";
 import { TESTS } from "@/lib/tamanna/tests";
 import { bandOf, normalizeClass, stenOf } from "@/lib/tamanna/norms";
-import { reviewComplete, sectionNotFilled } from "@/lib/tamanna/results";
+import { reviewComplete, sectionNotFilled, stenClassIssue } from "@/lib/tamanna/results";
 import { resultsCsv } from "@/lib/tamanna/export";
 import { supabase } from "@/lib/supabase/client";
 import type { Student } from "@/lib/types";
@@ -29,11 +29,12 @@ export function ResultScore({ r, c }: { r: Student; c: string }) {
   if (sectionNotFilled(r.scores.find((score) => score.test_code === c), c)) return <span className="text-xs font-semibold text-amber-900">Section not filled</span>;
   const v = raw(r, c), s = sten(r, c);
   const uncertain = r.scores.find((score) => score.test_code === c)?.uncertain ?? 0;
-  return <span className="inline-flex flex-col items-start gap-1"><span className="whitespace-nowrap text-xs" title={uncertain > 0 ? "Provisional marks from clear answers" : undefined}>Section Score: <b>{v ?? "–"}</b></span><span className={`whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-bold ${s !== null ? tone[bandOf(s)] : "bg-slate-100 text-slate-700"}`} title={s !== null ? `Sten ${s}, ${bandOf(s)}` : uncertain > 0 ? "Review pending for a final Sten score" : "No Sten score available"}>STEN SCORE: {s ?? "–"}</span></span>;
+  const classIssue = stenClassIssue(r.class);
+  return <span className="inline-flex flex-col items-start gap-1"><span className="whitespace-nowrap text-xs" title={uncertain > 0 ? "Provisional marks from clear answers" : undefined}>Section Score: <b>{v ?? "–"}</b></span><span className={`whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-bold ${s !== null ? tone[bandOf(s)] : "bg-slate-100 text-slate-700"}`} title={s !== null ? `Sten ${s}, ${bandOf(s)}` : classIssue ?? (uncertain > 0 ? "Review pending for a final Sten score" : "No Sten score available")}>STEN SCORE: {s ?? "–"}</span>{classIssue && <span className="max-w-40 text-xs font-semibold text-amber-900">{classIssue}</span>}</span>;
 }
 
 function StudentPills({ student }: { student: Student }) {
-  return <span className="mt-1 flex flex-wrap gap-1 text-[11px] font-bold"><span className="rounded-full bg-blue-100 px-2 py-0.5 text-blue-900">Class {student.class}</span><span className="rounded-full bg-violet-100 px-2 py-0.5 text-violet-900">{student.gender}</span></span>;
+  return <span className="mt-1 flex flex-wrap gap-1 text-[11px] font-bold"><span className="rounded-full bg-blue-100 px-2 py-0.5 text-blue-900">{student.class?.trim() ? `Class ${student.class}` : "Class missing"}</span><span className="rounded-full bg-violet-100 px-2 py-0.5 text-violet-900">{student.gender}</span></span>;
 }
 
 function SheetAction({ student, onClick }: { student: Student; onClick: () => void }) {
@@ -149,8 +150,10 @@ export function ResultsTable({ rows, archived = false }: { rows: Student[]; arch
           </div>
           <Button type="submit" variant="soft" className="!px-3 text-xs"><Search size={16} /> Search</Button>
         </form>
-          {!archived && shown.some(reviewComplete) && <BulkReportButtons cls={cls} />}
-          {!archived && <Button onClick={exportCsv} disabled={!shown.length} className="!border-green-700 !bg-green-700 !text-white hover:!bg-green-800 focus-visible:!outline-green-700"><FileSpreadsheet size={18} /> Download CSV</Button>}
+          {!archived && <div role="group" aria-label="Report downloads" className="ml-auto flex w-full flex-wrap justify-end gap-2 sm:w-auto [&>button]:px-3 [&>button]:text-xs">
+            {shown.some(reviewComplete) && <BulkReportButtons cls={cls} />}
+            <Button onClick={exportCsv} disabled={!shown.length} className="!border-green-700 !bg-green-700 !text-white hover:!bg-green-800 focus-visible:!outline-green-700"><FileSpreadsheet size={18} /> Download CSV</Button>
+          </div>}
           {archived && <Button variant="soft" disabled={busy || !rows.length} onClick={() => setConfirmation({ ids: rows.map((student) => student.id), action: "delete", all: true })}><Trash2 size={18} /> Clear archive</Button>}
       </div>
       {selectedIds.length > 0 && <div className="mb-4 flex flex-wrap items-center gap-3">

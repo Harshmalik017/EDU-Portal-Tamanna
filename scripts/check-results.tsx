@@ -2,7 +2,7 @@ import React from "react";
 import assert from "node:assert/strict";
 import { renderToStaticMarkup } from "react-dom/server";
 import { TESTS } from "@/lib/tamanna/tests";
-import { reviewComplete, sectionNotFilled } from "@/lib/tamanna/results";
+import { reviewComplete, sectionNotFilled, stenClassIssue } from "@/lib/tamanna/results";
 import { reportLabels } from "@/lib/tamanna/report-language";
 import type { Student } from "@/lib/types";
 import { ActivityLogTable } from "@/components/features/ActivityLogTable";
@@ -77,6 +77,18 @@ async function main() {
   };
   assert.ok(reviewComplete(student));
   assert.ok(reviewComplete({ ...student, report_ready: true }));
+  assert.equal(stenClassIssue("9"), null);
+  assert.equal(stenClassIssue(" x "), null);
+  assert.equal(stenClassIssue(null), "Select class IX or X in Profile.");
+  assert.equal(stenClassIssue(undefined), "Select class IX or X in Profile.");
+  for (const cls of ["", " ", "XII"]) {
+    const invalidClass = { ...student, class: cls, report_ready: true };
+    assert.equal(reviewComplete(invalidClass), false);
+    const score = renderToStaticMarkup(<ResultScore r={invalidClass} c="LA" />);
+    assert.ok(score.includes(stenClassIssue(cls)!));
+    assert.ok(score.includes("Section Score: <b>0</b>"));
+    assert.ok(score.includes("STEN SCORE: –"));
+  }
   for (const pending of [
     { ...student, scores: [] },
     { ...student, scores: student.scores.slice(1) },
@@ -123,6 +135,17 @@ async function main() {
   assert.equal((table.match(/href="\/admin\/students\/synthetic\/report"/g) ?? []).length, 2);
   assert.ok(!table.includes('href="/admin/students/pending/report"'));
   const pendingOnly = renderToStaticMarkup(<AppRouterContext.Provider value={router}><ResultsTable rows={[pending]} /></AppRouterContext.Provider>);
+  for (const cls of ["", "XII"]) {
+    const invalidClass = { ...student, class: cls, report_ready: true };
+    const invalidTable = renderToStaticMarkup(<AppRouterContext.Provider value={router}><ResultsTable rows={[invalidClass]} /></AppRouterContext.Provider>);
+    assert.ok(!invalidTable.includes('href="/admin/students/synthetic/report"'));
+    assert.ok(!invalidTable.includes("All Reports ("));
+    const invalidReport = renderToStaticMarkup(<AppRouterContext.Provider value={router}><ReportDialog student={invalidClass} /></AppRouterContext.Provider>);
+    assert.ok(!invalidReport.includes('class="report-page '));
+    const invalidProfile = renderToStaticMarkup(<AppRouterContext.Provider value={router}><StudentProfileDialog student={invalidClass} onClose={() => {}} /></AppRouterContext.Provider>);
+    assert.ok(invalidProfile.includes(stenClassIssue(cls)!));
+    if (cls) assert.match(invalidProfile, /<option[^>]*selected=""[^>]*>XII<\/option>/);
+  }
   assert.ok(!pendingOnly.includes('href="/admin/reports'));
   assert.ok(!pendingOnly.includes("All Reports ("));
   assert.ok(!pendingOnly.includes('href="/admin/students/pending/report"'));
@@ -132,6 +155,11 @@ async function main() {
   assert.ok(table.indexOf("0 selected") < table.indexOf('id="search-name,-roll-no.-or-school"'));
   assert.match(table, /<h1[^>]*>Student reports<\/h1><span[^>]*>2 students<\/span>/);
   assert.ok(table.includes('aria-label="STEN scoring"'));
+  const downloads = table.match(/<div role="group" aria-label="Report downloads"[^>]*>([\s\S]*?)<\/div>/)?.[1];
+  assert.ok(downloads);
+  for (const label of ["All Reports (Hindi)", "All Reports (English)", "Download CSV"]) assert.ok(downloads.includes(label));
+  assert.ok(downloads.indexOf("All Reports (Hindi)") < downloads.indexOf("All Reports (English)"));
+  assert.ok(downloads.indexOf("All Reports (English)") < downloads.indexOf("Download CSV"));
   assert.ok(table.includes('type="submit"'));
   const manyRows = renderToStaticMarkup(<AppRouterContext.Provider value={router}><ResultsTable rows={Array.from({ length: 25 }, (_, index) => ({ ...student, id: `row-${index}`, roll_number: String(10001 + index) }))} /></AppRouterContext.Provider>);
   assert.ok(manyRows.includes("Page 1 of 2"));

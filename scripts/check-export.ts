@@ -20,6 +20,12 @@ assert.ok(blank.includes('"Section not filled"'));
 const excluded = resultsCsv([{ ...student, excluded: true, scores: [{ test_code: "LA", correct: 30, uncertain: 0 }] }]);
 assert.ok(excluded.includes('"Section Score: 30; STEN SCORE: –"'));
 assert.ok(excluded.endsWith('"Excluded"'));
+for (const cls of ["", "XII"]) {
+  const invalidClass = resultsCsv([{ ...student, class: cls, report_ready: true, scores: TESTS.map((test) => ({ test_code: test.code, correct: 12, uncertain: 0 })) }]);
+  assert.ok(invalidClass.includes(cls ? "No STEN norms for Class XII." : "Select class IX or X in Profile."));
+  assert.ok(invalidClass.includes("Section Score: 12; STEN SCORE: –"));
+  assert.ok(invalidClass.endsWith('"Review Pending"'));
+}
 for (const removed of ["Block", "District", "blurry answers", "Excluded", "level"]) assert.ok(!header.includes(removed));
 assert.equal(resultsCsv([]).split("\n").length, 1);
 console.log("Export checks passed: 11 table-matching columns, profile pills in the Name cell, escaped quotes, blank sections, and withheld uncertain/excluded Sten.");

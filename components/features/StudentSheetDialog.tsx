@@ -10,6 +10,7 @@ import { OPTIONS, TESTS } from "@/lib/tamanna/tests";
 import type { Student, StudentSheet } from "@/lib/types";
 import type { PageResult } from "@/lib/omr/reader";
 import { ReplaceSheetDialog } from "@/components/features/ReplaceSheetDialog";
+import { stenClassIssue } from "@/lib/tamanna/results";
 
 export function StudentSheetDialog({ student, mode, onClose }: { student: Student; mode: "view" | "check"; onClose: () => void }) {
   const [sheet, setSheet] = useState<StudentSheet | null>(null);
@@ -21,6 +22,7 @@ export function StudentSheetDialog({ student, mode, onClose }: { student: Studen
   const [replacing, setReplacing] = useState(false);
   const router = useRouter();
   const toast = useToast();
+  const classIssue = stenClassIssue(student.class);
   useEffect(() => {
     const controller = new AbortController();
     setLoading(true); setError("");
@@ -50,7 +52,7 @@ export function StudentSheetDialog({ student, mode, onClose }: { student: Studen
     try {
       const { error: saveError } = await supabase.rpc("review_copy", { p_student_id: student.id, p_responses: marked, p_expected_key_hash: sheet.keyHash });
       if (saveError) return toast(`Could not score. ${saveError.message}`);
-      toast("Scan answers confirmed. Final marks saved."); onClose(); router.refresh();
+      toast(classIssue ? `No STEN score available. Raw marks saved. ${classIssue}` : "Scan answers confirmed. Final marks saved."); onClose(); router.refresh();
     } catch (failure) {
       console.error("Could not score the checked sheet.", failure); toast("Could not score the checked sheet.");
     } finally { setBusy(false); }
@@ -58,6 +60,7 @@ export function StudentSheetDialog({ student, mode, onClose }: { student: Studen
   return <><Dialog wide busy={busy || replacing} title={`OMR sheet · ${student.name || "Name pending"} · ${student.roll_number}`} onClose={onClose}
     headerActions={sheet && !loading && !error && <Button variant="soft" disabled={busy || replacing} onClick={() => setReplacing(true)}>Reupload OMR</Button>}>
     {loading ? <p role="status">Loading student sheet…</p> : error ? <div role="alert" className="space-y-3"><p>{error}</p><Button variant="soft" onClick={() => setAttempt((value) => value + 1)}>Try again</Button></div> : sheet && <>
+      {classIssue && <p role="status" className="text-sm font-semibold text-amber-900">{classIssue} STEN unavailable; raw marks can be saved.</p>}
       <fieldset disabled={busy || replacing} className="min-w-0"><SheetDisplay pages={sheet.originals} pdfUrl={sheet.pdfUrl} responses={marked} answerKey={sheet.answerKey} roll={student.roll_number} onChange={mode === "check" ? setMarked : undefined} /></fieldset>
       {mode === "check" && <>
         <div className="sticky bottom-0 flex flex-wrap items-center justify-between gap-3 border-t border-(--line) bg-[#fbfdf4] py-3">

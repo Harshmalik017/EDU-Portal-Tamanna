@@ -1,6 +1,6 @@
 import { TESTS } from "@/lib/tamanna/tests";
 import { stenOf } from "@/lib/tamanna/norms";
-import { reviewComplete, sectionNotFilled } from "@/lib/tamanna/results";
+import { reviewComplete, sectionNotFilled, stenClassIssue } from "@/lib/tamanna/results";
 import type { Student } from "@/lib/types";
 
 export function resultsCsv(rows: Student[]): string {
@@ -12,7 +12,8 @@ export function resultsCsv(rows: Student[]): string {
       const score = r.scores.find((s) => s.test_code === t.code);
       if (sectionNotFilled(score, t.code)) return "Section not filled";
       const sten = score && !score.uncertain && !r.excluded ? stenOf(r.class, r.gender, t.code, score.correct) : null;
-      return `Section Score: ${score?.correct ?? "–"}; STEN SCORE: ${sten ?? "–"}`;
+      const classIssue = stenClassIssue(r.class);
+      return `Section Score: ${score?.correct ?? "–"}; STEN SCORE: ${sten ?? "–"}${classIssue ? `; ${classIssue}` : ""}`;
     }), status].map(cell).join(",");
   });
   return [head.join(","), ...lines].join("\n");
