@@ -1,6 +1,12 @@
 # Changelog
 Format: [Keep a Changelog](https://keepachangelog.com), versions follow [SemVer](https://semver.org). See `versioning.md`.
 
+## [Unreleased]
+### Security
+- Upgrade Next.js from 16.4.2 to 16.4.6 to resolve the published framework security advisory that blocked production builds.
+### Validation
+- The exact installed framework version, runtime dependency audit, typecheck, OMR/import/report/rescan/export/results/archive checks, and production build passed.
+
 ## [0.22.3] - 2026-11-13
 ### Fixed
 - Right-align All Reports (Hindi), All Reports (English), and Download CSV as one compact responsive toolbar group. Preserve left-side search/selection, button order, and narrow-screen wrapping.

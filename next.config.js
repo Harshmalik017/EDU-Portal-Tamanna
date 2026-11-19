@@ -8,6 +8,7 @@ const security = [
 module.exports = {
   reactStrictMode: true,
   poweredByHeader: false,
+  experimental: { agentUpgrade: "security" },
   env: { NEXT_PUBLIC_APP_VERSION: version },
   async headers() {
     return [
