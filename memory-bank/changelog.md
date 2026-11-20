@@ -1,6 +1,11 @@
 # Changelog
 Format: [Keep a Changelog](https://keepachangelog.com), versions follow [SemVer](https://semver.org). See `versioning.md`.
 
+## [0.23.1] - 2026-11-20
+### Changed
+- Reorganise the README around product capabilities, supported workflows, privacy, local setup, quality checks, and maintainer references.
+- Remove internal operational detail, school-specific data, and unnecessary technology-heavy explanations from the public project overview.
+
 ## [0.23.0] - 2026-11-20
 ### Security
 - Upgrade Next.js from 16.4.2 to 16.4.6 to resolve the published framework security advisory that blocked production builds.
