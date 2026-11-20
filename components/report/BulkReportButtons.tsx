@@ -102,8 +102,8 @@ export function BulkReportButtons({ cls }: { cls: string }) {
   }
 
   return <>
-    <Button variant="soft" disabled={printing !== null} aria-busy={printing === "hi"} onClick={(event) => void print("hi", event.currentTarget)}><Printer size={18} /> All Reports (Hindi)</Button>
-    <Button variant="soft" disabled={printing !== null} aria-busy={printing === "en"} onClick={(event) => void print("en", event.currentTarget)}><Printer size={18} /> All Reports (English)</Button>
+    <Button variant="soft" disabled={printing !== null} aria-busy={printing === "hi"} onClick={(event) => void print("hi", event.currentTarget)}><Printer size={18} aria-hidden="true" /> All Reports (Hindi)</Button>
+    <Button variant="soft" disabled={printing !== null} aria-busy={printing === "en"} onClick={(event) => void print("en", event.currentTarget)}><Printer size={18} aria-hidden="true" /> All Reports (English)</Button>
     {printing && <Dialog compact title={`All reports (${printing === "hi" ? "Hindi" : "English"})`} onClose={() => job.current?.abort()}>
       <div role="status" aria-live="polite" className="flex items-center justify-between gap-3 text-sm font-semibold"><span>{progress === 100 ? "Ready to save as PDF" : "Processing reports"}</span><span>{progress}%</span></div>
       <progress aria-label="Report processing" value={progress} max={100} className="h-3 w-full accent-brand-700" />

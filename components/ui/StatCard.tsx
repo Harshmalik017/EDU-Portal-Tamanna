@@ -14,7 +14,7 @@ export function StatCard({ label, value, hint, icon: Icon, tone = "green" }: { l
   const t = tones[tone];
   return (
     <div className={clsx("clay flex items-center gap-4 p-5", t.card)}>
-      {Icon && <div className={clsx("grid h-11 w-11 shrink-0 place-items-center rounded-xl", t.icon)}><Icon size={22} /></div>}
+      {Icon && <div className={clsx("grid h-11 w-11 shrink-0 place-items-center rounded-xl", t.icon)}><Icon size={22} aria-hidden="true" /></div>}
       <div><p className="text-2xl font-bold leading-none">{value}</p><p className={clsx("mt-1 text-sm font-medium", t.label)}>{label}</p>{hint && <p className="text-xs text-ink/70">{hint}</p>}</div>
     </div>
   );

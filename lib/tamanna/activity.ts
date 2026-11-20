@@ -1,4 +1,5 @@
 import { TESTS } from "@/lib/tamanna/tests";
+import { formatDateTimeIst } from "@/lib/tamanna/format";
 
 export const LOG_CATEGORIES = {
   scans: "Answer sheets", scoring: "Scores", students: "Students",
@@ -42,8 +43,5 @@ export function activityDetails(detail: string | null): string {
   return section ? text.replace(section.code, section.name).replace(" question ", " · Question ") : text;
 }
 export function activityDate(date: string): string {
-  return `${new Date(date).toLocaleString("en-IN", {
-    timeZone: "Asia/Kolkata", day: "2-digit", month: "short", year: "numeric",
-    hour: "2-digit", minute: "2-digit", hour12: true,
-  })} IST`;
+  return formatDateTimeIst(date);
 }

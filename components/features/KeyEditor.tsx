@@ -6,11 +6,15 @@ import { OPTIONS, TESTS } from "@/lib/tamanna/tests";
 import { Button, Card } from "@/components/ui";
 import { useToast } from "@/components/Toast";
 import type { Key } from "@/lib/types";
+import { useUnsavedChanges } from "@/components/hooks/useUnsavedChanges";
 
 export function KeyEditor({ initial }: { initial: Key }) {
   const toast = useToast();
   const [key, setKey] = useState<Key>(initial);
+  const [savedKey, setSavedKey] = useState(initial);
   const [tab, setTab] = useState(TESTS[0].code);
+  const [busy, setBusy] = useState(false);
+  useUnsavedChanges(JSON.stringify(key) !== JSON.stringify(savedKey));
 
   const t = TESTS.find((x) => x.code === tab)!;
   const count = (c: string) => (key[c] ?? []).filter(Boolean).length;
@@ -18,9 +22,19 @@ export function KeyEditor({ initial }: { initial: Key }) {
 
   async function save() {
     if (count(tab) !== t.questions) return toast(`Select all ${t.questions} answers for ${tab}.`);
-    const rows = (key![tab] ?? []).map((o, i) => (o ? { test_code: tab, question_no: i + 1, correct_option: o } : null)).filter(Boolean);
-    const { error } = await supabase.from("answer_keys").upsert(rows as object[], { onConflict: "test_code,question_no" });
-    toast(error ? "Could not save." : `Saved ${rows.length} answers for ${tab}. Re-score sheets if answers changed.`);
+    setBusy(true);
+    try {
+      const rows = (key![tab] ?? []).map((o, i) => (o ? { test_code: tab, question_no: i + 1, correct_option: o } : null)).filter(Boolean);
+      const { error } = await supabase.from("answer_keys").upsert(rows as object[], { onConflict: "test_code,question_no" });
+      if (error) return toast(`Could not save. ${error.message}`);
+      setSavedKey(key);
+      toast(`Saved ${rows.length} answers for ${tab}. Re-score sheets if answers changed.`);
+    } catch (error) {
+      console.error("Could not save answer key.", error);
+      toast("Could not save the answer key.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
@@ -28,7 +42,7 @@ export function KeyEditor({ initial }: { initial: Key }) {
       <h2 className="mb-3 text-lg font-bold">Select the correct option (A, B, C or D) for each question</h2>
       <div className="mb-4 flex flex-wrap gap-2">
         {TESTS.map((x) => (
-          <button key={x.code} onClick={() => setTab(x.code)} className={(tab === x.code ? "clay-btn" : "clay-btn-soft") + " !px-4 !py-2"}>
+          <button key={x.code} type="button" onClick={() => setTab(x.code)} className={(tab === x.code ? "clay-btn" : "clay-btn-soft") + " !px-4 !py-2"}>
             {x.code} <span className="text-xs">{count(x.code)}/{x.questions}</span>
           </button>
         ))}
@@ -41,6 +55,7 @@ export function KeyEditor({ initial }: { initial: Key }) {
               {OPTIONS.map((o) => (
                 <button
                   key={o}
+                  type="button"
                   aria-pressed={key[tab]?.[q] === o}
                   onClick={() => set(tab, q, key[tab]?.[q] === o ? undefined : o)}
                   className={(key[tab]?.[q] === o ? "clay-btn" : "clay-btn-soft") + " min-h-11 min-w-11 !rounded-xl !p-0"}
@@ -52,7 +67,7 @@ export function KeyEditor({ initial }: { initial: Key }) {
           </li>
         ))}
       </ul>
-      <Button className="mt-5" onClick={save}><Save size={18} /> Save answers for {tab}</Button>
+      <Button className="mt-5" disabled={busy} aria-busy={busy} onClick={() => void save()}><Save size={18} aria-hidden="true" /> {busy ? "Saving…" : `Save answers for ${tab}`}</Button>
     </Card>
   );
 }

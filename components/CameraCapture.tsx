@@ -1,7 +1,8 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { X, Camera } from "lucide-react";
+import { Camera } from "lucide-react";
 import { Button } from "@/components/ui";
+import { Dialog } from "@/components/ui/Dialog";
 
 const ASPECT = 924 / 1300;
 
@@ -39,19 +40,15 @@ export function CameraCapture({ title, onCapture, onClose }: { title: string; on
   }
 
   return (
-    <div role="dialog" aria-label={`Camera: ${title}`} className="fixed inset-0 z-40 grid place-items-center bg-[#25331a]/80 p-3">
-      <div className="clay max-h-[96dvh] w-full max-w-md space-y-3 overflow-y-auto p-4">
-        <div className="flex items-center justify-between"><p className="font-extrabold">{title} · Page {page} of 2</p>
-          <button onClick={onClose} aria-label="Close camera" className="clay-btn-soft !p-2"><X size={18} /></button></div>
+    <Dialog compact title={`${title} · Page ${page} of 2`} onClose={onClose}>
         {err ? <p className="py-10 text-center font-semibold">{err}</p> : (
           <div className="relative mx-auto max-h-[60dvh] overflow-hidden rounded-2xl bg-black" style={{ aspectRatio: String(ASPECT) }}>
-            <video ref={ref} autoPlay playsInline muted onLoadedMetadata={() => setReady(true)} className="h-full w-full object-cover" />
+            <video ref={ref} autoPlay playsInline muted aria-label={`Camera preview for page ${page}`} onLoadedMetadata={() => setReady(true)} className="h-full w-full object-cover" />
             <div className="pointer-events-none absolute inset-3 rounded-lg border-2 border-dashed border-white/90" />
           </div>
         )}
         <p className="text-center text-sm">{page === 2 ? "Page 1 captured. Fit page 2 inside the frame." : "Fit page 1 inside the frame."}</p>
-        <Button className="w-full" onClick={snap} disabled={!!err || !ready}><Camera size={18} /> Capture page {page}</Button>
-      </div>
-    </div>
+        <Button className="w-full" onClick={snap} disabled={!!err || !ready}><Camera size={18} aria-hidden="true" /> Capture page {page}</Button>
+    </Dialog>
   );
 }

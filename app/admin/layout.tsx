@@ -13,7 +13,6 @@ export default async function AdminLayout({ children, report }: { children: Reac
   const userName = typeof data.user?.user_metadata.display_name === "string" && data.user.user_metadata.display_name.trim() ? data.user.user_metadata.display_name : data.user?.email;
   return (
     <>
-      <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-xl focus:bg-white focus:px-4 focus:py-2 print:hidden">Skip to content</a>
       <AdminShell userName={userName}>
         <main id="main" className="w-full px-4 pt-6 pb-24 sm:px-6 lg:px-10 lg:py-8 2xl:px-12"><div className="admin-page">{children}</div>{report}</main>
         <VersionBadge />

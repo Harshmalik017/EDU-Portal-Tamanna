@@ -64,10 +64,11 @@ async function main() {
   for (const path of ["/", "/login", "/admin", "/admin/results", "/admin/reports", "/admin/students/synthetic/report", "/brand/logo.png"]) {
     const headers = new Map(headerRules.filter((rule) => getPathMatch(rule.source)(path)).flatMap((rule) => rule.headers.map(({ key, value }) => [key.toLowerCase(), value] as const)));
     assert.equal(headers.get("x-frame-options"), path === "/admin/reports" ? "SAMEORIGIN" : "DENY");
-    assert.equal(headers.get("content-security-policy"), path === "/admin/reports" ? "frame-ancestors 'self'" : undefined);
+    assert.match(headers.get("content-security-policy") ?? "", path === "/admin/reports" ? /frame-ancestors 'self'/ : /frame-ancestors 'none'/);
     assert.equal(headers.get("x-content-type-options"), "nosniff");
   }
-  const { ResultScore, ResultsTable } = await import("@/components/features/ResultsTable");
+  const { ResultsTable } = await import("@/components/features/ResultsTable");
+  const { ResultScore } = await import("@/components/features/results/ResultCells");
   const { AppRouterContext } = await import("next/dist/shared/lib/app-router-context.shared-runtime");
   const { ReportDialog } = await import("@/components/report/ReportDialog");
   const { StudentProfileDialog } = await import("@/components/features/StudentProfileDialog");
@@ -84,7 +85,7 @@ async function main() {
   for (const cls of ["", " ", "XII"]) {
     const invalidClass = { ...student, class: cls, report_ready: true };
     assert.equal(reviewComplete(invalidClass), false);
-    const score = renderToStaticMarkup(<ResultScore r={invalidClass} c="LA" />);
+    const score = renderToStaticMarkup(<ResultScore student={invalidClass} code="LA" />);
     assert.ok(score.includes(stenClassIssue(cls)!));
     assert.ok(score.includes("Section Score: <b>0</b>"));
     assert.ok(score.includes("STEN SCORE: –"));
@@ -101,7 +102,7 @@ async function main() {
   for (const test of TESTS) {
     const blank = { test_code: test.code, correct: 0, blank: test.questions, uncertain: 0 };
     assert.ok(sectionNotFilled(blank, test.code));
-    const html = renderToStaticMarkup(<ResultScore r={{ ...student, scores: [blank] }} c={test.code} />);
+    const html = renderToStaticMarkup(<ResultScore student={{ ...student, scores: [blank] }} code={test.code} />);
     assert.ok(html.includes("Section not filled"));
     assert.ok(!html.includes("Section Score"));
     assert.ok(!html.includes("STEN SCORE"));
@@ -110,17 +111,17 @@ async function main() {
   }
   assert.equal(sectionNotFilled(undefined, "LA"), false);
   assert.equal(sectionNotFilled({ test_code: "PA", correct: 0, blank: 30, uncertain: 0 }, "PA"), false);
-  const zero = renderToStaticMarkup(<ResultScore r={student} c="LA" />);
+  const zero = renderToStaticMarkup(<ResultScore student={student} code="LA" />);
   assert.ok(zero.includes("Section Score: <b>0</b>"));
   assert.ok(!zero.includes("Section not filled"));
-  const missing = renderToStaticMarkup(<ResultScore r={{ ...student, scores: [] }} c="LA" />);
+  const missing = renderToStaticMarkup(<ResultScore student={{ ...student, scores: [] }} code="LA" />);
   assert.ok(!missing.includes("Section not filled"));
   const router = { bfcacheId: "synthetic", back() {}, forward() {}, refresh() {}, push() {}, replace() {}, prefetch() {} };
   const profile = renderToStaticMarkup(<AppRouterContext.Provider value={router}><StudentProfileDialog student={student} onClose={() => {}} /></AppRouterContext.Provider>);
   assert.match(profile, /<dt[^>]*>Roll number<\/dt><dd[^>]*>99999<\/dd>/);
   assert.doesNotMatch(profile, /<input\b[^>]*(?:id="roll-number"|value="99999")/);
   for (const id of ["student-name", "school", "block", "district"]) {
-    const field = profile.match(new RegExp(`<input\\b[^>]*id="${id}"[^>]*>`))?.[0];
+    const field = profile.match(new RegExp(`<input\\b[^>]*name="${id}"[^>]*>`))?.[0];
     assert.ok(field, `${id} remains available`);
     assert.doesNotMatch(field, /readonly|disabled/i);
   }
@@ -152,7 +153,7 @@ async function main() {
   assert.ok(table.includes('aria-label="Select all matching results"'));
   assert.ok(table.includes('aria-label="Select roll 99999"'));
   for (const removed of ["Select all 2 matching results", "Select page", ">Select</th>", "Marks and Sten score", "Marks are provisional", "Active students", 'href="/admin/archive"']) assert.ok(!table.includes(removed), removed);
-  assert.ok(table.indexOf("0 selected") < table.indexOf('id="search-name,-roll-no.-or-school"'));
+  assert.ok(table.indexOf("0 selected") < table.indexOf('name="search-name-roll-no-or-school"'));
   assert.match(table, /<h1[^>]*>Student reports<\/h1><span[^>]*>2 students<\/span>/);
   assert.ok(table.includes('aria-label="STEN scoring"'));
   const downloads = table.match(/<div role="group" aria-label="Report downloads"[^>]*>([\s\S]*?)<\/div>/)?.[1];

@@ -1,8 +1,12 @@
 export { Badge } from "./Badge";
 export { Button } from "./Button";
 export { Card } from "./Card";
+export { ConfirmDialog } from "./ConfirmDialog";
 export { Input } from "./Input";
 export { PageHeader } from "./PageHeader";
+export { Pagination } from "./Pagination";
 export { Select } from "./Select";
 export { Skeleton } from "./Skeleton";
+export { SkipLink } from "./SkipLink";
 export { StatCard } from "./StatCard";
+export { StatusPill } from "./StatusPill";

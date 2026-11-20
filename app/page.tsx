@@ -30,7 +30,7 @@ export default function Landing() {
   );
 
   return (
-    <main className="w-full space-y-8 px-4 py-4 sm:space-y-10 sm:px-6 sm:py-6 lg:px-10 2xl:px-12">
+    <main id="main" className="w-full space-y-8 px-4 py-4 sm:space-y-10 sm:px-6 sm:py-6 lg:px-10 2xl:px-12">
       <LandingHeader />
 
       <section className="grid items-center gap-6 md:grid-cols-2 lg:gap-10">
@@ -50,7 +50,7 @@ export default function Landing() {
             Measures seven natural aptitudes to help students, parents and teachers make informed subject and career choices.
           </p>
           <div className="flex flex-wrap gap-3 pt-1">
-            <Link href="/login" className="clay-btn"><LogIn size={18} /> Open portal</Link>
+            <Link href="/login" className="clay-btn"><LogIn size={18} aria-hidden="true" /> Open portal</Link>
             <a href="#subtests" className="clay-btn-soft">View 7 sub-tests</a>
           </div>
         </div>
@@ -82,7 +82,7 @@ export default function Landing() {
       <section id="about" className="scroll-mt-24 space-y-5">
         <h2 className={H2}>About Tamanna</h2>
         <div className="grid gap-5 lg:grid-cols-2">
-          <Card title="What is aptitude?" className="h-full">
+          <Card title="What is aptitude?" titleLevel={3} className="h-full">
             <p className="text-sm leading-relaxed">
               Aptitude is the natural ability to learn a skill in a specific area. It shows where a student is likely to succeed with training.
             </p>
@@ -90,11 +90,11 @@ export default function Landing() {
               Developed by NCERT and piloted by CBSE across affiliated schools for Classes IX and X.
             </p>
           </Card>
-          <Card title="How results help" className="h-full">{list(HELPS)}</Card>
+          <Card title="How results help" titleLevel={3} className="h-full">{list(HELPS)}</Card>
         </div>
         <div className="grid gap-5 md:grid-cols-3">
           {COMPONENTS.map((c) => (
-            <Card key={c.title} title={c.title} className="h-full">
+            <Card key={c.title} title={c.title} titleLevel={3} className="h-full">
               <p className="text-sm">{c.text}</p>
             </Card>
           ))}
@@ -112,7 +112,7 @@ export default function Landing() {
               <Card key={s.code} className={`h-full space-y-2 ${isLastOdd ? "md:col-span-2" : ""}`}>
                 <div className="flex items-center gap-3">
                   <div className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${colors[i % colors.length]}`}>
-                    <Icon size={20} />
+                    <Icon size={20} aria-hidden="true" />
                   </div>
                   <div>
                     <h3 className="font-bold">{s.name} ({s.code})</h3>
@@ -131,15 +131,15 @@ export default function Landing() {
       <section id="conduct" className="scroll-mt-24 space-y-5">
         <h2 className={H2}>Conducting the test</h2>
         <div className="grid gap-5 lg:grid-cols-2">
-          <Card title="Test rules" className="h-full">{list(ADMIN_POINTS)}</Card>
-          <Card title="Materials needed" className="h-full">{list(MATERIALS)}</Card>
+          <Card title="Test rules" titleLevel={3} className="h-full">{list(ADMIN_POINTS)}</Card>
+          <Card title="Materials needed" titleLevel={3} className="h-full">{list(MATERIALS)}</Card>
         </div>
       </section>
 
       <section id="scoring" className="scroll-mt-24 space-y-5">
         <h2 className={H2}>Scoring</h2>
         <div className="grid gap-5 lg:grid-cols-2">
-          <Card title="Steps" className="h-full space-y-4">
+          <Card title="Steps" titleLevel={3} className="h-full space-y-4">
             <ol className="space-y-2.5">
               {SCORING_STEPS.map((t, i) => (
                 <li key={t} className="flex items-center gap-3">
@@ -156,7 +156,7 @@ export default function Landing() {
               ))}
             </div>
           </Card>
-          <Card title={`Example: Roll ${EXAMPLE.roll}`} description={EXAMPLE.detail} className="h-full">
+          <Card title={`Example: Roll ${EXAMPLE.roll}`} titleLevel={3} description={EXAMPLE.detail} className="h-full">
             <ul className="space-y-2.5">
               {EXAMPLE.rows.map((r) => (
                 <li key={r.code} className="flex items-center gap-3 text-sm">
@@ -171,7 +171,7 @@ export default function Landing() {
           </Card>
         </div>
         <div className="grid gap-5 lg:grid-cols-2">
-          <Card title="Careers linked to aptitudes" className="h-full">
+          <Card title="Careers linked to aptitudes" titleLevel={3} className="h-full">
             <ul className="grid gap-2 sm:grid-cols-2">
               {CAREER_EXAMPLES.map(([o, a]) => (
                 <li key={o} className="clay-inset px-3 py-2 text-sm">
@@ -180,7 +180,7 @@ export default function Landing() {
               ))}
             </ul>
           </Card>
-          <Card title="Use scores with care" className="h-full">{list(CAUTIONS)}</Card>
+          <Card title="Use scores with care" titleLevel={3} className="h-full">{list(CAUTIONS)}</Card>
         </div>
       </section>
 

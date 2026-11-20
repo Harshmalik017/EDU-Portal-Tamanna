@@ -1,11 +1,22 @@
 # Changelog
 Format: [Keep a Changelog](https://keepachangelog.com), versions follow [SemVer](https://semver.org). See `versioning.md`.
 
-## [Unreleased]
+## [0.23.0] - 2026-11-20
 ### Security
 - Upgrade Next.js from 16.4.2 to 16.4.6 to resolve the published framework security advisory that blocked production builds.
+- Add application and same-origin report CSPs, tighten Supabase network origins, and clear all runtime and development dependency audit findings.
+### Added
+- Add shared confirmation, pagination, status-pill, skip-link, field error, unsaved-change, response-readiness, and private-sheet storage helpers.
+### Changed
+- Consolidate student detail fields, reviewed-answer saves, date formatting, result actions, OMR theme rendering, and the three report pages.
+- Add explicit pending states and errors for sign-out, answer-key saves, calibration, scanned-sheet saves, and reviewed-answer saves.
+- Split the OMR renderer and report UI into focused modules. Remove stale compatibility modules and unused answer-review, manual-check, and legacy navigation components.
+### Fixed
+- Restore the lint release gate with narrow Node globals for CommonJS files. Add a UI regression guard to the CI path.
+- Use stable unique form IDs and meaningful names. Add global skip navigation, image dimensions, touch behavior, modal scroll containment, dirty-state warnings, and a reusable destructive confirmation.
+- Replace broad `transition-all`, native destructive `confirm`, duplicated modal implementations, and hard-coded date formatting.
 ### Validation
-- The exact installed framework version, runtime dependency audit, typecheck, OMR/import/report/rescan/export/results/archive checks, and production build passed.
+- The exact installed framework version, full dependency audit, lint, typecheck, OMR/import/report/rescan/export/results/archive checks, and production build pass.
 
 ## [0.22.3] - 2026-11-13
 ### Fixed

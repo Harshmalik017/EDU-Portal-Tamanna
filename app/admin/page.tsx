@@ -8,7 +8,8 @@ import type { Student } from "@/lib/types";
 
 export default async function Dashboard({ searchParams }: { searchParams: Promise<{ class?: string }> }) {
   const sp = await searchParams;
-  const { data } = await (await createServer()).from("students").select("id,class,gender,excluded,verification_status,scores(test_code,correct)").is("archived_at", null);
+  const { data, error } = await (await createServer()).from("students").select("id,class,gender,excluded,verification_status,scores(test_code,correct)").is("archived_at", null);
+  if (error) throw new Error("Could not load dashboard data.", { cause: error });
   const all = (data ?? []) as unknown as Student[];
   const cls = normalizeClass(sp.class);
   const rows = all.filter((s) => !s.excluded && (!cls || normalizeClass(s.class) === cls));

@@ -1,7 +1,7 @@
 # Tech Stack (free tier)
 | Layer | Choice |
 |---|---|
-| Framework | Next.js 16 (App Router, React 19) + TypeScript |
+| Framework | Next.js 16.4.6 (App Router, React 19) + TypeScript |
 | Styling | Tailwind CSS 4 + claymorphism `@utility` rules in `app/globals.css` |
 | Icons | lucide-react |
 | Backend/DB/Auth | Supabase (Postgres, email auth, RLS) |

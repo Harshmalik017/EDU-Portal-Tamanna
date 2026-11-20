@@ -10,7 +10,7 @@ export default async function Setup({ searchParams }: { searchParams: Promise<{ 
   const sp = await searchParams;
   const ready = envReady();
   return (
-    <main className="mx-auto max-w-2xl space-y-5 px-4 py-10">
+    <main id="main" className="mx-auto max-w-2xl space-y-5 px-4 py-10">
       <Card>
         <h1 className="text-2xl font-extrabold">Set up Tamanna Portal</h1>
         <p className="mt-2 text-sm">{ready ? "Supabase keys found." : "No Supabase connection. Add the website settings below."}</p>

@@ -5,6 +5,7 @@ import { UserRound } from "lucide-react";
 import { Button, Card, Input, PageHeader } from "@/components/ui";
 import { supabase } from "@/lib/supabase/client";
 import { useToast } from "@/components/Toast";
+import { useUnsavedChanges } from "@/components/hooks/useUnsavedChanges";
 
 export function AccountSettings({ email, displayName }: { email: string; displayName: string }) {
   const [name, setName] = useState(displayName);
@@ -14,6 +15,7 @@ export function AccountSettings({ email, displayName }: { email: string; display
   const [busy, setBusy] = useState(false);
   const toast = useToast();
   const router = useRouter();
+  useUnsavedChanges(name !== displayName || !!current || !!password || !!confirmation);
 
   async function save(event: FormEvent<HTMLFormElement>, changePassword: boolean) {
     event.preventDefault();
@@ -46,7 +48,7 @@ export function AccountSettings({ email, displayName }: { email: string; display
       <Card title="Your profile">
         <form className="space-y-4" onSubmit={(event) => void save(event, false)}>
           <fieldset disabled={busy} className="space-y-4">
-            <Input label="Email" type="email" value={email} readOnly autoComplete="username" />
+            <Input label="Email" type="email" value={email} readOnly autoComplete="username" spellCheck={false} />
             <Input label="Display name" value={name} onChange={(event) => setName(event.target.value)} maxLength={100} autoComplete="name" />
             <Button type="submit">{busy ? "Saving…" : "Save profile"}</Button>
           </fieldset>

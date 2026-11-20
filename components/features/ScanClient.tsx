@@ -8,14 +8,16 @@ import type { Column } from "@/lib/omr/template";
 import type { Key } from "@/lib/types";
 import { compress } from "@/lib/omr/image";
 import { TESTS } from "@/lib/tamanna/tests";
-import { Button, Card, Input, Select } from "@/components/ui";
+import { Button, Card } from "@/components/ui";
 import { SheetDisplay } from "@/components/features/OMRSheetPreview";
 import { Dialog } from "@/components/ui/Dialog";
 import { useToast } from "@/components/Toast";
+import { StudentDetailsFields } from "@/components/features/StudentDetailsFields";
+import { useUnsavedChanges } from "@/components/hooks/useUnsavedChanges";
+import { removeSheetFiles, uploadSheetFiles } from "@/lib/supabase/storage";
 
 const EMPTY = { name: "", class: "X", gender: "Male", school: "Pt. Deen Dayal Upadhyay Rajkiya Model Inter College, Jajaur", block: "Sidhauli", district: "Sitapur" };
 const CameraCapture = dynamic(() => import("@/components/CameraCapture").then((m) => m.CameraCapture), { ssr: false });
-const CLASSES = ["IX", "X"]; // Tamanna is for classes IX and X
 type N = 1 | 2;
 
 export function ScanClient({ initialKey, template }: { initialKey: Key; template: Column[] }) {
@@ -43,11 +45,17 @@ export function ScanClient({ initialKey, template }: { initialKey: Key; template
   const keyError = useMemo(() => { try { validateKey(key); return ""; } catch (error) { return error instanceof Error ? error.message : "Could not read the answer key."; } }, [key]);
   const patterns = useMemo(() => (answers ? detectPatterns(answers) : []), [answers]);
   const issues = ([1, 2] as N[]).flatMap((n) => (insp[n]?.quality.issues ?? []).map((i) => `Page ${n}: ${i}`));
+  useUnsavedChanges(!!answers || !!files[1] || !!files[2] || JSON.stringify(info) !== JSON.stringify(EMPTY));
 
   async function rollbackStudent(id: string, paths: string[]) {
     const { error: studentError } = await supabase.from("students").delete().eq("id", id);
-    const { error: storageError } = paths.length ? await supabase.storage.from("sheets").remove(paths) : { error: null };
-    return !!studentError || !!storageError;
+    let storageFailed = false;
+    try {
+      await removeSheetFiles(supabase, paths);
+    } catch {
+      storageFailed = true;
+    }
+    return !!studentError || storageFailed;
   }
 
   function setPages(next: Partial<Record<N, File>>) {
@@ -135,20 +143,20 @@ export function ScanClient({ initialKey, template }: { initialKey: Key; template
       const { data: st, error } = await supabase.from("students").insert({ ...info, name: info.name.trim(), excluded: exclude, exclude_reason: exclude ? patterns.join("; ") : null }).select("id,roll_number").single();
       if (error || !st) return toast(`Could not save student. ${error?.message ?? "No student record was returned."}`);
       studentId = st.id;
+      const uploads: { path: string; file: Blob }[] = [];
       for (const n of [1, 2] as N[]) {
         if (!files[n]) continue;
         const path = `${st.id}/side-${n}.jpg`;
         const image = await compress(files[n]!);
         paths.push(path);
-        const { error: uploadError } = await supabase.storage.from("sheets").upload(path, image, { contentType: "image/jpeg" });
-        if (uploadError) throw new Error("Could not save the scanned pages.", { cause: uploadError });
+        uploads.push({ path, file: image });
       }
       if (pdfArchive) {
         const path = `${st.id}/answer-sheet.pdf`;
         paths.push(path);
-        const { error: pdfError } = await supabase.storage.from("sheets").upload(path, pdfArchive, { contentType: "application/pdf" });
-        if (pdfError) throw new Error("Could not save the PDF record.", { cause: pdfError });
+        uploads.push({ path, file: pdfArchive });
       }
+      await uploadSheetFiles(supabase, uploads);
       const { error: submissionError } = await supabase.from("submissions").insert({ student_id: st.id, responses: answers, image_paths: paths.filter((path) => !path.endsWith(".pdf")), pdf_path: paths.find((path) => path.endsWith(".pdf")) ?? null });
       if (submissionError) throw new Error("Could not save the responses.", { cause: submissionError });
       toast(`Roll ${st.roll_number} saved for review.`);
@@ -163,12 +171,7 @@ export function ScanClient({ initialKey, template }: { initialKey: Key; template
     }
   }
 
-  const studentFields = <div className="grid gap-3 sm:grid-cols-2">
-    <Input label="Student name" value={info.name} onChange={(e) => setInfo({ ...info, name: e.target.value })} />
-    <Select label="Class" options={CLASSES} value={info.class} onChange={(e) => setInfo({ ...info, class: e.target.value })} />
-    <Select label="Gender" options={["Male", "Female", "Not specified"]} value={info.gender} onChange={(e) => setInfo({ ...info, gender: e.target.value })} />
-    <Input label="School" value={info.school} onChange={(e) => setInfo({ ...info, school: e.target.value })} />
-  </div>;
+  const studentFields = <StudentDetailsFields value={info} onChange={(change) => setInfo({ ...info, ...change })} />;
   return (
     <div className="space-y-6">
       {cam && <CameraCapture title="Scan answer sheet" onClose={() => setCam(false)} onCapture={(pages) => { void capturePages(pages); }} />}
@@ -181,17 +184,17 @@ export function ScanClient({ initialKey, template }: { initialKey: Key; template
             <p className="text-sm">Upload one two-page PDF. The original is saved unchanged.</p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <label className="clay-btn-soft cursor-pointer !py-2"><Upload size={18} /> Upload one PDF
+            <label className="clay-btn-soft cursor-pointer !py-2"><Upload size={18} aria-hidden="true" /> Upload one PDF
               <input type="file" accept="application/pdf,.pdf" className="sr-only" disabled={busy} onChange={(e) => { const file = e.target.files?.[0]; e.target.value = ""; if (file) void loadPdf(file); }} /></label>
-            <Button className="!py-2" variant="soft" onClick={startCamera} disabled={busy}><Camera size={18} /> Scan both pages</Button>
-            {(files[1] || files[2]) && <button disabled={busy} className="clay-btn-soft !px-3 !py-2" aria-label="Remove scanned pages" onClick={() => setPages({})}><Trash2 size={18} /></button>}
+            <Button className="!py-2" variant="soft" onClick={startCamera} disabled={busy}><Camera size={18} aria-hidden="true" /> Scan both pages</Button>
+            {(files[1] || files[2]) && <button type="button" disabled={busy} className="clay-btn-soft !px-3 !py-2" aria-label="Remove scanned pages" onClick={() => setPages({})}><Trash2 size={18} aria-hidden="true" /></button>}
           </div>
           {busy && !answers && <p className="text-sm font-semibold">Preparing answer sheet…</p>}
           {(previews[1] || previews[2]) && (
             <div className="grid gap-3 sm:grid-cols-2">
               {([1, 2] as N[]).map((n) => previews[n] && <figure key={n} className="space-y-1">
                 <figcaption className="text-sm font-semibold">Page {n}</figcaption>
-                <img src={previews[n]} alt={`Original preview of page ${n}`} className="max-h-64 w-full rounded-lg object-contain" />
+                <img src={previews[n]} alt={`Original preview of page ${n}`} width={924} height={1300} decoding="async" className="max-h-64 w-full rounded-lg object-contain" />
               </figure>)}
             </div>
           )}
@@ -199,12 +202,12 @@ export function ScanClient({ initialKey, template }: { initialKey: Key; template
         <div className="flex flex-wrap gap-3">
           <Button onClick={() => answers ? setReviewOpen(true) : void process()} disabled={busy || (!files[1] || !files[2])}>{busy ? "Reading…" : answers ? "Review sheet" : "Check sheet"}</Button>
         </div>
-        {issues.length > 0 && <ul className="space-y-1 text-sm font-semibold text-amber-800">{issues.map((i) => <li key={i} className="flex gap-2"><AlertTriangle size={16} className="mt-0.5 shrink-0" />{i}</li>)}</ul>}
+        {issues.length > 0 && <ul className="space-y-1 text-sm font-semibold text-amber-800">{issues.map((i) => <li key={i} className="flex gap-2"><AlertTriangle size={16} aria-hidden="true" className="mt-0.5 shrink-0" />{i}</li>)}</ul>}
         {insp[1] && (
           <details className="clay-inset p-3" open>
             <summary className="cursor-pointer font-bold">Checked bubbles</summary>
             <p className="my-2 text-xs">Green: single mark · Red: multiple marks · Orange: blank</p>
-            {([1, 2] as N[]).map((n) => insp[n] &&   <img key={n} src={insp[n]!.overlay} alt={`Checked side ${n}`} className="mb-3 w-full rounded-xl" />)}
+            {([1, 2] as N[]).map((n) => insp[n] && <img key={n} src={insp[n]!.overlay} alt={`Checked side ${n}`} width={924} height={1300} loading="lazy" decoding="async" className="mb-3 w-full rounded-xl" />)}
           </details>
         )}
       </Card>
@@ -227,7 +230,7 @@ export function ScanClient({ initialKey, template }: { initialKey: Key; template
         </fieldset>
         <div className="sticky bottom-0 flex flex-wrap items-center justify-between gap-3 border-t border-(--line) bg-[#fbfdf4] py-3">
           <div className="ml-auto flex flex-wrap gap-2">
-            <Button onClick={save} disabled={busy}><Save size={18} />{busy ? "Saving…" : "Add for review"}</Button>
+            <Button onClick={save} disabled={busy}><Save size={18} aria-hidden="true" />{busy ? "Saving…" : "Add for review"}</Button>
           </div>
         </div>
       </Dialog>}

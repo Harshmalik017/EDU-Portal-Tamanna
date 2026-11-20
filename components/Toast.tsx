@@ -33,7 +33,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
       {children}
       <div aria-live="polite" className="fixed bottom-4 left-1/2 z-[60] w-[92%] max-w-sm -translate-x-1/2 space-y-2 print:hidden">
         {list.map(({ id, m, kind }) => { const { cls, Icon } = STYLE[kind]; return (
-          <div key={id} role={kind === "error" ? "alert" : "status"} className={`flex items-start gap-2 rounded-xl border px-4 py-3 text-sm font-medium shadow-lg ${cls}`}><Icon size={18} className="mt-0.5 shrink-0" />{m}</div>); })}
+          <div key={id} role={kind === "error" ? "alert" : "status"} className={`flex items-start gap-2 rounded-xl border px-4 py-3 text-sm font-medium shadow-lg ${cls}`}><Icon size={18} aria-hidden="true" className="mt-0.5 shrink-0" />{m}</div>); })}
       </div>
     </Ctx.Provider>
   );

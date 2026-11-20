@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { readReplacement } from "@/lib/omr/reader";
 import type { StudentSheet } from "@/lib/types";
+import { removeSheetFiles, uploadSheetFiles } from "@/lib/supabase/storage";
 
 export async function replaceSheet(supabase: SupabaseClient, studentId: string, previous: StudentSheet, replacement: Awaited<ReturnType<typeof readReplacement>>) {
   const folder = `${studentId}/${crypto.randomUUID()}`;
@@ -11,11 +12,7 @@ export async function replaceSheet(supabase: SupabaseClient, studentId: string, 
   let committed = false;
   let saving = false;
   try {
-    for (const { path, file } of files) {
-      const { error } = await supabase.storage.from("sheets").upload(path, file, { contentType: file.type });
-      if (error) throw new Error(`Could not upload the replacement OMR. ${error.message}`);
-      uploaded.push(path);
-    }
+    await uploadSheetFiles(supabase, files.map(({ path, file }) => ({ path, file })), (path) => uploaded.push(path));
     const source = replacement.archive ?? new Blob(replacement.pages);
     const hash = Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", await source.arrayBuffer())), (byte) => byte.toString(16).padStart(2, "0")).join("");
     saving = true;
@@ -39,10 +36,11 @@ export async function replaceSheet(supabase: SupabaseClient, studentId: string, 
       }
     }
     if (uploaded.length) {
-      const { error: cleanupError } = await supabase.storage.from("sheets").remove(uploaded);
-      if (cleanupError) {
+      try {
+        await removeSheetFiles(supabase, uploaded);
+      } catch (cleanupError) {
         console.error("Could not clean up replacement uploads.", cleanupError);
-        throw new Error("Could not replace the OMR or remove the incomplete upload. Refresh and contact the administrator.", { cause: error });
+        throw new Error("Could not replace the OMR or remove the incomplete upload. Refresh and contact the administrator.", { cause: cleanupError });
       }
     }
     throw error;

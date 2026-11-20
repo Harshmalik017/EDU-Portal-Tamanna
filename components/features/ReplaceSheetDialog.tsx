@@ -7,6 +7,7 @@ import { useToast } from "@/components/Toast";
 import { replaceSheet } from "@/lib/supabase/replace-sheet";
 import { supabase } from "@/lib/supabase/client";
 import type { Student, StudentSheet } from "@/lib/types";
+import { removeSheetFiles } from "@/lib/supabase/storage";
 
 export function ReplaceSheetDialog({ student, sheet, onClose, onSaved }: { student: Student; sheet: StudentSheet; onClose: () => void; onSaved: () => void }) {
   const [files, setFiles] = useState<File[]>([]);
@@ -30,8 +31,11 @@ export function ReplaceSheetDialog({ student, sheet, onClose, onSaved }: { stude
         router.refresh();
       }
       if (oldPaths.length) {
-        const { error: cleanupError } = await supabase.storage.from("sheets").remove(oldPaths);
-        if (cleanupError) throw new Error("Could not remove the old files. New OMR is saved. Retry removal.");
+        try {
+          await removeSheetFiles(supabase, oldPaths);
+        } catch (error) {
+          throw new Error("Could not remove the old files. New OMR is saved. Retry removal.", { cause: error });
+        }
       }
       onSaved();
     } catch (failure) {
@@ -51,7 +55,7 @@ export function ReplaceSheetDialog({ student, sheet, onClose, onSaved }: { stude
     {error && <p role="alert" className="text-sm font-semibold text-red-800">{error}</p>}
     <div className="flex flex-wrap justify-end gap-2">
       {!saved && <Button variant="soft" disabled={busy} onClick={onClose}>Cancel</Button>}
-      <Button disabled={busy || (!saved && !files.length)} onClick={() => void replace()}>{busy ? "Processing..." : saved ? "Retry removal" : "Replace and re-evaluate"}</Button>
+      <Button disabled={busy || (!saved && !files.length)} onClick={() => void replace()}>{busy ? "Processing…" : saved ? "Retry removal" : "Replace and re-evaluate"}</Button>
     </div>
   </Dialog>;
 }

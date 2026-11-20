@@ -12,7 +12,10 @@ import { Button, Card, PageHeader } from "@/components/ui";
 import { useToast } from "@/components/Toast";
 import { SheetDisplay } from "@/components/features/OMRSheetPreview";
 import { StudentProfileForm } from "@/components/features/StudentProfileForm";
-import { OPTIONS, TESTS } from "@/lib/tamanna/tests";
+import { responsesReady } from "@/lib/tamanna/responses";
+import { reviewSheet } from "@/lib/supabase/review-sheet";
+import { ConfirmDialog } from "@/components/ui";
+import { useUnsavedChanges } from "@/components/hooks/useUnsavedChanges";
 
 const tone = { Low: "bg-amber-100 text-amber-900", Average: "bg-blue-100 text-blue-900", High: "bg-green-100 text-green-900" } as const;
 
@@ -24,30 +27,30 @@ export function StudentView({ initial, imgs, pdfUrl, responses, answerKey, keyHa
   const [marked, setMarked] = useState(responses);
   const [scoring, setScoring] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
   useEffect(() => { setS(initial); setMarked(responses); }, [initial, responses]);
+  useUnsavedChanges(JSON.stringify(marked) !== JSON.stringify(responses));
   const p = buildProfile(s);
-  const ready = TESTS.every((test) => marked[test.code]?.length === test.questions && marked[test.code].every((value) => value === null || value === "MULTI" || OPTIONS.some((option) => option === value)));
+  const ready = responsesReady(marked);
 
   async function saveAnswers() {
     if (!keyHash) return toast("Could not score. Save the complete official answer key first.");
     if (!ready) return toast("Select an answer, No response, or M for every question.");
     setScoring(true);
     try {
-      const { error } = await supabase.rpc("review_copy", { p_student_id: id, p_responses: marked, p_expected_key_hash: keyHash });
-      if (error) return toast(`Could not score. ${error.message}`);
+      await reviewSheet(supabase, id, marked, keyHash);
       toast("Scan answers confirmed. Final marks saved."); router.refresh();
     } catch (error) {
       console.error("Could not save checked scan answers.", error);
-      toast("Could not save checked scan answers.");
+      toast(error instanceof Error && error.message.startsWith("Could not") ? error.message : "Could not save checked scan answers.");
     } finally { setScoring(false); }
   }
   async function del() {
-    if (!confirm(`Move roll ${s.roll_number} to Archive? Restore within 30 days before permanent deletion.`)) return;
     setDeleting(true);
     try {
       const { error } = await supabase.rpc("archive_students", { p_ids: [id], p_restore: false });
       if (error) return toast(`Could not archive student. ${error.message}`);
-      toast("Student archived."); router.push("/admin/results"); router.refresh();
+      toast("Student archived."); setDeleteOpen(false); router.push("/admin/results"); router.refresh();
     } catch (error) {
       console.error("Could not archive student.", error); toast("Could not archive student.");
     } finally { setDeleting(false); }
@@ -60,8 +63,8 @@ export function StudentView({ initial, imgs, pdfUrl, responses, answerKey, keyHa
         icon={UserRound}
         actions={
           <div className="flex flex-wrap gap-2">
-            <Link href="/admin/results" className="clay-btn-soft"><ArrowLeft size={18} /> Back to results</Link>
-            {reviewComplete(s) && <Link prefetch={false} scroll={false} href={`/admin/students/${id}/report`} className="clay-btn"><FileText size={18} /> Open report</Link>}
+            <Link href="/admin/results" className="clay-btn-soft"><ArrowLeft size={18} aria-hidden="true" /> Back to results</Link>
+            {reviewComplete(s) && <Link prefetch={false} scroll={false} href={`/admin/students/${id}/report`} className="clay-btn"><FileText size={18} aria-hidden="true" /> Open report</Link>}
           </div>
         }
       />
@@ -69,7 +72,7 @@ export function StudentView({ initial, imgs, pdfUrl, responses, answerKey, keyHa
         <Card className="space-y-4">
           <h2 className="text-lg font-bold">Student details</h2>
           {s.excluded && <p className="clay-inset p-3 text-sm font-semibold">Excluded: {s.exclude_reason || "answer pattern"}.</p>}
-          <fieldset disabled={deleting || scoring}><StudentProfileForm initial={s}><Button type="button" variant="soft" disabled={deleting} onClick={del}><Trash2 size={18} /> Delete</Button></StudentProfileForm></fieldset>
+          <fieldset disabled={deleting || scoring}><StudentProfileForm initial={s}><Button type="button" variant="soft" disabled={deleting} onClick={() => setDeleteOpen(true)}><Trash2 size={18} aria-hidden="true" /> Delete</Button></StudentProfileForm></fieldset>
         </Card>
         <Card>
           <h2 className="mb-1 text-lg font-bold">Scorecard</h2>
@@ -89,6 +92,10 @@ export function StudentView({ initial, imgs, pdfUrl, responses, answerKey, keyHa
       </div>
       <Card><fieldset disabled={scoring || deleting} className="min-w-0"><SheetDisplay pages={imgs.map((url, index) => ({ label: `Page ${index + 1}`, url }))} pdfUrl={pdfUrl} responses={marked} answerKey={answerKey} roll={s.roll_number} onChange={setMarked} /></fieldset></Card>
       <Button onClick={saveAnswers} disabled={scoring || deleting || !keyHash || !ready}>{scoring ? "Saving…" : "Confirm and score"}</Button>
+      {deleteOpen && <ConfirmDialog title="Move student to Archive" confirmLabel={deleting ? "Moving…" : "Move to Archive"} busy={deleting} destructive onConfirm={() => void del()} onClose={() => setDeleteOpen(false)}>
+        <p>Move roll {s.roll_number} to Archive?</p>
+        <p>Restore within 30 days before permanent deletion.</p>
+      </ConfirmDialog>}
     </div>
   );
 }

@@ -25,7 +25,7 @@ export function LandingHeader() {
         </nav>
         <div className="ml-auto flex shrink-0 items-center gap-2">
           <Link href="/login" className="clay-btn !min-h-10 !px-3 !py-2 sm:!px-4">
-            <LogIn size={18} /> Login
+            <LogIn size={18} aria-hidden="true" /> Login
           </Link>
           <button
             type="button"
@@ -35,7 +35,7 @@ export function LandingHeader() {
             onClick={() => setMenuOpen((open) => !open)}
             className="clay-btn-soft !min-h-10 !w-10 !p-0 md:hidden"
           >
-            {menuOpen ? <X size={20} /> : <Menu size={20} />}
+            {menuOpen ? <X size={20} aria-hidden="true" /> : <Menu size={20} aria-hidden="true" />}
           </button>
         </div>
       </div>

@@ -35,16 +35,16 @@ export function LoginForm({ denied }: { denied?: boolean }) {
           <ArrowLeft size={17} aria-hidden="true" /> Home
         </Link>
       </header>
-      <main className="grid flex-1 place-items-center py-8">
+      <main id="main" className="grid flex-1 place-items-center py-8">
         <Card className="w-full max-w-md">
           <h1 className="mb-6 text-center text-2xl font-extrabold">Admin login</h1>
           <form onSubmit={submit} className="space-y-4">
-            <Input label="Username or email" autoComplete="username" required value={email} onChange={(e) => setEmail(e.target.value)} />
+            <Input label="Username or email" autoComplete="username" spellCheck={false} required value={email} onChange={(e) => setEmail(e.target.value)} />
             <div className="relative">
               <Input label="Password" autoComplete="current-password" type={show ? "text" : "password"} required value={password} onChange={(e) => setPassword(e.target.value)} />
-              <button type="button" aria-label={show ? "Hide password" : "Show password"} onClick={() => setShow(!show)} className="absolute right-3 top-[38px] p-1">{show ? <EyeOff size={20} /> : <Eye size={20} />}</button>
+              <button type="button" aria-label={show ? "Hide password" : "Show password"} aria-pressed={show} onClick={() => setShow(!show)} className="absolute right-3 top-[38px] p-1">{show ? <EyeOff size={20} aria-hidden="true" /> : <Eye size={20} aria-hidden="true" />}</button>
             </div>
-            {error && <p role="alert" className="text-sm font-semibold text-red-700">{error}</p>}
+            {error && <p role="alert" className="text-sm font-semibold text-red-700">{error} Check your details and try again.</p>}
             <Button className="w-full" disabled={busy}>{busy ? "Signing in…" : "Login"}</Button>
           </form>
         </Card>

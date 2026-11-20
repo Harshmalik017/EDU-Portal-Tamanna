@@ -76,7 +76,7 @@ export function Sidebar({ open, collapsed, onClose }: { open: boolean; collapsed
               const isActive = active(href);
               return (
                 <Link key={href} href={href} onClick={() => navigate(href)} aria-label={label} title={label} aria-current={isActive ? "page" : undefined}
-                  className={`group relative flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold transition-all focus-visible:outline-2 focus-visible:outline-brand-700 ${collapsed ? "lg:justify-center lg:px-2" : ""} ${isActive ? "bg-brand-100 text-brand-700" : "text-ink/80 hover:bg-brand-50 hover:text-brand-700"}`}>
+                  className={`group relative flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-brand-700 ${collapsed ? "lg:justify-center lg:px-2" : ""} ${isActive ? "bg-brand-100 text-brand-700" : "text-ink/80 hover:bg-brand-50 hover:text-brand-700"}`}>
                   {isActive && <span aria-hidden className="absolute left-0 top-2 bottom-2 w-1 rounded-r-full bg-brand-600" />}
                   <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors ${isActive ? "bg-brand-600 text-white shadow-sm" : "bg-brand-50 text-brand-700 group-hover:bg-brand-100"}`}>
                     <Icon size={16} aria-hidden="true" />
@@ -109,9 +109,9 @@ export function Sidebar({ open, collapsed, onClose }: { open: boolean; collapsed
           Student Reports
         </Link>
       </nav>
-      {open && <div className="fixed inset-0 z-40 bg-[#25331a]/50 lg:hidden print:hidden" onClick={onClose} aria-hidden />}
+      {open && <div className="fixed inset-0 z-40 bg-[#25331a]/50 lg:hidden print:hidden" onClick={onClose} aria-hidden="true" />}
       <aside ref={sidebarRef} id="admin-sidebar" aria-label="Main menu" className={`fixed inset-y-0 left-0 z-50 flex w-72 flex-col overflow-hidden border-r border-brand-200 bg-brand-50 transition-transform lg:visible lg:z-20 lg:translate-x-0 print:hidden ${open ? "visible translate-x-0" : "invisible -translate-x-full"} ${collapsed ? "lg:w-20" : "lg:w-64"}`}>
-        {open && <button aria-label="Close menu" onClick={() => { onClose(); document.getElementById("admin-menu-toggle")?.focus(); }} className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-lg bg-red-600 text-white shadow-sm hover:bg-red-700 lg:hidden"><X size={16} /></button>}
+        {open && <button type="button" aria-label="Close menu" onClick={() => { onClose(); document.getElementById("admin-menu-toggle")?.focus(); }} className="absolute right-3 top-3 z-10 flex h-11 w-11 items-center justify-center rounded-lg bg-red-600 text-white shadow-sm hover:bg-red-700 lg:hidden"><X size={16} aria-hidden="true" /></button>}
         {nav}
       </aside>
       {navigating && (

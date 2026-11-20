@@ -6,11 +6,13 @@ import { Button } from "@/components/ui";
 import { SheetDisplay } from "@/components/features/OMRSheetPreview";
 import { useToast } from "@/components/Toast";
 import { supabase } from "@/lib/supabase/client";
-import { OPTIONS, TESTS } from "@/lib/tamanna/tests";
 import type { Student, StudentSheet } from "@/lib/types";
 import type { PageResult } from "@/lib/omr/reader";
 import { ReplaceSheetDialog } from "@/components/features/ReplaceSheetDialog";
 import { stenClassIssue } from "@/lib/tamanna/results";
+import { responsesReady } from "@/lib/tamanna/responses";
+import { reviewSheet } from "@/lib/supabase/review-sheet";
+import { useUnsavedChanges } from "@/components/hooks/useUnsavedChanges";
 
 export function StudentSheetDialog({ student, mode, onClose }: { student: Student; mode: "view" | "check"; onClose: () => void }) {
   const [sheet, setSheet] = useState<StudentSheet | null>(null);
@@ -23,6 +25,7 @@ export function StudentSheetDialog({ student, mode, onClose }: { student: Studen
   const router = useRouter();
   const toast = useToast();
   const classIssue = stenClassIssue(student.class);
+  useUnsavedChanges(!!sheet && JSON.stringify(marked) !== JSON.stringify(sheet.responses));
   useEffect(() => {
     const controller = new AbortController();
     setLoading(true); setError("");
@@ -45,16 +48,16 @@ export function StudentSheetDialog({ student, mode, onClose }: { student: Studen
     void load();
     return () => controller.abort();
   }, [student.id, attempt]);
-  const ready = TESTS.every((test) => marked[test.code]?.length === test.questions && marked[test.code].every((value) => value === null || value === "MULTI" || OPTIONS.some((option) => option === value)));
+  const ready = responsesReady(marked);
   async function save() {
     if (!sheet || !ready) return toast("Select an answer, No response, or M for every question.");
     setBusy(true);
     try {
-      const { error: saveError } = await supabase.rpc("review_copy", { p_student_id: student.id, p_responses: marked, p_expected_key_hash: sheet.keyHash });
-      if (saveError) return toast(`Could not score. ${saveError.message}`);
+      await reviewSheet(supabase, student.id, marked, sheet.keyHash);
       toast(classIssue ? `No STEN score available. Raw marks saved. ${classIssue}` : "Scan answers confirmed. Final marks saved."); onClose(); router.refresh();
     } catch (failure) {
-      console.error("Could not score the checked sheet.", failure); toast("Could not score the checked sheet.");
+      console.error("Could not score the checked sheet.", failure);
+      toast(failure instanceof Error && failure.message.startsWith("Could not") ? failure.message : "Could not score the checked sheet.");
     } finally { setBusy(false); }
   }
   return <><Dialog wide busy={busy || replacing} title={`OMR sheet · ${student.name || "Name pending"} · ${student.roll_number}`} onClose={onClose}

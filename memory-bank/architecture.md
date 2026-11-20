@@ -24,10 +24,11 @@ Auth: `proxy.ts` (session refresh + redirect) → `admin/layout.tsx` (`is_admin(
 ## Security
 RLS on every table via `is_admin()`; `admins` table has no API policies; views use `security_invoker`; only the public anon key is in the browser; security headers in `next.config.js`.
 All routes deny framing except `/admin/reports`, which uses `X-Frame-Options: SAMEORIGIN` and `Content-Security-Policy: frame-ancestors 'self'` for the off-screen bulk print frame. External framing remains blocked; report authentication, admin checks, and RLS are unchanged.
+The response CSP allows only same-origin resources and the configured Supabase origin, plus the data/blob sources required by scans and reports. Development alone permits `unsafe-eval` for React debugging. Next.js is pinned to the security-fixed 16.4.6 release.
 ## Known limits / next
 - Client-side OMR runs on the main thread (move to a Web Worker for batches).
 - Results are loaded in full and paginated in the browser (fine for thousands; move to server pagination beyond ~5k).
-- No strict CSP yet (needs nonces with Next inline scripts). Script-based checks exist; Vercel builds without running them. v0.14.0 uses lint-only local validation and manual testing as requested.
+- CSP is policy-based and allows the inline scripts/styles that current Next output and print flows require. Move to nonce or SRI enforcement after dedicated browser regression coverage.
 - Pages using the Supabase browser client ship ~60 kB extra JS; unavoidable for uploads and auth.
 
 ## Code layout (v0.7.0)
